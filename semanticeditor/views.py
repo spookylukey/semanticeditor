@@ -8,8 +8,8 @@ import sys
 def json_view(func):
     """
     Use this decorator on a function that takes a request and returns
-    a dictionary of values in order to create view that handles errors
-    and return JSON.
+    a dictionary of values in order to create a view that handles
+    errors and return JSON.
 
     The dictionary should be in this standard format:
 
