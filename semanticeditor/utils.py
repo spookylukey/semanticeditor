@@ -11,27 +11,26 @@ class InvalidHtml(ValueError):
 class IncorrectHeadings(ValueError):
     pass
 
+
+headingdef = ['h1','h2','h3','h4','h5','h6']
+
+
 def extract_headings(content):
     """
     Extracts H1, H2, etc headings, and returns a list of tuples
     containing (level, name)
     """
+    # Parse
     try:
         tree = ET.fromstring("<html>" + content + "</html>")
     except expat.ExpatError, e:
         raise InvalidHtml("HTML content is not well formed.")
 
-    headingdef = ['h1','h2','h3','h4','h5','h6']
-
-    # Parse
     nodes = [n for n in tree.getiterator() if n.tag in headingdef]
     headings = [(int(h.tag[1]), flatten(h)) for h in nodes]
 
     # Check ordering
-    if len(headings) == 0:
-        return headings
-
-    if headings[0][0] > 1:
+    if len(headings) > 0 and headings[0][0] > 1:
         raise IncorrectHeadings("First heading must be H1.")
 
     # Headings should decrease or monotonically increase

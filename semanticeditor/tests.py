@@ -22,6 +22,9 @@ class TestExtract(TestCase):
        (1, "Heading two"),
        ])
 
+    def test_extract_headings_missing(self):
+        self.assertEqual(extract_headings("Hello"), [])
+
     def test_rejects_bad_html(self):
         self.assertRaises(InvalidHtml, extract_headings, "<h1>Foo")
 
