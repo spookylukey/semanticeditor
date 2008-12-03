@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html
 
 class TestExtract(TestCase):
     def test_extract_headings(self):
@@ -36,3 +36,18 @@ class TestExtract(TestCase):
 
     def test_rejects_duplicate_headings(self):
         self.assertRaises(IncorrectHeadings, extract_headings, "<h1>Hello</h1><h2>Hello</h2>")
+
+class TestCombine(TestCase):
+    def test_no_headings(self):
+        html = "<p>Test</p>"
+        self.assertEqual(html, format_html(html, {}))
+
+    def test_no_styling(self):
+        html = "<h1>Hello</h1><p>P 1</p><h2>Heading 2</h2>"
+        outh = "<div><h1>Hello</h1><p>P 1</p><div><h2>Heading 2</h2></div></div>"
+        self.assertEqual(outh, format_html(html, {}))
+
+    def test_existing_divs(self):
+        html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
+        outh = "<foo><bar><fribble>Some text <p>para</p> some more more <span> of </span> this stuff </fribble></bar></foo>"
+        self.assertEqual(outh, format_html(html, {}))
