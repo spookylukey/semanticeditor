@@ -110,7 +110,7 @@ def format_html(html, styleinfo):
     Formats the XHTML given using a dictionary of style information.
     The dictionary has keys which are the names of headings,
     and values which are lists of CSS classes or special commands.
-    Commands start with 'command:'
+    Commands start with 'command:', CSS classes start with 'class:'
     """
     # Ensure that the headings are well formed and the HTML is valid
     headingnames = extract_headings(html)
@@ -173,6 +173,10 @@ def format_html(html, styleinfo):
         # Replace original element
         parent[first_elem:last_elem] = [newdiv]
 
+        # Apply css styles
+        classes = [s[6:] for s in styleinfo.get(name, []) if s.startswith("class:")]
+        if classes:
+            newdiv.set("class", " ".join(classes))
         # TODO - apply styles
         # TODO - store div for later processing
 

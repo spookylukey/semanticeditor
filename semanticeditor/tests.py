@@ -43,14 +43,20 @@ class TestFormat(TestCase):
         self.assertEqual(html, format_html(html, {}))
 
     def test_creates_section_divs(self):
-        html = "<h1>Hello</h1><p>P 1</p><h2>Heading 2</h2><h1>Another</h1><p>So</p>"
-        outh = "<div><h1>Hello</h1><p>P 1</p><div><h2>Heading 2</h2></div></div><div><h1>Another</h1><p>So</p></div>"
+        html = "<h1>Hello</h1><p>P 1</p><h2>Heading 2</h2> trailing text<h1>Another</h1><p>So</p> trail"
+        outh = "<div><h1>Hello</h1><p>P 1</p><div><h2>Heading 2</h2> trailing text</div></div><div><h1>Another</h1><p>So</p> trail</div>"
         self.assertEqual(outh, format_html(html, {}))
 
     def test_existing_divs(self):
         html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
         outh = "<foo><bar><fribble>Some text <p>para</p> some more more <span> of </span> this stuff </fribble></bar></foo>"
         self.assertEqual(outh, format_html(html, {}))
+
+    def test_add_css_classes(self):
+        html = "<h1>Hello <em>you</em></h1><h2>Hi</h2>"
+        outh = "<div class=\"myclass\"><h1>Hello <em>you</em></h1><div class=\"c1 c2\"><h2>Hi</h2></div></div>"
+        self.assertEqual(outh, format_html(html, {'Hello you':['class:myclass'],
+                                                  'Hi':['class:c1', 'class:c2']}))
 
 class TestElementTreeUtils(TestCase):
     def test_get_parent(self):
