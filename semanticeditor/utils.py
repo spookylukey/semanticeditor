@@ -88,21 +88,13 @@ def cleanup(elem, filter):
             out.append(e)
     elem[:] = out
 
-def flatten(node):
-    """
-    Pulls out all text in this node and its children.
-    """
-    # Use flatten_helper, but don't include the
-    # tail for the very top level element
-    return flatten_helper(node, include_tail=False)
-
-def flatten_helper(node, include_tail=True):
-    if include_tail:
-        tail = node.tail or ''
-    else:
-        tail = ''
-    return node.text + ''.join(map(flatten_helper, node.getchildren())) + tail
-
+def flatten(elem):
+    text = elem.text or ""
+    for e in elem:
+        text += flatten(e)
+        if e.tail:
+            text += e.tail
+    return text
 
 def format_html(html, styleinfo):
     """
