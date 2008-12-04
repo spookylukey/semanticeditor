@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index
 
 class TestExtract(TestCase):
     def test_extract_headings(self):
@@ -42,7 +42,7 @@ class TestFormat(TestCase):
         html = "<p>Test</p>"
         self.assertEqual(html, format_html(html, {}))
 
-    def test_no_styling(self):
+    def test_creates_section_divs(self):
         html = "<h1>Hello</h1><p>P 1</p><h2>Heading 2</h2><h1>Another</h1><p>So</p>"
         outh = "<div><h1>Hello</h1><p>P 1</p><div><h2>Heading 2</h2></div></div><div><h1>Another</h1><p>So</p></div>"
         self.assertEqual(outh, format_html(html, {}))
@@ -61,3 +61,13 @@ class TestElementTreeUtils(TestCase):
         n = t.find(".//b2")
         p = get_parent(t, n)
         self.assertEqual(p, t.find(".//a"))
+
+    def test_get_index(self):
+        """
+        Tests that get_index returns the index of node amongst its siblings
+        """
+        t = parse("<a><b1></b1><b2></b2></a>")
+        n = t.find(".//b2")
+        p = get_parent(t, n)
+        self.assertEqual(1, get_index(p,n))
+

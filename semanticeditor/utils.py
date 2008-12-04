@@ -102,6 +102,9 @@ def get_parent(topnode, elem):
             return n
     return None
 
+def get_index(parent, elem):
+    return list(parent.getchildren()).index(elem)
+
 def format_html(html, styleinfo):
     """
     Formats the XHTML given using a dictionary of style information.
@@ -112,36 +115,68 @@ def format_html(html, styleinfo):
     # Ensure that the headings are well formed and the HTML is valid
     headingnames = extract_headings(html)
 
-    tree = parse(html)
+    root = parse(html)
 
     # Strip existing divs
-    cleanup(tree, lambda t: t.tag != 'div')
+    cleanup(root, lambda t: t.tag != 'div')
 
     # Get the heading nodes, decorated with the level of the heading
-    headers = [(int(n.tag[1]), n) for n in tree.getiterator() if n.tag in headingdef]
+    headers = [(int(n.tag[1]), n) for n in root.getiterator() if n.tag in headingdef]
 
-    # 'scope' of each section is from heading node to before the next
-    # heading with a level the same or higher
 
-    # First, we assume that all h1, h2 etc tags will be children of
-    # the root.  remove_tag should have ensured that.
+    # First, all h1, h2 etc tags will be children of the root.
+    # remove_tag should have ensured that, otherwise we will be unable
+    # to cut the HTML into sections.
     for level, h in headers:
+        parent = get_parent(root, h)
+        # TODO: nicer assert
+        assert parent is root
+
+    # Cut the HTML up into sections
+    for idx, (level, h) in enumerate(headers):
         name = flatten(h)
-        # TODO: assert that the node is a child of root
-        nextnodes = [(l,n) for (l,n) in headers if l <= level]
+        # We can no longer assume that parent = root, because the divs
+        # we insert will change that.  However, the divs we insert
+        # will keep sub-section headings on the same level.
+        parent = get_parent(root, h)
+
+        thisidx = get_index(parent, h)
+        first_elem = thisidx
+
+        # 'scope' of each section is from heading node to before the next
+        # heading with a level the same or higher
+        nextnodes = [(l,n) for (l,n) in headers[idx+1:] if l <= level]
+        # Bug in elementtree - throws AssertionError if we try
+        # to set a slice with [something:None]. So we use len()
+        # instead of None
         if not nextnodes:
             # scope extends to end
-            # TODO
-            pass
+            last_elem = len(parent)
         else:
-            # scope extends to before n
-            # TODO
-            pass
-        # TODO - insert div around scope
+            # scope extends to node before n
+            nextnode = nextnodes[0][1]
+            nn_parent = get_parent(root, nextnode)
+            if nn_parent is parent:
+                # Same level, can find index
+                last_elem = get_index(parent, nextnode)
+            else:
+                # Different level, (due to having been enclosed in a
+                # div already), just go to end
+                last_elem = len(parent)
+
+        group = parent[first_elem:last_elem]
+
+        # Create a new div for them
+        newdiv = ET.Element("div")
+        newdiv[:] = group
+
+        # Replace original element
+        parent[first_elem:last_elem] = [newdiv]
+
         # TODO - apply styles
         # TODO - store div for later processing
 
     # TODO - apply commands to divs
 
-    return ET.tostring(tree).replace('<html>','').replace('</html>','')
+    return ET.tostring(root).replace('<html>','').replace('</html>','')
 
