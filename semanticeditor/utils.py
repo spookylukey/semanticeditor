@@ -96,6 +96,12 @@ def flatten(elem):
             text += e.tail
     return text
 
+def get_parent(topnode, elem):
+    for n in topnode.getiterator():
+        if elem in n.getchildren():
+            return n
+    return None
+
 def format_html(html, styleinfo):
     """
     Formats the XHTML given using a dictionary of style information.

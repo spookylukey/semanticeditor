@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent
 
 class TestExtract(TestCase):
     def test_extract_headings(self):
@@ -37,7 +37,7 @@ class TestExtract(TestCase):
     def test_rejects_duplicate_headings(self):
         self.assertRaises(IncorrectHeadings, extract_headings, "<h1>Hello</h1><h2>Hello</h2>")
 
-class TestCombine(TestCase):
+class TestFormat(TestCase):
     def test_no_headings(self):
         html = "<p>Test</p>"
         self.assertEqual(html, format_html(html, {}))
@@ -51,3 +51,13 @@ class TestCombine(TestCase):
         html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
         outh = "<foo><bar><fribble>Some text <p>para</p> some more more <span> of </span> this stuff </fribble></bar></foo>"
         self.assertEqual(outh, format_html(html, {}))
+
+class TestElementTreeUtils(TestCase):
+    def test_get_parent(self):
+        """
+        Tests that get_parent works
+        """
+        t = parse("<a><b1></b1><b2></b2></a>")
+        n = t.find(".//b2")
+        p = get_parent(t, n)
+        self.assertEqual(p, t.find(".//a"))
