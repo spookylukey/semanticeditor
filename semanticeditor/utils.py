@@ -51,6 +51,42 @@ def extract_headings(content):
 
     return headings
 
+def textjoin(a, b):
+    a = a or ''
+    b = b or ''
+    return a + b
+
+def cleanup(elem, filter):
+    """
+    Removes start and stop tags for any element for which the filter
+    function returns false.  If you want to remove the entire element,
+    including all subelements, use the 'clear' method inside the
+    filter callable.
+
+    Note that this function modifies the tree in place.
+    @param elem An element tree.
+    @param filter An filter function.  This should be a callable that
+    takes an element as its single argument.
+    """
+
+    out = []
+    for e in elem:
+        cleanup(e, filter)
+        if not filter(e):
+            if e.text:
+                if out:
+                    out[-1].tail = textjoin(out[-1].tail, e.text)
+                else:
+                    elem.text = textjoin(elem.text, e.text)
+            out.extend(e)
+            if e.tail:
+                if out:
+                    out[-1].tail = textjoin(out[-1].tail, e.tail)
+                else:
+                    elem.text = textjoin(elem.text, e.tail)
+        else:
+            out.append(e)
+    elem[:] = out
 
 def flatten(node):
     """
@@ -67,57 +103,6 @@ def flatten_helper(node, include_tail=True):
         tail = ''
     return node.text + ''.join(map(flatten_helper, node.getchildren())) + tail
 
-def remove_tag(tree, tag):
-    """
-    Remove all tags named tag from the tree.
-    Their contents are pulled up into the parent.
-    Returns true if the tree was changed.
-    """
-
-    cont = True
-    while cont:
-        children = list(tree.getchildren())
-        changed = False
-        for idx, node in enumerate(children):
-            if node.tag == tag:
-                tree.remove(node)
-                # Insert its contents into parent.
-
-                # 'text' is appended to older sibling's 'tail'
-                #  or into 'text' of tree
-                ntail = node.tail or ''
-                ntext = node.text or ''
-
-                if idx == 0:
-                    ttext = tree.text or ''
-                    tree.text = ttext + ntext
-                else:
-                    ctail = children[idx-1].tail or ''
-                    children[idx-1].tail = ctail + ntext
-
-                # Nodes are inserted
-                for cidx, cnode in enumerate(node.getchildren()):
-                    tree.insert(idx + cidx, cnode)
-
-                # 'tail' is prepended to younger sibling's 'text'
-                # or to 'tail' of tree
-                if idx == len(children) - 1:
-                    ttail = tree.tail or ''
-                    tree.tail = ntail + ttail
-                else:
-                    ctext = children[idx+1].text or ''
-                    children[idx+1].text = ntail + ctext
-
-                # Everything has changed, so we start again
-                changed = True
-                break
-
-        # if changed, we have to start over again.
-        cont = changed
-
-    # Recurse to children
-    for n in tree.getchildren():
-        remove_tag(n, tag)
 
 def format_html(html, styleinfo):
     """
@@ -128,7 +113,7 @@ def format_html(html, styleinfo):
     """
     tree = parse(html)
     # Strip existing divs
-    remove_tag(tree, 'div')
+    cleanup(tree, lambda t: t.tag != 'div')
 
     return ET.tostring(tree).replace('<html>','').replace('</html>','')
 
