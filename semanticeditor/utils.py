@@ -105,6 +105,15 @@ def get_parent(topnode, elem):
 def get_index(parent, elem):
     return list(parent.getchildren()).index(elem)
 
+def _assert_sane_sections(root, headers):
+    # First, all h1, h2 etc tags will be children of the root.
+    # remove_tag should have ensured that, otherwise we will be unable
+    # to cut the HTML into sections.
+    for level, h in headers:
+        parent = get_parent(root, h)
+        # TODO: nicer assert
+        assert parent is root
+
 def format_html(html, styleinfo):
     """
     Formats the XHTML given using a dictionary of style information.
@@ -123,14 +132,7 @@ def format_html(html, styleinfo):
     # Get the heading nodes, decorated with the level of the heading
     headers = [(int(n.tag[1]), n) for n in root.getiterator() if n.tag in headingdef]
 
-
-    # First, all h1, h2 etc tags will be children of the root.
-    # remove_tag should have ensured that, otherwise we will be unable
-    # to cut the HTML into sections.
-    for level, h in headers:
-        parent = get_parent(root, h)
-        # TODO: nicer assert
-        assert parent is root
+    _assert_sane_sections(root, headers)
 
     # Cut the HTML up into sections
     for idx, (level, h) in enumerate(headers):
@@ -177,7 +179,8 @@ def format_html(html, styleinfo):
         classes = [s[6:] for s in styleinfo.get(name, []) if s.startswith("class:")]
         if classes:
             newdiv.set("class", " ".join(classes))
-        # TODO - apply styles
+
+
         # TODO - store div for later processing
 
     # TODO - apply commands to divs
