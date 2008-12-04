@@ -43,8 +43,8 @@ class TestCombine(TestCase):
         self.assertEqual(html, format_html(html, {}))
 
     def test_no_styling(self):
-        html = "<h1>Hello</h1><p>P 1</p><h2>Heading 2</h2>"
-        outh = "<div><h1>Hello</h1><p>P 1</p><div><h2>Heading 2</h2></div></div>"
+        html = "<h1>Hello</h1><p>P 1</p><h2>Heading 2</h2><h1>Another</h1><p>So</p>"
+        outh = "<div><h1>Hello</h1><p>P 1</p><div><h2>Heading 2</h2></div></div><div><h1>Another</h1><p>So</p></div>"
         self.assertEqual(outh, format_html(html, {}))
 
     def test_existing_divs(self):

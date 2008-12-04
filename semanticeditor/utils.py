@@ -103,9 +103,39 @@ def format_html(html, styleinfo):
     and values which are lists of CSS classes or special commands.
     Commands start with 'command:'
     """
+    # Ensure that the headings are well formed and the HTML is valid
+    headingnames = extract_headings(html)
+
     tree = parse(html)
+
     # Strip existing divs
     cleanup(tree, lambda t: t.tag != 'div')
+
+    # Get the heading nodes, decorated with the level of the heading
+    headers = [(int(n.tag[1]), n) for n in tree.getiterator() if n.tag in headingdef]
+
+    # 'scope' of each section is from heading node to before the next
+    # heading with a level the same or higher
+
+    # First, we assume that all h1, h2 etc tags will be children of
+    # the root.  remove_tag should have ensured that.
+    for level, h in headers:
+        name = flatten(h)
+        # TODO: assert that the node is a child of root
+        nextnodes = [(l,n) for (l,n) in headers if l <= level]
+        if not nextnodes:
+            # scope extends to end
+            # TODO
+            pass
+        else:
+            # scope extends to before n
+            # TODO
+            pass
+        # TODO - insert div around scope
+        # TODO - apply styles
+        # TODO - store div for later processing
+
+    # TODO - apply commands to divs
 
     return ET.tostring(tree).replace('<html>','').replace('</html>','')
 
