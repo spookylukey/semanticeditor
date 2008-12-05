@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, NEWROW, NEWCOL
 
 class TestExtract(TestCase):
     def test_extract_headings(self):
@@ -57,6 +57,21 @@ class TestFormat(TestCase):
         outh = "<div class=\"myclass\"><h1>Hello <em>you</em></h1><div class=\"c1 c2\"><h2>Hi</h2></div></div>"
         self.assertEqual(outh, format_html(html, {'Hello you':['class:myclass'],
                                                   'Hi':['class:c1', 'class:c2']}))
+
+    def test_sanity_check_sections(self):
+        html = "<h1>Hello</h1><blockquote><h2>Hi</h2></blockquote>"
+        self.assertRaises(BadStructure, format_html, html, {})
+
+    def test_columns_1(self):
+        html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
+        outh = "<div class=\"row2col\"><div class=\"col\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"col\"><div><h1>2</h1></div><div><h1>3</h1></div></div></div>"
+        self.assertEqual(outh, format_html(html, {'1':[NEWROW],
+                                                  '2':[NEWCOL]}))
+
+    def test_columns_missing_newrow(self):
+        html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
+        self.assertRaises(BadStructure, format_html, html, {'2':[NEWCOL]})
+
 
 class TestElementTreeUtils(TestCase):
     def test_get_parent(self):
