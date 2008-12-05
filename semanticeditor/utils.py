@@ -14,9 +14,14 @@ class IncorrectHeadings(ValueError):
 class BadStructure(ValueError):
     pass
 
+class TooManyColumns(BadStructure):
+    pass
+
 headingdef = ['h1','h2','h3','h4','h5','h6']
 NEWROW = 'command:newrow'
 NEWCOL = 'command:newcolumn'
+
+MAXCOLS = 4
 
 def _is_command(x):
     return x.startswith('command:')
@@ -163,7 +168,10 @@ def _apply_commands(root, section_nodes, styleinfo, headers):
 def _add_rows_and_columns(topnode, known_nodes, styleinfo):
     cur_row_start = None
     cur_col = None
-    children = topnode.getchildren()
+    children = list(topnode.getchildren())
+    # Offset used to cope with the fact that we are pulling sub-nodes
+    # out of topnode as we go along.
+    idx_offset = 0
     for idx, node in enumerate(children):
         name = known_nodes.get(node)
         if name is None:
@@ -175,8 +183,10 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
         if NEWROW in commands:
             if cur_row_start is not None:
                 # The previous row is finished
-                _apply_row_col_divs(topnode, cur_row_start_idx, idx, columns)
-
+                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + idx_offset, columns)
+                # We have removed (idx - cur_row_start_idx) elements,
+                # and added one back
+                idx_offset += -(idx - cur_row_start_idx) + 1
             # start a new row
             cur_row_start = node
             cur_row_start_idx = idx
@@ -188,7 +198,7 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
                                    "'%(name)s' without an appropriate 'new row' "
                                    "command before it. " % dict(name=name))
             else:
-                columns.append((idx, node))
+                columns.append((idx + idx_offset, name))
 
         if not cur_row_start:
             # Rows/columns can only be added within the same level of nesting
@@ -204,7 +214,7 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
         # including the current node in the row (hence idx + 1).
         if idx == len(children) - 1 and cur_row_start is not None \
                 and len(columns) > 0:
-                _apply_row_col_divs(topnode, cur_row_start_idx, idx + 1, columns)
+                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + 1 + idx_offset, columns)
 
 
 def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
@@ -213,6 +223,10 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
     newrow.set('class', 'row%dcol' % len(columns))
 
     # Add the columns
+    if len(columns) > MAXCOLS:
+        raise TooManyColumns("The maximum number of columns is %(max)d. "
+                             "Please move section '%(name)s' into a new "
+                             "row." % dict(max=MAXCOLS, name=columns[MAXCOLS][1]))
 
     # The idx in 'columns' are all out now, due to having pulled the
     # nodes out. Fix them up, and add a dummy entry to provide the

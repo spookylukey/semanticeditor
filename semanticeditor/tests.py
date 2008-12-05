@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, NEWROW, NEWCOL
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL
 
 class TestExtract(TestCase):
     def test_extract_headings(self):
@@ -67,6 +67,86 @@ class TestFormat(TestCase):
         outh = "<div class=\"row2col\"><div class=\"col\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"col\"><div><h1>2</h1></div><div><h1>3</h1></div></div></div>"
         self.assertEqual(outh, format_html(html, {'1':[NEWROW],
                                                   '2':[NEWCOL]}))
+
+    def test_max_cols(self):
+        html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1>"
+        self.assertRaises(TooManyColumns, format_html, html, {'1':[NEWROW],
+                                                              '2':[NEWCOL],
+                                                              '3':[NEWCOL],
+                                                              '4':[NEWCOL],
+                                                              '5':[NEWCOL]
+                                                            })
+
+    def test_creates_section_divs_2(self):
+        html = \
+            "<h1>1</h1>" \
+            "<h1>2</h1>" \
+            "<h2>2.1</h2>" \
+            "<h2>2.2</h2>" \
+            "<h2>2.3</h2>" \
+            "<h2>2.4</h2>" \
+            "<h1>3</h1>" \
+            "<h1>4</h1>"
+
+        outh = \
+            "<div><h1>1</h1></div>" \
+            "<div><h1>2</h1>" \
+            "<div><h2>2.1</h2></div>" \
+            "<div><h2>2.2</h2></div>" \
+            "<div><h2>2.3</h2></div>" \
+            "<div><h2>2.4</h2></div>" \
+            "</div>" \
+            "<div><h1>3</h1></div>" \
+            "<div><h1>4</h1></div>"
+        self.assertEqual(outh, format_html(html, {}))
+
+
+    def test_columns_2(self):
+        html = \
+            "<h1>1</h1>" \
+            "<h1>2</h1>" \
+            "<h2>2.1</h2>" \
+            "<h2>2.2</h2>" \
+            "<h2>2.3</h2>" \
+            "<h2>2.4</h2>" \
+            "<h1>3</h1>" \
+            "<h1>4</h1>"
+
+        outh = \
+            "<div><h1>1</h1></div>" \
+            "<div><h1>2</h1>" \
+            "<div class=\"row2col\">" \
+            "<div class=\"col\">" \
+            "<div><h2>2.1</h2></div>" \
+            "</div>" \
+            "<div class=\"col\">" \
+            "<div><h2>2.2</h2></div>" \
+            "</div>" \
+            "</div>" \
+            "<div class=\"row2col\">" \
+            "<div class=\"col\">" \
+            "<div><h2>2.3</h2></div>" \
+            "</div>" \
+            "<div class=\"col\">" \
+            "<div><h2>2.4</h2></div>" \
+            "</div>" \
+            "</div>" \
+            "</div>" \
+            "<div class=\"row2col\">" \
+            "<div class=\"col\">" \
+            "<div><h1>3</h1></div>" \
+            "</div>" \
+            "<div class=\"col\">" \
+            "<div><h1>4</h1></div>" \
+            "</div>" \
+            "</div>"
+        self.assertEqual(outh, format_html(html, {'2.1':[NEWROW],
+                                                  '2.2':[NEWCOL],
+                                                  '2.3':[NEWROW],
+                                                  '2.4':[NEWCOL],
+                                                  '3':[NEWROW],
+                                                  '4':[NEWCOL],
+                                                  }))
 
     def test_columns_missing_newrow(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
