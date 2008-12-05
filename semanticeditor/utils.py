@@ -24,19 +24,6 @@ NEWCOL = 'command:newcolumn'
 MAXCOLS = 4
 COLUMNCLASS = 'col'
 
-## Presentation dictionary utilities
-def _is_command(x):
-    return x.startswith('command:')
-
-def _get_class(x):
-    return x[6:]
-
-def _add_class_to_set(s, c):
-    s.add('class:' + c)
-
-def _is_class(x):
-    return x.startswith('class:')
-
 # Parsing
 
 def parse(content):
@@ -46,37 +33,7 @@ def parse(content):
         raise InvalidHtml("HTML content is not well formed.")
     return tree
 
-
-def extract_headings(content):
-    """
-    Extracts H1, H2, etc headings, and returns a list of tuples
-    containing (level, name)
-    """
-    # Parse
-    tree = parse(content)
-    nodes = [n for n in tree.getiterator() if n.tag in headingdef]
-    headings = [(int(h.tag[1]), flatten(h)) for h in nodes]
-
-    # Check ordering
-    if len(headings) > 0 and headings[0][0] > 1:
-        raise IncorrectHeadings("First heading must be H1.")
-
-    # Headings should decrease or monotonically increase
-    # and they should have unique names
-    lastnum = 0
-    names = {}
-    for num, name in headings:
-        if num > lastnum + 1:
-            raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
-                                    ' but it should be level H%(rightnum)d or less' %
-                                    dict(name=name,foundnum=num,rightnum=lastnum+1))
-        lastnum = num
-        if name in names:
-            raise IncorrectHeadings('There are duplicate headings with the name'
-                                    ' "%s".' % name)
-        names[name] = True
-
-    return headings
+# ElementTree utilities
 
 def textjoin(a, b):
     a = a or ''
@@ -140,6 +97,190 @@ def get_index(parent, elem):
     """
     return list(parent.getchildren()).index(elem)
 
+def wrap_elements_in_tag(parent, start_idx, stop_idx, tag):
+    """
+    Wrap elements in parent at indices [start_idx:stop_idx] with
+    a new element
+    """
+    newelem = ET.Element(tag)
+    group = parent[start_idx:stop_idx]
+    newelem[:] = group
+    parent[start_idx:stop_idx] = [newelem]
+    return newelem
+
+### Semantic editor functionality ###
+
+## Presentation dictionary utilities
+def _pres_get_class(x):
+    return x[6:]
+
+def _pres_make_class(c):
+    return 'class:' + c
+
+def _pres_is_class(x):
+    return x.startswith('class:')
+
+## General utilities
+
+def _invert_dict(d):
+    return dict((v,k) for (k,v) in d.items())
+
+def _get_classes_for_node(node):
+    return filter(len, node.get('class','').split(' '))
+
+def get_heading_nodes(root):
+    """
+    Return the heading nodes, as (level, name, node) tuples
+    """
+    return [(int(n.tag[1]), flatten(n), n) for n in root.getiterator() if n.tag in headingdef]
+
+## Main functions and sub functions
+
+
+def extract_headings(content):
+    """
+    Extracts H1, H2, etc headings, and returns a list of tuples
+    containing (level, name)
+    """
+    # Parse
+    tree = parse(content)
+    nodes = [n for n in tree.getiterator() if n.tag in headingdef]
+    headings = [(int(h.tag[1]), flatten(h)) for h in nodes]
+
+    # Check ordering
+    if len(headings) > 0 and headings[0][0] > 1:
+        raise IncorrectHeadings("First heading must be H1.")
+
+    # Headings should decrease or monotonically increase
+    # and they should have unique names
+    lastnum = 0
+    names = {}
+    for num, name in headings:
+        if num > lastnum + 1:
+            raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
+                                    ' but it should be level H%(rightnum)d or less' %
+                                    dict(name=name,foundnum=num,rightnum=lastnum+1))
+        lastnum = num
+        if name in names:
+            raise IncorrectHeadings('There are duplicate headings with the name'
+                                    ' "%s".' % name)
+        names[name] = True
+
+    return headings
+
+# == Formatting HTML ==
+#
+# The user is allowed to assign presentation to different sections.
+# The sections are identified by headings, so that formatting will be
+# consistent with the logical structure of the document.
+#
+# This imposes a certain div structure on the HTML.  Consider the following
+# document:
+#
+# - H1 - Section 1
+#   - H2 - Section 1.1
+#   - P
+#   - H2 - Section 1.2
+# - H1 - Section 2
+#   etc
+#
+# If the user wants 'Section 1' in a blue, bordered box, the only
+# (practical) way to do it in CSS is to create a div around *all* of
+# section 1 (including Section 1.1 and Section 1.2) and apply a CSS
+# class to it. The div structures must therefore nest according to the
+# logical structure of the document.
+#
+# If the user decided that column 1 should contain Section 1 up to
+# Section 1.1, and that column 2 should contain Section 1.2 up to
+# Section 2, this would require a div structure incompatible with the
+# above. Thus the column layout is limited by the logical structure of
+# the document.
+
+
+def format_html(html, styleinfo):
+    """
+    Formats the XHTML given using a dictionary of style information.
+    The dictionary has keys which are the names of headings,
+    and values which are lists of CSS classes or special commands.
+    Commands start with 'command:', CSS classes start with 'class:'
+    """
+    # Use extract_headings to ensure that the headings are well formed
+    # and the HTML is valid.
+    headingnames = [name for (level, name) in extract_headings(html)]
+
+    styleinfo = _sanitise_styleinfo(styleinfo, headingnames)
+
+    root = parse(html)
+
+    # Strip existing divs, otherwise we cannot format properly.  If
+    # there are other block level elements that mess things up, we
+    # raise BadStructure later, but divs have so semantics so can just
+    # be removed.
+    cleanup(root, lambda t: t.tag != 'div')
+
+    headers = get_heading_nodes(root)
+
+    _assert_sane_sections(root, headers)
+
+    section_nodes = {}
+    # Cut the HTML up into sections
+    for idx, (level, name, h) in enumerate(headers):
+        # We can no longer assume that parent = root, because the divs
+        # we insert will change that.  However, the divs we insert
+        # will keep sub-section headings on the same level.
+        parent = get_parent(root, h)
+
+        thisidx = get_index(parent, h)
+        first_elem = thisidx
+
+        # 'scope' of each section is from heading node to before the next
+        # heading with a level the same or higher
+        nextnodes = [(l,n) for (l,nname,n) in headers[idx+1:] if l <= level]
+        # Bug in elementtree - throws AssertionError if we try
+        # to set a slice with [something:None]. So we use len()
+        # instead of None
+        if not nextnodes:
+            # scope extends to end
+            last_elem = len(parent)
+        else:
+            # scope extends to node before n
+            nextnode = nextnodes[0][1]
+            nn_parent = get_parent(root, nextnode)
+            if nn_parent is parent:
+                # Same level, can find index
+                last_elem = get_index(parent, nextnode)
+            else:
+                # Different level, (due to having been enclosed in a
+                # div already), just go to end
+                last_elem = len(parent)
+
+        newdiv = wrap_elements_in_tag(parent, first_elem, last_elem, "div")
+
+        # Apply css styles
+        classes = [_pres_get_class(s) for s in styleinfo[name] if _pres_is_class(s)]
+        classes.sort()
+        if classes:
+            newdiv.set("class", " ".join(classes))
+
+        section_nodes[name] = newdiv
+
+    _apply_commands(root, section_nodes, styleinfo, headers)
+
+    return ET.tostring(root).replace('<html>','').replace('</html>','')
+
+def _sanitise_styleinfo(styleinfo, headingnames):
+    # Replace lists with sets
+    out = {}
+    for k, v in styleinfo.items():
+        out[k] = set(v)
+
+    # Ensure that all sections have an entry in styleinfo
+    for name in headingnames:
+        if not name in out:
+            out[name] = set()
+
+    return out
+
 def _assert_sane_sections(root, headers):
     # First, all h1, h2 etc tags will be children of the root.
     # remove_tag should have ensured that, otherwise we will be unable
@@ -152,9 +293,6 @@ def _assert_sane_sections(root, headers):
                                "format the sections and apply columns. "
                                "Please move the heading out of the '%(element)s'"
                                " element that contains it." % dict(name=name, element=parent.tag))
-
-def _invert_dict(d):
-    return dict((v,k) for (k,v) in d.items())
 
 def _apply_commands(root, section_nodes, styleinfo, headers):
     # Rules:
@@ -259,136 +397,6 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
         newcol.set('class', COLUMNCLASS)
 
 
-def _sanitise_styleinfo(styleinfo, headingnames):
-    # Replace lists with sets
-    out = {}
-    for k, v in styleinfo.items():
-        out[k] = set(v)
-
-    # Ensure that all sections have an entry in styleinfo
-    for name in headingnames:
-        if not name in out:
-            out[name] = set()
-
-    return out
-
-# == Formatting HTML ==
-#
-# The user is allowed to assign presentation to different sections.
-# The sections are identified by headings, so that formatting will be
-# consistent with the logical structure of the document.
-#
-# This imposes a certain div structure on the HTML.  Consider the following
-# document:
-#
-# - H1 - Section 1
-#   - H2 - Section 1.1
-#   - P
-#   - H2 - Section 1.2
-# - H1 - Section 2
-#   etc
-#
-# If the user wants 'Section 1' in a blue, bordered box, the only
-# (practical) way to do it in CSS is to create a div around *all* of
-# section 1 (including Section 1.1 and Section 1.2) and apply a CSS
-# class to it. The div structures must therefore nest according to the
-# logical structure of the document.
-#
-# If the user decided that column 1 should contain Section 1 up to
-# Section 1.1, and that column 2 should contain Section 1.2 up to
-# Section 2, this would require a div structure incompatible with the
-# above. Thus the column layout is limited by the logical structure of
-# the document.
-
-def wrap_elements_in_tag(parent, start_idx, stop_idx, tag):
-    """
-    Wrap elements in parent at indices [start_idx:stop_idx] with
-    a new element
-    """
-    newelem = ET.Element(tag)
-    group = parent[start_idx:stop_idx]
-    newelem[:] = group
-    parent[start_idx:stop_idx] = [newelem]
-    return newelem
-
-def get_heading_nodes(root):
-    """
-    Return the heading nodes, as (level, name, node) tuples
-    """
-    return [(int(n.tag[1]), flatten(n), n) for n in root.getiterator() if n.tag in headingdef]
-
-def format_html(html, styleinfo):
-    """
-    Formats the XHTML given using a dictionary of style information.
-    The dictionary has keys which are the names of headings,
-    and values which are lists of CSS classes or special commands.
-    Commands start with 'command:', CSS classes start with 'class:'
-    """
-    # Use extract_headings to ensure that the headings are well formed
-    # and the HTML is valid.
-    headingnames = [name for (level, name) in extract_headings(html)]
-
-    styleinfo = _sanitise_styleinfo(styleinfo, headingnames)
-
-    root = parse(html)
-
-    # Strip existing divs, otherwise we cannot format properly.  If
-    # there are other block level elements that mess things up, we
-    # raise BadStructure later, but divs have so semantics so can just
-    # be removed.
-    cleanup(root, lambda t: t.tag != 'div')
-
-    headers = get_heading_nodes(root)
-
-    _assert_sane_sections(root, headers)
-
-    section_nodes = {}
-    # Cut the HTML up into sections
-    for idx, (level, name, h) in enumerate(headers):
-        # We can no longer assume that parent = root, because the divs
-        # we insert will change that.  However, the divs we insert
-        # will keep sub-section headings on the same level.
-        parent = get_parent(root, h)
-
-        thisidx = get_index(parent, h)
-        first_elem = thisidx
-
-        # 'scope' of each section is from heading node to before the next
-        # heading with a level the same or higher
-        nextnodes = [(l,n) for (l,nname,n) in headers[idx+1:] if l <= level]
-        # Bug in elementtree - throws AssertionError if we try
-        # to set a slice with [something:None]. So we use len()
-        # instead of None
-        if not nextnodes:
-            # scope extends to end
-            last_elem = len(parent)
-        else:
-            # scope extends to node before n
-            nextnode = nextnodes[0][1]
-            nn_parent = get_parent(root, nextnode)
-            if nn_parent is parent:
-                # Same level, can find index
-                last_elem = get_index(parent, nextnode)
-            else:
-                # Different level, (due to having been enclosed in a
-                # div already), just go to end
-                last_elem = len(parent)
-
-        newdiv = wrap_elements_in_tag(parent, first_elem, last_elem, "div")
-
-        # Apply css styles
-        classes = [_get_class(s) for s in styleinfo[name] if _is_class(s)]
-        classes.sort()
-        if classes:
-            newdiv.set("class", " ".join(classes))
-
-        section_nodes[name] = newdiv
-
-    _apply_commands(root, section_nodes, styleinfo, headers)
-
-    return ET.tostring(root).replace('<html>','').replace('</html>','')
-
-
 def extract_presentation(html):
     """
     Return the presentation elements used to format some HTML,
@@ -412,7 +420,7 @@ def extract_presentation(html):
 
         # Section - extract classes
         for c in _get_classes_for_node(section_node):
-            _add_class_to_set(pres[name], c)
+            pres[name].add(_pres_make_class(c))
 
         # Parent/grandparent of section - newcol/newrow
         p = get_parent(root, section_node)
@@ -434,5 +442,3 @@ def extract_presentation(html):
 
     return pres
 
-def _get_classes_for_node(node):
-    return filter(len, node.get('class','').split(' '))
