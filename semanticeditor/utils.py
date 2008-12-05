@@ -22,15 +22,22 @@ NEWROW = 'command:newrow'
 NEWCOL = 'command:newcolumn'
 
 MAXCOLS = 4
+COLUMNCLASS = 'col'
 
+## Presentation dictionary utilities
 def _is_command(x):
     return x.startswith('command:')
 
 def _get_class(x):
     return x[6:]
 
+def _add_class_to_set(s, c):
+    s.add('class:' + c)
+
 def _is_class(x):
     return x.startswith('class:')
+
+# Parsing
 
 def parse(content):
     try:
@@ -117,12 +124,20 @@ def flatten(elem):
     return text
 
 def get_parent(topnode, elem):
+    """
+    Return the parent of 'elem'.
+
+    topnode is the node to start searching from
+    """
     for n in topnode.getiterator():
         if elem in n.getchildren():
             return n
     return None
 
 def get_index(parent, elem):
+    """
+    Return the index of elem in parent's children
+    """
     return list(parent.getchildren()).index(elem)
 
 def _assert_sane_sections(root, headers):
@@ -241,7 +256,7 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
             # last dummy entry
             continue
         newcol = wrap_elements_in_tag(newrow, idx, columns[i - 1][0], 'div')
-        newcol.set('class', 'col')
+        newcol.set('class', COLUMNCLASS)
 
 
 def _sanitise_styleinfo(styleinfo, headingnames):
@@ -251,7 +266,7 @@ def _sanitise_styleinfo(styleinfo, headingnames):
         out[k] = set(v)
 
     # Ensure that all sections have an entry in styleinfo
-    for level, name in headingnames:
+    for name in headingnames:
         if not name in out:
             out[name] = set()
 
@@ -296,6 +311,12 @@ def wrap_elements_in_tag(parent, start_idx, stop_idx, tag):
     parent[start_idx:stop_idx] = [newelem]
     return newelem
 
+def get_heading_nodes(root):
+    """
+    Return the heading nodes, as (level, name, node) tuples
+    """
+    return [(int(n.tag[1]), flatten(n), n) for n in root.getiterator() if n.tag in headingdef]
+
 def format_html(html, styleinfo):
     """
     Formats the XHTML given using a dictionary of style information.
@@ -303,21 +324,21 @@ def format_html(html, styleinfo):
     and values which are lists of CSS classes or special commands.
     Commands start with 'command:', CSS classes start with 'class:'
     """
-    # Ensure that the headings are well formed and the HTML is valid
-    headingnames = extract_headings(html)
+    # Use extract_headings to ensure that the headings are well formed
+    # and the HTML is valid.
+    headingnames = [name for (level, name) in extract_headings(html)]
 
     styleinfo = _sanitise_styleinfo(styleinfo, headingnames)
 
     root = parse(html)
 
-    # Strip existing div, otherwise we cannot format properly.  If
+    # Strip existing divs, otherwise we cannot format properly.  If
     # there are other block level elements that mess things up, we
     # raise BadStructure later, but divs have so semantics so can just
     # be removed.
     cleanup(root, lambda t: t.tag != 'div')
 
-    # Get the heading nodes, decorated with the level of the heading
-    headers = [(int(n.tag[1]), flatten(n), n) for n in root.getiterator() if n.tag in headingdef]
+    headers = get_heading_nodes(root)
 
     _assert_sane_sections(root, headers)
 
@@ -367,3 +388,51 @@ def format_html(html, styleinfo):
 
     return ET.tostring(root).replace('<html>','').replace('</html>','')
 
+
+def extract_presentation(html):
+    """
+    Return the presentation elements used to format some HTML,
+    as a dictionary with keys = section names, values = set
+    of classes/commands.
+    """
+    # TODO: this function is not brilliantly well defined e.g.  should
+    # there be an entry in the dictionary for sections with no
+    # formatting?  This does not affect functionality, but it does
+    # affect tests.
+
+    root = parse(html)
+    headers = get_heading_nodes(root)
+    pres = {}
+    for level, name, node in headers:
+        pres[name] = set()
+        section_node = get_parent(root, node)
+        if section_node is None or section_node.tag != 'div':
+            # Not in standard format, we can't say anything about it
+            continue
+
+        # Section - extract classes
+        for c in _get_classes_for_node(section_node):
+            _add_class_to_set(pres[name], c)
+
+        # Parent/grandparent of section - newcol/newrow
+        p = get_parent(root, section_node)
+        if p is not None and p.tag == 'div':
+            classes = _get_classes_for_node(p)
+            if COLUMNCLASS in classes:
+                pres[name].add(NEWCOL)
+            gp = get_parent(root, p)
+            if gp is not None and gp.tag == 'div':
+                # Could add a redundant check for a 'rowXcol'
+                # class. If it's not there, we probably want to assume
+                # it, otherwise we have to cancel the columns we have
+                # found.
+                if get_index(gp, p) == 0:
+                    # This is the first child, therefore the beginning
+                    # of the row.
+                    pres[name].add(NEWROW)
+                    pres[name].remove(NEWCOL) # not technically necessary
+
+    return pres
+
+def _get_classes_for_node(node):
+    return filter(len, node.get('class','').split(' '))

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation
 
 class TestExtract(TestCase):
     def test_extract_headings(self):
@@ -172,3 +172,37 @@ class TestElementTreeUtils(TestCase):
         p = get_parent(t, n)
         self.assertEqual(1, get_index(p,n))
 
+
+class TestExtractPresentation(TestCase):
+    def test_extract_style(self):
+        html = "<div class=\"foo\"><h1>Heading 1</h1><div class=\"bar baz\"><h2>Heading 2</h2></div></div>"
+        pres = extract_presentation(html)
+        self.assertEqual({'Heading 1':set(['class:foo']),
+                          'Heading 2':set(['class:bar', 'class:baz'])
+                          }, pres)
+
+    # Lazy method - assume that combine works and check the round-trip.
+    # This only works currently if we 'normalise' the presentation dict.
+    def test_extract_1(self):
+        html = \
+            "<h1>1</h1>" \
+            "<h1>2</h1>" \
+            "<h2>2.1</h2>" \
+            "<h2>2.2</h2>" \
+            "<h2>2.3</h2>" \
+            "<h2>2.4</h2>" \
+            "<h1>3</h1>" \
+            "<h1>4</h1>"
+
+        presentation = {'1':set(['class:myclass1']),
+                        '2':set([]),
+                        '2.1':set([NEWROW]),
+                        '2.2':set([NEWCOL]),
+                        '2.3':set([NEWROW]),
+                        '2.4':set([NEWCOL, 'class:myclass2']),
+                        '3':set([NEWROW]),
+                        '4':set([NEWCOL]),
+                        }
+        combined = format_html(html, presentation)
+        pres2 = extract_presentation(combined)
+        self.assertEqual(presentation, pres2)
