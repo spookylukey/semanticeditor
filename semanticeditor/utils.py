@@ -43,10 +43,13 @@ def extract_headings(content):
     names = {}
     for num, name in headings:
         if num > lastnum + 1:
-            raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d, but it should be level H%(rightnum)d or less'  % dict(name=name,foundnum=num,rightnum=lastnum+1))
+            raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
+                                    ' but it should be level H%(rightnum)d or less' %
+                                    dict(name=name,foundnum=num,rightnum=lastnum+1))
         lastnum = num
         if name in names:
-            raise IncorrectHeadings('There are duplicate headings with the name "%s".' % name)
+            raise IncorrectHeadings('There are duplicate headings with the name'
+                                    ' "%s".' % name)
         names[name] = True
 
     return headings
