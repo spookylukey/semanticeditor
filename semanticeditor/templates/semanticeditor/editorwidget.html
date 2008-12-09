@@ -3,8 +3,8 @@
 <script type="text/javascript">
     jQuery('#id_{{ name }}').wymeditor({
         lang: '{{ language }}',
-        skin: 'django',
-        skinPath: "{{ CMS_MEDIA_URL }}javascript/wymeditor/skins/django/",
+        skin: 'semanticeditor',
+        skinPath: "{{ SE_MEDIA_URL }}javascript/wymeditor/skins/semanticeditor/",
         updateSelector: '.submit-row input[type=submit],',
         updateEvent: 'click',
         postInit: function(wym) {
@@ -14,7 +14,7 @@
                  + "<a name='PageLink' href='#'"
                  + " title='Page link'"
                  + " style='background-image:"
-                 + " url({{ CMS_MEDIA_URL }}javascript/wymeditor/skins/django/icons.png);"
+                 + " url({{ SE_MEDIA_URL }}javascript/wymeditor/skins/semanticeditor/icons.png);"
                  + " background-position-y: -623px;'>"
                  + "Page link"
                  + "</a></li>";

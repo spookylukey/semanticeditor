@@ -3,7 +3,8 @@
 # Include all the normal ones
 from cms.admin.widgets import *
 from django import forms
-from cms.settings import CMS_MEDIA_URL
+from django.conf import settings
+
 
 class SemanticEditor(WYMEditor):
     def _media(self):
@@ -14,7 +15,7 @@ class SemanticEditor(WYMEditor):
         context = {
             'name': name,
             'language': self.language,
-            'CMS_MEDIA_URL': CMS_MEDIA_URL,
+            'SE_MEDIA_URL': settings.SE_MEDIA_URL,
         }
         return mark_safe(render_to_string(
             'semanticeditor/editorwidget.html', context))
