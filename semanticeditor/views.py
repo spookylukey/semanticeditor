@@ -2,7 +2,8 @@ from django.http import HttpResponse
 from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, NEWROW_detail, NEWCOL_detail
+from semanticeditor.models import CssClass
 import sys
 
 def json_view(func):
@@ -77,3 +78,12 @@ def extract_headings_view(request):
         return failure(e.args[0])
 
     return success(headings)
+
+@json_view
+def retrieve_styles(request):
+    retval = [NEWROW_detail, NEWCOL_detail]
+    retval += [dict(class_name = "class:" + c.class_name,
+                    name = c.name,
+                    description = c.description)
+               for c in CssClass.objects.all()]
+    return success(retval)

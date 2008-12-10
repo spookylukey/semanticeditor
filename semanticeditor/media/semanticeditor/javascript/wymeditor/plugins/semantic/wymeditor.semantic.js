@@ -12,6 +12,7 @@ function PresentationControls(wym) {
     this.headingsbox_id = id_prefix + 'headings';
     this.optsbox_id = id_prefix + 'optsbox';
     this.setup_controls(container);
+    this.available_styles = new Array();
 }
 
 /*
@@ -20,37 +21,74 @@ function PresentationControls(wym) {
  *  - called on setup
  * combine_presentation
  *  - called before teardown
- * retrieve_style
+ * retrieve_styles
  *  - called on setup
  * update_headingbox
  *  - called when new info about headings arrives
- * update_optsbox
+ * build_optsbox
+ *  - called when information about available styles arrives
  *  - needs to create controls
- *  - then set them up from stored data
+ * update_optsbox
+ *  - remove any existing event handlers
+ *  - sets up control state from stored data
  *  - then add event handlers
+ * optsbox event handlers
+ *  - these need to store style data depending on what
+ *    the user just changed
  * // wrappers for storing data:
  * add_style(heading, pres)
  * remove_style(heading, pres)
  * update_stored_headings
  *  - called when new info about headings arrives
+ * current_heading
  */
+
+function escapeHtml(html) {
+    return html.replace(/\"/g,"&quot;")
+	.replace(/</g,"&lt;")
+	.replace(/>/g,"&gt;")
+	.replace(/&/g,"&amp;");
+}
 
 PresentationControls.prototype.setup_controls = function(container) {
     container.after("<div class=\"prescontrolheadings\">Headings:<br/><select size=\"5\" id=\"" + this.headingsbox_id + "\"></select></div>" +
 		    "<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + this.optsbox_id + "\"></div></div>");
+
+    this.optsbox = jQuery('#' + this.optsbox_id);
+    this.headingscontrol = jQuery('#' + this.headingsbox_id);
+
+    this.retrieve_styles();
     // Event handlers
     this.headingscontrol.change = function(event) {
 	this.update_optsbox();
     };
 };
 
-PresentationControls.prototype.optsbox = function() {
-    return jQuery('#' + this.optsbox_id);
+PresentationControls.prototype.build_optsbox = function() {
+    this.optsbox.empty();
+    var self = this;
+    jQuery.each(this.available_styles, function(i, item) {
+		    // TODO name, value
+		    // TODO - tooltip with description
+		    // TODO event handlers
+		    self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"\"> " + escapeHtml(item.name) + "</label></div></div>");
+    });
 };
 
-PresentationControls.prototype.headingscontrol = function() {
-    return jQuery('#' + this.headingscontrol);
+PresentationControls.prototype.retrieve_styles = function() {
+    // Retrieve via AJAX
+    // TODO - remove hardcoded URL
+    var self = this;
+    jQuery.getJSON("/semantic/retrieve_styles/", {},
+		   function (data) {
+		       // TODO - handle failure
+		       if (data.result == 'ok') {
+			   self.available_styles = data.value;
+			   self.build_optsbox();
+		       }
+		   });
 };
+
 
 // The actual WYMeditor plugin:
 WYMeditor.editor.prototype.semantic = function(options) {

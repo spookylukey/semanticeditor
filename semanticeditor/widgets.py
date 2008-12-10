@@ -8,8 +8,6 @@ import os
 
 join = os.path.join
 
-
-
 class SemanticEditor(WYMEditor):
     class Media:
         js = [join(settings.SE_MEDIA_URL, path) for path in

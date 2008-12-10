@@ -21,6 +21,16 @@ headingdef = ['h1','h2','h3','h4','h5','h6']
 NEWROW = 'command:newrow'
 NEWCOL = 'command:newcolumn'
 
+
+NEWROW_detail = dict(class_name=NEWROW,
+                     name="New row",
+                     description="TODO")
+
+NEWCOL_detail = dict(class_name=NEWCOL,
+                     name="New column",
+                     description="TODO")
+
+
 MAXCOLS = 4
 COLUMNCLASS = 'col'
 
