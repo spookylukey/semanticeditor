@@ -4,7 +4,7 @@ WYMeditor.SKINS['semanticeditor'] = {
 
         //render following sections as panels
         jQuery(wym._box).find(wym._options.classesSelector)
-          .addClass("wym_panel");
+	    .remove();
 
         //render following sections as buttons
         jQuery(wym._box).find(wym._options.toolsSelector)

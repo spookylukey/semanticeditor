@@ -1,0 +1,31 @@
+
+WYMeditor extensions
+====================
+
+The semantic editor application provides its own version of WYMeditor.  This
+is derived from the skins/templates found in django-cms2, with the following
+customisations:
+
+
+ - name of the skin changed from 'django' to 'semanticeditor'.  This is
+   necessary if we are to allow two different versions of WYMeditor on the
+   same page, one using the normal WYMeditor + CMS controls, another with
+   the full 'semantic editor' controls, for longer pieces of content.
+
+ - The skin.js file removes the 'classes' panel, since it is replaced by
+   dynamic elements.
+
+ - skins.css - added styling for additional presentation controls
+
+ - a WYMeditor plugin named 'semantic' has been added.  This implements
+   most of the client side logic for this application.
+
+ - the editorwidget.html template has been changed.  In particular
+   - the skin has been changed to 'semanticeditor'
+   - a call to wymeditor.semantic() has been added to set up the plugin.
+
+ - a new django widget 'SemanticEditor' has been created that inherits from
+   the django 'WYMEditor' widget in django-cms2.  This is needed so that
+    - the WYMeditor plugin javascript file can be added to Media
+    - our editorwdiget.html template can be used.
+

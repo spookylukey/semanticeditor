@@ -4,12 +4,17 @@
 from cms.admin.widgets import *
 from django import forms
 from django.conf import settings
+import os
+
+join = os.path.join
+
 
 
 class SemanticEditor(WYMEditor):
-    def _media(self):
-        extra_media = forms.Media({})
-        return super(SemanticEditor, self)._media() + extra_media
+    class Media:
+        js = [join(settings.SE_MEDIA_URL, path) for path in
+              ('javascript/wymeditor/plugins/semantic/wymeditor.semantic.js',
+               )]
 
     def render_extra(self, name, value, attrs=None):
         context = {
