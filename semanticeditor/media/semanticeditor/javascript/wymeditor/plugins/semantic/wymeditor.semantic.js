@@ -8,11 +8,8 @@
 function PresentationControls(wym) {
     this.name = wym._element.get(0).name;
     var container = jQuery(wym._box).find(".wym_area_bottom");
-    var id_prefix = "id_prescontrol_" + this.name + "_";
-    this.headingsbox_id = id_prefix + 'headings';
-    this.optsbox_id = id_prefix + 'optsbox';
-    this.setup_controls(container);
     this.available_styles = new Array();
+    this.setup_controls(container);
 }
 
 /*
@@ -51,11 +48,15 @@ function escapeHtml(html) {
 }
 
 PresentationControls.prototype.setup_controls = function(container) {
-    container.after("<div class=\"prescontrolheadings\">Headings:<br/><select size=\"5\" id=\"" + this.headingsbox_id + "\"></select></div>" +
-		    "<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + this.optsbox_id + "\"></div></div>");
+    var id_prefix = "id_prescontrol_" + this.name + "_";
+    var headingsbox_id = id_prefix + 'headings';
+    var optsbox_id = id_prefix + 'optsbox';
 
-    this.optsbox = jQuery('#' + this.optsbox_id);
-    this.headingscontrol = jQuery('#' + this.headingsbox_id);
+    container.after("<div class=\"prescontrolheadings\">Headings:<br/><select size=\"5\" id=\"" + headingsbox_id + "\"></select></div>" +
+		    "<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div>");
+
+    this.optsbox = jQuery('#' + optsbox_id);
+    this.headingscontrol = jQuery('#' + headingsbox_id);
 
     this.retrieve_styles();
     // Event handlers
