@@ -12,7 +12,7 @@ class CssClass(models.Model):
                                    "as raw HTML, so it can include an example.")
 
     def __unicode__(self):
-        return self.name
+        return self.verbose_name
 
     class Meta:
         verbose_name = "CSS class"
