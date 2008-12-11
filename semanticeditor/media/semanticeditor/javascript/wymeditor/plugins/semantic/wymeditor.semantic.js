@@ -54,10 +54,13 @@ PresentationControls.prototype.setup_controls = function(container) {
     var headingsbox_id = id_prefix + 'headings';
     var optsbox_id = id_prefix + 'optsbox';
     var self = this;
-    container.after("<div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select></div>" +
-		    "<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div>" +
-		    "<div class=\"prescontrolrefresh\"><input type=\"submit\" value=\"Refresh\" id=\"" + id_prefix + "refresh" + "\" /></div>" +
-		   "<div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div>");
+    container.after(
+	"<div class=\"prescontrol\">" +
+	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select></div></td>" +
+	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div></td></tr></table>" +
+	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td><div class=\"prescontrolrefresh\"><input type=\"submit\" value=\"Refresh headings\" id=\"" + id_prefix + "refresh" + "\" /></div></td>" +
+	"<td width=\"*\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
+        "</div>");
 
     this.optsbox = jQuery('#' + optsbox_id);
     this.headingscontrol = jQuery('#' + headingsbox_id);

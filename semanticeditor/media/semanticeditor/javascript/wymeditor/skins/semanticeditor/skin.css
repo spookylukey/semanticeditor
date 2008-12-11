@@ -137,10 +137,10 @@
 
 
 /* SEMANTIC EDITOR PRESENTATION CONTROLS */
-	.prescontrolheadings        { float: left; width: 50%; }
+	.prescontrolheadings        {  }
 	.prescontrolheadings select { min-width: 150px; }
-	.prescontroloptsboxcont     { float: left; width: 49%; }
+	.prescontroloptsboxcont     {  }
 	.prescontroloptsbox         { overflow-y: scroll; }
-	.prescontrolrefresh         { clear: both; }
-	.prescontrolerror           { color: red; overflow: hide; }
+	.prescontrolrefresh         {  }
+	.prescontrolerror           { color: red; }
 	/* TODO - styling for checkboxes and labels in prescontroloptsbox */
