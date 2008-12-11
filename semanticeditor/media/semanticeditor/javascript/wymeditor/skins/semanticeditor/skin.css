@@ -141,4 +141,6 @@
 	.prescontrolheadings select { min-width: 150px; }
 	.prescontroloptsboxcont     { float: left; width: 49%; }
 	.prescontroloptsbox         { overflow-y: scroll; }
+	.prescontrolrefresh         { clear: both; }
+	.prescontrolerror           { color: red; overflow: hide; }
 	/* TODO - styling for checkboxes and labels in prescontroloptsbox */

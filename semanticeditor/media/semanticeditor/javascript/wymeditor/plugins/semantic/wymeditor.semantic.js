@@ -7,8 +7,10 @@
 
 function PresentationControls(wym) {
     this.name = wym._element.get(0).name;
+    this.wym = wym;
     var container = jQuery(wym._box).find(".wym_area_bottom");
     this.available_styles = new Array();
+    this.stored_headings = new Array();
     this.setup_controls(container);
 }
 
@@ -41,29 +43,35 @@ function PresentationControls(wym) {
  */
 
 function escapeHtml(html) {
-    return html.replace(/\"/g,"&quot;")
+    return html.replace(/&/g,"&amp;")
+	.replace(/\"/g,"&quot;")
 	.replace(/</g,"&lt;")
-	.replace(/>/g,"&gt;")
-	.replace(/&/g,"&amp;");
+	.replace(/>/g,"&gt;");
 }
 
 PresentationControls.prototype.setup_controls = function(container) {
     var id_prefix = "id_prescontrol_" + this.name + "_";
     var headingsbox_id = id_prefix + 'headings';
     var optsbox_id = id_prefix + 'optsbox';
-
+    var self = this;
     container.after("<div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select></div>" +
-		    "<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div>");
+		    "<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div>" +
+		    "<div class=\"prescontrolrefresh\"><input type=\"submit\" value=\"Refresh\" id=\"" + id_prefix + "refresh" + "\" /></div>" +
+		   "<div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div>");
 
     this.optsbox = jQuery('#' + optsbox_id);
     this.headingscontrol = jQuery('#' + headingsbox_id);
-
-    this.optsbox.get(0).style.height = this.headingscontrol.get(0).clientHeight.toString() + "px";
-
+    this.errorbox = jQuery('#' + id_prefix + "errorbox");
+    // TODO - handler for error box to expand when clicked.
+    this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
+    jQuery("#" + id_prefix + "refresh").click(function(event) {
+						  self.refresh_headings();
+						  return false;
+					      });
     this.retrieve_styles();
     // Event handlers
     this.headingscontrol.change = function(event) {
-	this.update_optsbox();
+	self.update_optsbox();
     };
 };
 
@@ -71,10 +79,51 @@ PresentationControls.prototype.build_optsbox = function() {
     this.optsbox.empty();
     var self = this;
     jQuery.each(this.available_styles, function(i, item) {
-		    // TODO name, value
-		    // TODO - tooltip with description
-		    // TODO event handlers
-		    self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"\"> " + escapeHtml(item.verbose_name) + "</label></div></div>");
+	// TODO name, value
+	// TODO - tooltip with description
+	self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"\" /> " + escapeHtml(item.verbose_name) + "</label></div></div>");
+    });
+};
+
+// If data contains an error message, display to the user,
+// otherwise clear the displayed error and perform the callback
+PresentationControls.prototype.handle_error = function(data, callback) {
+    if (data.result == 'ok') {
+	this.clear_error();
+	callback();
+    } else {
+	this.clear_error();
+	// TODO - perhaps distinguish between a server error
+	// and a user error
+	this.show_error(data.message);
+    }
+};
+
+PresentationControls.prototype.clear_error = function() {
+    this.errorbox.empty();
+};
+
+PresentationControls.prototype.show_error = function(message) {
+    this.errorbox.append(escapeHtml(message));
+};
+
+PresentationControls.prototype.refresh_headings = function() {
+    var self = this;
+    var html = this.wym.html();
+    jQuery.post("/semantic/extract_headings/", { 'html':html },
+	function(data) {
+	    self.handle_error(data, function() {
+		self.stored_headings = data.value;
+		self.update_headingbox();
+	    });
+	}, "json");
+};
+
+PresentationControls.prototype.update_headingbox = function() {
+    var self = this;
+    this.headingscontrol.empty();
+    jQuery.each(this.stored_headings, function(i, item) {
+		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + escapeHtml(item[1]) + "</option>");
     });
 };
 
