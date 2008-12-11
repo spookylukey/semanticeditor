@@ -72,7 +72,7 @@ PresentationControls.prototype.build_optsbox = function() {
 		    // TODO name, value
 		    // TODO - tooltip with description
 		    // TODO event handlers
-		    self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"\"> " + escapeHtml(item.name) + "</label></div></div>");
+		    self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"\"> " + escapeHtml(item.verbose_name) + "</label></div></div>");
     });
 };
 

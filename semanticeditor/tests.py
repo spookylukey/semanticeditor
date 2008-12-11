@@ -2,6 +2,9 @@
 
 from django.test import TestCase
 from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation
+from semanticeditor.utils.presentation import PresentationInfo, PresentationClass
+
+PC = PresentationClass
 
 class TestExtract(TestCase):
     def test_extract_headings(self):
@@ -37,6 +40,15 @@ class TestExtract(TestCase):
     def test_rejects_duplicate_headings(self):
         self.assertRaises(IncorrectHeadings, extract_headings, "<h1>Hello</h1><h2>Hello</h2>")
 
+class TestPresentationInfo(TestCase):
+    def test_equality(self):
+        p1 = PresentationInfo(prestype="command", name="foo", verbose_name="blah")
+        p2 = PresentationInfo(prestype="command", name="foo")
+        p3 = PresentationInfo(prestype="command", name="bar")
+        self.assertEqual(p1, p2)
+        self.assertNotEqual(p2, p3)
+        self.assertEqual(set([p1]), set([p2]))
+
 class TestFormat(TestCase):
     def test_no_headings(self):
         html = "<p>Test</p>"
@@ -55,8 +67,8 @@ class TestFormat(TestCase):
     def test_add_css_classes(self):
         html = "<h1>Hello <em>you</em></h1><h2>Hi</h2>"
         outh = "<div class=\"myclass\"><h1>Hello <em>you</em></h1><div class=\"c1 c2\"><h2>Hi</h2></div></div>"
-        self.assertEqual(outh, format_html(html, {'Hello you':['class:myclass'],
-                                                  'Hi':['class:c1', 'class:c2']}))
+        self.assertEqual(outh, format_html(html, {'Hello you':[PC('myclass')],
+                                                  'Hi':[PC('c1'), PC('c2')]}))
 
     def test_sanity_check_sections(self):
         html = "<h1>Hello</h1><blockquote><h2>Hi</h2></blockquote>"
@@ -174,11 +186,11 @@ class TestElementTreeUtils(TestCase):
 
 
 class TestExtractPresentation(TestCase):
-    def test_extract_style(self):
+    def test_extract_presentation(self):
         html = "<div class=\"foo\"><h1>Heading 1</h1><div class=\"bar baz\"><h2>Heading 2</h2></div></div>"
         pres = extract_presentation(html)
-        self.assertEqual({'Heading 1':set(['class:foo']),
-                          'Heading 2':set(['class:bar', 'class:baz'])
+        self.assertEqual({'Heading 1':set([PC('foo')]),
+                          'Heading 2':set([PC('bar'), PC('baz')])
                           }, pres)
 
     # Lazy method - assume that combine works and check the round-trip.
@@ -194,12 +206,12 @@ class TestExtractPresentation(TestCase):
             "<h1>3</h1>" \
             "<h1>4</h1>"
 
-        presentation = {'1':set(['class:myclass1']),
+        presentation = {'1':set([PC('myclass1')]),
                         '2':set([]),
                         '2.1':set([NEWROW]),
                         '2.2':set([NEWCOL]),
                         '2.3':set([NEWROW]),
-                        '2.4':set([NEWCOL, 'class:myclass2']),
+                        '2.4':set([NEWCOL, PC('myclass2')]),
                         '3':set([NEWROW]),
                         '4':set([NEWCOL]),
                         }

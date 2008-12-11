@@ -23,17 +23,6 @@ class TooManyColumns(BadStructure):
 ### Definitions ###
 
 headingdef = ['h1','h2','h3','h4','h5','h6']
-NEWROW = 'command:newrow'
-NEWCOL = 'command:newcolumn'
-
-
-NEWROW_detail = dict(class_name=NEWROW,
-                     name="New row",
-                     description="TODO")
-
-NEWCOL_detail = dict(class_name=NEWCOL,
-                     name="New column",
-                     description="TODO")
 
 MAXCOLS = 4
 COLUMNCLASS = 'col'
@@ -50,14 +39,51 @@ def parse(content):
 ### Semantic editor functionality ###
 
 ## Presentation dictionary utilities
-def _pres_get_class(x):
-    return x[6:]
 
-def _pres_make_class(c):
-    return 'class:' + c
+class PresentationInfo(object):
+    """
+    Encapsulates a piece of presentation information.
+    """
+    def __init__(self, prestype=None, name=None, verbose_name="", description=""):
+        self.prestype = prestype
+        self.name = name
+        # The verbose_name and description are additional pieces of
+        # information that are only needed when the client is
+        # requesting a list of styles.  In other sitations these
+        # objects may not have these attributes filled in.
+        self.verbose_name = verbose_name
+        self.description = description
 
-def _pres_is_class(x):
-    return x.startswith('class:')
+    def __eq__(self, other):
+        return self.prestype == other.prestype and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.prestype) ^ hash(self.name)
+
+    def __repr__(self):
+        return "PresentationInfo(prestype=\"%s\", name=\"%s\")" % (self.prestype, self.name)
+
+def PresentationClass(name, verbose_name="", description=""):
+    """
+    Shortcut for creating CSS classes
+    """
+    return PresentationInfo(prestype="class",  name=name,
+                            verbose_name=verbose_name, description=description)
+
+def PresentationCommand(name, verbose_name="", description=""):
+    """
+    Shortcut for creating commands
+    """
+    return PresentationInfo(prestype="command",  name=name,
+                            verbose_name=verbose_name, description=description)
+
+NEWROW = PresentationCommand('newrow',
+                             verbose_name = "New row",
+                             description = "TODO")
+
+NEWCOL = PresentationCommand('newcol',
+                             verbose_name = "New column",
+                             description = "TODO")
 
 ## General utilities
 
@@ -74,7 +100,6 @@ def get_heading_nodes(root):
     return [(int(n.tag[1]), flatten(n), n) for n in root.getiterator() if n.tag in headingdef]
 
 ## Main functions and sub functions
-
 
 def extract_headings(content):
     """
@@ -196,7 +221,7 @@ def format_html(html, styleinfo):
         newdiv = wrap_elements_in_tag(parent, first_elem, last_elem, "div")
 
         # Apply css styles
-        classes = [_pres_get_class(s) for s in styleinfo[name] if _pres_is_class(s)]
+        classes = [s.name for s in styleinfo[name] if s.prestype == "class"]
         classes.sort()
         if classes:
             newdiv.set("class", " ".join(classes))
@@ -359,7 +384,7 @@ def extract_presentation(html):
 
         # Section - extract classes
         for c in _get_classes_for_node(section_node):
-            pres[name].add(_pres_make_class(c))
+            pres[name].add(PresentationClass(c))
 
         # Parent/grandparent of section - newcol/newrow
         p = get_parent(root, section_node)
