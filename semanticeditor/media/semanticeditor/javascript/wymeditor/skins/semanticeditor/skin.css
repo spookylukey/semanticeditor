@@ -137,6 +137,8 @@
 
 
 /* SEMANTIC EDITOR PRESENTATION CONTROLS */
-	.prescontrolheadings        { float: left; width: 40%; }
+	.prescontrolheadings        { float: left; width: 50%; }
 	.prescontrolheadings select { min-width: 150px; }
-	.prescontroloptsboxcont     { float: left; width: 60%; }
+	.prescontroloptsboxcont     { float: left; width: 49%; }
+	.prescontroloptsbox         { overflow-y: scroll; }
+	/* TODO - styling for checkboxes and labels in prescontroloptsbox */

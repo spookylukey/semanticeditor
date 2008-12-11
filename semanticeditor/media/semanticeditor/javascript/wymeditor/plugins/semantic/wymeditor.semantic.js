@@ -52,11 +52,13 @@ PresentationControls.prototype.setup_controls = function(container) {
     var headingsbox_id = id_prefix + 'headings';
     var optsbox_id = id_prefix + 'optsbox';
 
-    container.after("<div class=\"prescontrolheadings\">Headings:<br/><select size=\"5\" id=\"" + headingsbox_id + "\"></select></div>" +
+    container.after("<div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select></div>" +
 		    "<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div>");
 
     this.optsbox = jQuery('#' + optsbox_id);
     this.headingscontrol = jQuery('#' + headingsbox_id);
+
+    this.optsbox.get(0).style.height = this.headingscontrol.get(0).clientHeight.toString() + "px";
 
     this.retrieve_styles();
     // Event handlers
