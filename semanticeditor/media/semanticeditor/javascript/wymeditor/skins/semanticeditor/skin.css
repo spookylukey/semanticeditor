@@ -137,10 +137,11 @@
 
 
 /* SEMANTIC EDITOR PRESENTATION CONTROLS */
+	.prescontrol td             { padding: 0; }
 	.prescontrolheadings        {  }
 	.prescontrolheadings select { min-width: 150px; }
 	.prescontroloptsboxcont     {  }
 	.prescontroloptsbox         { overflow-y: scroll; }
 	.prescontrolrefresh         {  }
-	.prescontrolerror           { color: red; }
+	.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
 	/* TODO - styling for checkboxes and labels in prescontroloptsbox */
