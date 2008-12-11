@@ -24,9 +24,6 @@ function PresentationControls(wym) {
  *  - called on setup
  * update_headingbox
  *  - called when new info about headings arrives
- * build_optsbox
- *  - called when information about available styles arrives
- *  - needs to create controls
  * update_optsbox
  *  - remove any existing event handlers
  *  - sets up control state from stored data
@@ -65,13 +62,14 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.optsbox = jQuery('#' + optsbox_id);
     this.headingscontrol = jQuery('#' + headingsbox_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
-    // TODO - handler for error box to expand when clicked.
     this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
     jQuery("#" + id_prefix + "refresh").click(function(event) {
 						  self.refresh_headings();
+						  self.headingscontrol.get(0).focus();
 						  return false;
 					      });
     this.retrieve_styles();
+    this.refresh_headings();
     // Event handlers
     this.headingscontrol.change = function(event) {
 	self.update_optsbox();
@@ -90,10 +88,11 @@ PresentationControls.prototype.build_optsbox = function() {
 
 // If data contains an error message, display to the user,
 // otherwise clear the displayed error and perform the callback
-PresentationControls.prototype.handle_error = function(data, callback) {
+// with the value in the data.
+ PresentationControls.prototype.with_good_data = function(data, callback) {
     if (data.result == 'ok') {
 	this.clear_error();
-	callback();
+	callback(data.value);
     } else {
 	this.clear_error();
 	// TODO - perhaps distinguish between a server error
@@ -115,8 +114,8 @@ PresentationControls.prototype.refresh_headings = function() {
     var html = this.wym.html();
     jQuery.post("/semantic/extract_headings/", { 'html':html },
 	function(data) {
-	    self.handle_error(data, function() {
-		self.stored_headings = data.value;
+	    self.with_good_data(data, function(value) {
+		self.stored_headings = value;
 		self.update_headingbox();
 	    });
 	}, "json");
@@ -136,11 +135,10 @@ PresentationControls.prototype.retrieve_styles = function() {
     var self = this;
     jQuery.getJSON("/semantic/retrieve_styles/", {},
 		   function (data) {
-		       // TODO - handle failure
-		       if (data.result == 'ok') {
+		       self.with_good_data(data, function(value) {
 			   self.available_styles = data.value;
 			   self.build_optsbox();
-		       }
+		       });
 		   });
 };
 
