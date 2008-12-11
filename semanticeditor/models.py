@@ -17,4 +17,5 @@ class CssClass(models.Model):
     class Meta:
         verbose_name = "CSS class"
         verbose_name_plural = "CSS classes"
+        ordering = ('verbose_name',)
 
