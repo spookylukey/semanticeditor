@@ -122,7 +122,6 @@ PresentationControls.prototype.form_submit = function(event) {
 	this.show_error(data.message);
 	var pos = this.wym._box.offset();
 	window.scrollTo(pos.left, pos.top);
-	alert(data.message);
     }
 };
 
