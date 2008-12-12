@@ -20,6 +20,8 @@ class BadStructure(ValueError):
 class TooManyColumns(BadStructure):
     pass
 
+AllUserErrors = (InvalidHtml, IncorrectHeadings, BadStructure, TooManyColumns)
+
 ### Definitions ###
 
 headingdef = ['h1','h2','h3','h4','h5','h6']
@@ -180,7 +182,7 @@ def format_html(html, styleinfo):
     # there are other block level elements that mess things up, we
     # raise BadStructure later, but divs have so semantics so can just
     # be removed.
-    cleanup(root, lambda t: t.tag != 'div')
+    _strip_presentation(root)
 
     headers = get_heading_nodes(root)
 
@@ -230,7 +232,14 @@ def format_html(html, styleinfo):
 
     _apply_commands(root, section_nodes, styleinfo, headers)
 
+    return _html_extract(root)
+
+def _html_extract(root):
     return ET.tostring(root).replace('<html>','').replace('</html>','')
+
+def _strip_presentation(tree):
+    cleanup(tree, lambda t: t.tag != 'div')
+
 
 def _sanitise_styleinfo(styleinfo, headingnames):
     # Replace lists with sets
@@ -404,5 +413,8 @@ def extract_presentation(html):
                     pres[name].add(NEWROW)
                     pres[name].remove(NEWCOL) # not technically necessary
 
-    return pres
+    _strip_presentation(root)
+    out_html = _html_extract(root)
+
+    return (pres, out_html)
 

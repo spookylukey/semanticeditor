@@ -188,10 +188,11 @@ class TestElementTreeUtils(TestCase):
 class TestExtractPresentation(TestCase):
     def test_extract_presentation(self):
         html = "<div class=\"foo\"><h1>Heading 1</h1><div class=\"bar baz\"><h2>Heading 2</h2></div></div>"
-        pres = extract_presentation(html)
+        pres, html2 = extract_presentation(html)
         self.assertEqual({'Heading 1':set([PC('foo')]),
                           'Heading 2':set([PC('bar'), PC('baz')])
                           }, pres)
+        self.assertEqual("<h1>Heading 1</h1><h2>Heading 2</h2>", html2)
 
     # Lazy method - assume that combine works and check the round-trip.
     # This only works currently if we 'normalise' the presentation dict.
@@ -216,5 +217,6 @@ class TestExtractPresentation(TestCase):
                         '4':set([NEWCOL]),
                         }
         combined = format_html(html, presentation)
-        pres2 = extract_presentation(combined)
+        pres2, html2 = extract_presentation(combined)
         self.assertEqual(presentation, pres2)
+        self.assertEqual(html, html2)
