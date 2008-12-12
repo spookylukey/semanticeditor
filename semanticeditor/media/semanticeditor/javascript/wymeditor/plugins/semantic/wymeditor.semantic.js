@@ -8,22 +8,20 @@
 function PresentationControls(wym) {
     this.name = wym._element.get(0).name;
     this.wym = wym;
-    var container = jQuery(wym._box).find(".wym_area_bottom");
+    // available_styles: an array of dictionaries corresponding
+    // to PresentationInfo objects
     this.available_styles = new Array();
+    // stored_headings: an array of 2 elements arrays, [heading level, heading name]
     this.stored_headings = new Array();
-    this.setup_controls(container);
+    // presentation_info: a dictionary of { heading name : [PresentationInfo] }
+    this.presentation_info = {};
+    this.setup_controls(jQuery(wym._box).find(".wym_area_bottom"));
 }
 
 /*
  * TODO
- * separate_presentation
- *  - called on setup
  * combine_presentation
  *  - called before teardown
- * retrieve_styles
- *  - called on setup
- * update_headingbox
- *  - called when new info about headings arrives
  * update_optsbox
  *  - remove any existing event handlers
  *  - sets up control state from stored data
@@ -44,6 +42,18 @@ function escapeHtml(html) {
 	.replace(/\"/g,"&quot;")
 	.replace(/</g,"&lt;")
 	.replace(/>/g,"&gt;");
+}
+
+function flattenPresStyle(pres) {
+    // Convert a PresentationInfo object to a string
+    return pres.prestype + ":" + pres.name;
+}
+
+function expandPresStyle(presstr) {
+    // Convert a string to PresentationInfo object
+    var comps = presstr.match(/^([^:]+):(.*)$/);
+    return { prestype: comps[1],
+	     name: comps[2] };
 }
 
 PresentationControls.prototype.setup_controls = function(container) {
@@ -70,10 +80,29 @@ PresentationControls.prototype.setup_controls = function(container) {
 					      });
     this.retrieve_styles();
     this.refresh_headings();
+    this.separate_presentation();
+    this.update_optsbox();
     // Event handlers
-    this.headingscontrol.change = function(event) {
+    this.headingscontrol.click(function(event) {
 	self.update_optsbox();
-    };
+    });
+};
+
+/*
+ * Splits the HTML into 'content HTML' and 'presentation'
+ */
+PresentationControls.prototype.separate_presentation = function() {
+    var self = this;
+    jQuery.post("/semantic/separate_presentation/", { html: self.wym.html() } ,
+		function(data) {
+		    self.with_good_data(data,
+			function(value) {
+			    // Store the presentation
+			    self.presentation_info = value.presentation;
+			    // Update the HTML
+			    self.wym.html(value.html);
+			});
+		}, "json");
 };
 
 PresentationControls.prototype.build_optsbox = function() {
@@ -82,8 +111,62 @@ PresentationControls.prototype.build_optsbox = function() {
     jQuery.each(this.available_styles, function(i, item) {
 	// TODO name, value
 	// TODO - tooltip with description
-	self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"\" /> " + escapeHtml(item.verbose_name) + "</label></div></div>");
+	var val = flattenPresStyle(item);
+	self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"" + escapeHtml(val) + "\" /> " + escapeHtml(item.verbose_name) + "</label></div></div>");
     });
+};
+
+PresentationControls.prototype.unbind_optsbox = function() {
+    // Remove existing event handlers
+    this.optsbox.find("input").unbind().removeAttr("checked").attr("disabled", true);
+};
+
+PresentationControls.prototype.update_optsbox = function() {
+    var self = this;
+    this.unbind_optsbox();
+    // Currently selected heading?
+    var selected = this.headingscontrol.get(0).value;
+    if (!selected) {
+	return;
+    }
+    var headingIndex = parseInt(selected, 10);
+    var heading = this.stored_headings[headingIndex][1];
+    var styles = this.presentation_info[heading];
+    this.optsbox.find("input").each(
+	function(i, input) {
+	    // Set state
+	    var val = input.value;
+	    jQuery.each(styles,
+		function (i, style) {
+		    if (flattenPresStyle(style) == val) {
+			input.checked = true;
+		    }
+		});
+	    // Add event handler
+	    jQuery(this).change(function(event) {
+				    var style = expandPresStyle(input.value);
+				    if (input.checked) {
+					self.add_style(heading, style);
+				    } else {
+					self.remove_style(heading, style);
+				    }
+			 });
+	});
+    this.optsbox.find("input").removeAttr("disabled");
+};
+
+PresentationControls.prototype.add_style = function(heading, presinfo) {
+    var styles = this.presentation_info[heading];
+    styles.push(presinfo);
+    this.presentation_info[heading] = jQuery.unique(styles);
+};
+
+PresentationControls.prototype.remove_style = function(heading, presinfo) {
+    var styles = this.presentation_info[heading];
+    styles = jQuery.grep(styles, function(item, i) {
+			     return item != presinfo;
+			 });
+    this.presentation_info[heading] = styles;
 };
 
 // If data contains an error message, display to the user,
@@ -123,6 +206,7 @@ PresentationControls.prototype.refresh_headings = function() {
 
 PresentationControls.prototype.update_headingbox = function() {
     var self = this;
+    this.unbind_optsbox();
     this.headingscontrol.empty();
     jQuery.each(this.stored_headings, function(i, item) {
 		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + escapeHtml(item[1]) + "</option>");
