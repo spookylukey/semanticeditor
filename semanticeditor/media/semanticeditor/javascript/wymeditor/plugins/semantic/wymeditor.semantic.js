@@ -64,7 +64,7 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.update_optsbox();
 
     // Event handlers
-    this.headingscontrol.click(function(event) {
+    this.headingscontrol.change(function(event) {
 	self.update_optsbox();
     });
     jQuery("#" + id_prefix + "refresh").click(function(event) {
@@ -171,6 +171,7 @@ PresentationControls.prototype.update_optsbox = function() {
 				    } else {
 					self.remove_style(heading, style);
 				    }
+				    self.headingscontrol.get(0).focus();
 			 });
 	});
     this.optsbox.find("input").removeAttr("disabled");
