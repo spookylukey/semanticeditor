@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, NEWROW, NEWCOL, PresentationClass
+from semanticeditor.utils import extract_headings, extract_presentation, AllUserErrors, NEWROW, NEWCOL, PresentationClass
 from semanticeditor.models import CssClass
 import sys
 
@@ -27,9 +27,7 @@ def json_view(func):
     def wrap(request, *a, **kw):
         response = None
         try:
-            response = dict(func(request, *a, **kw))
-            if 'result' not in response:
-                response['result'] = 'ok'
+            response = func(request, *a, **kw)
         except KeyboardInterrupt:
             # Allow keyboard interrupts through for debugging.
             raise
@@ -53,18 +51,44 @@ def json_view(func):
                 msg = e.message
             else:
                 msg = _('Internal error')+': '+str(e)
-            response = {'result': 'error',
-                        'message': msg}
+            response = error(msg)
 
         json = simplejson.dumps(response)
         return HttpResponse(json, mimetype='application/json')
     return wrap
 
-def failure(msg):
+def error(msg):
+    """
+    Standard error result - for internal errors
+    """
     return dict(result='error', message=msg)
 
+def failure(msg):
+    """
+    Standard failure result
+    """
+    return dict(result='usererror', message=msg)
+
 def success(value):
+    """
+    Standard success result
+    """
     return dict(result='ok', value=value)
+
+
+# Anything that depends on values the user may have entered and might
+# contain 'errors' should use this, normally passing in AllUserErrors
+# as 'exceptions'.
+def graceful_errors(exceptions, callback):
+    """
+    Retrieve a value from a callback, handling the exceptions that
+    are passed in, and returning in standard formats
+    """
+    try:
+        val = callback()
+    except exceptions, e:
+        return failure(e.args[0])
+    return success(val)
 
 @json_view
 def extract_headings_view(request):
@@ -72,13 +96,7 @@ def extract_headings_view(request):
     if data is None:
         return failure("No HTML sent for parsing")
 
-    try:
-        headings = extract_headings(data)
-    except (InvalidHtml, IncorrectHeadings), e:
-        return failure(e.args[0])
-
-    return success(headings)
-
+    return graceful_errors(AllUserErrors, lambda: extract_headings(data))
 
 def PI_to_dict(pi):
     """
@@ -95,3 +113,26 @@ def retrieve_styles(request):
                                  description=c.description)
                for c in CssClass.objects.all().order_by('verbose_name')]
     return success(map(PI_to_dict,retval))
+
+@json_view
+def separate_presentation(request):
+    """
+    Returns a JSON object:
+     { presentation: <dictionary of presentation info from html>
+       html: <input html stripped of presentation>
+     }
+    """
+    data = request.POST.get('html')
+    if data is None:
+        return failure("No HTML sent for parsing")
+
+    def _ret():
+        pres, html = extract_presentation(data)
+        # Rewrite pres so that we can serialise it
+        pres2 = {}
+        for k, v in pres.items():
+            pres2[k] = list(v)
+        return dict(presentation=pres2,
+                    html=html)
+
+    return graceful_errors(AllUserErrors, _ret)
