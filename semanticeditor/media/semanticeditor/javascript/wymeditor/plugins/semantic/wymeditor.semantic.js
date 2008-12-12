@@ -8,34 +8,15 @@
 function PresentationControls(wym) {
     this.name = wym._element.get(0).name;
     this.wym = wym;
-    // available_styles: an array of dictionaries corresponding
-    // to PresentationInfo objects
+    // available_styles: an array of dictionaries corresponding to PresentationInfo objects
     this.available_styles = new Array();
     // stored_headings: an array of 2 elements arrays, [heading level, heading name]
     this.stored_headings = new Array();
     // presentation_info: a dictionary of { heading name : [PresentationInfo] }
     this.presentation_info = {};
+
     this.setup_controls(jQuery(wym._box).find(".wym_area_bottom"));
 }
-
-/*
- * TODO
- * combine_presentation
- *  - called before teardown
- * update_optsbox
- *  - remove any existing event handlers
- *  - sets up control state from stored data
- *  - then add event handlers
- * optsbox event handlers
- *  - these need to store style data depending on what
- *    the user just changed
- * // wrappers for storing data:
- * add_style(heading, pres)
- * remove_style(heading, pres)
- * update_stored_headings
- *  - called when new info about headings arrives
- * current_heading
- */
 
 function escapeHtml(html) {
     return html.replace(/&/g,"&amp;")
@@ -61,6 +42,8 @@ PresentationControls.prototype.setup_controls = function(container) {
     var headingsbox_id = id_prefix + 'headings';
     var optsbox_id = id_prefix + 'optsbox';
     var self = this;
+
+    // Create elements
     container.after(
 	"<div class=\"prescontrol\">" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select></div></td>" +
@@ -73,27 +56,36 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.headingscontrol = jQuery('#' + headingsbox_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
     this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
+
+    // Initial set up
+    this.retrieve_styles();
+    this.refresh_headings();
+    this.separate_presentation();
+    this.update_optsbox();
+
+    // Event handlers
+    this.headingscontrol.click(function(event) {
+	self.update_optsbox();
+    });
     jQuery("#" + id_prefix + "refresh").click(function(event) {
 						  self.refresh_headings();
 						  self.headingscontrol.get(0).focus();
 						  return false;
 					      });
-    this.retrieve_styles();
-    this.refresh_headings();
-    this.separate_presentation();
-    this.update_optsbox();
-    // Event handlers
-    this.headingscontrol.click(function(event) {
-	self.update_optsbox();
-    });
+
+    // Insert rewriting of HTML before the WYMeditor updates the textarea.
+    jQuery(this.wym._options.updateSelector)
+	.bind(this.wym._options.updateEvent, function(event) {
+		  self.form_submit(event);
+	      });
+
+    // Other event handlers added in update_optsbox
 };
 
-/*
- * Splits the HTML into 'content HTML' and 'presentation'
- */
+// Splits the HTML into 'content HTML' and 'presentation'
 PresentationControls.prototype.separate_presentation = function() {
     var self = this;
-    jQuery.post("/semantic/separate_presentation/", { html: self.wym.html() } ,
+    jQuery.post("/semantic/separate_presentation/", { html: self.wym.xhtml() } ,
 		function(data) {
 		    self.with_good_data(data,
 			function(value) {
@@ -103,6 +95,35 @@ PresentationControls.prototype.separate_presentation = function() {
 			    self.wym.html(value.html);
 			});
 		}, "json");
+};
+
+PresentationControls.prototype.form_submit = function(event) {
+    // Since we are in the middle of submitting the page, an asynchronous
+    // request will be too late! So we block instead.
+    var res = jQuery.ajax({
+		  type: "POST",
+		  data: {
+		      html: this.wym.xhtml(),
+		      presentation: JSON.stringify(this.presentation_info)
+		  },
+		  url: "/semantic/combine_presentation/",
+		  dataType: "json",
+		  async: false
+    }).responseText;
+    var data = JSON.parse(res);
+    if (data.result == 'ok') {
+	// Replace existing HTML with combined.
+	this.wym.html(data.value.html);
+	// In case the normal WYMeditor update got called *before* this
+	// event handler, we do another update.
+	this.wym.update();
+    } else {
+	event.preventDefault();
+	this.show_error(data.message);
+	var pos = this.wym._box.offset();
+	window.scrollTo(pos.left, pos.top);
+	alert(data.message);
+    }
 };
 
 PresentationControls.prototype.build_optsbox = function() {
@@ -164,7 +185,8 @@ PresentationControls.prototype.add_style = function(heading, presinfo) {
 PresentationControls.prototype.remove_style = function(heading, presinfo) {
     var styles = this.presentation_info[heading];
     styles = jQuery.grep(styles, function(item, i) {
-			     return item != presinfo;
+			     return !(item.prestype == presinfo.prestype
+				      && item.name == presinfo.name);
 			 });
     this.presentation_info[heading] = styles;
 };
@@ -194,7 +216,7 @@ PresentationControls.prototype.show_error = function(message) {
 
 PresentationControls.prototype.refresh_headings = function() {
     var self = this;
-    var html = this.wym.html();
+    var html = this.wym.xhtml();
     jQuery.post("/semantic/extract_headings/", { 'html':html },
 	function(data) {
 	    self.with_good_data(data, function(value) {

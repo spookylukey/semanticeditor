@@ -12,6 +12,7 @@ class SemanticEditor(WYMEditor):
     class Media:
         js = [join(settings.SE_MEDIA_URL, path) for path in
               ('javascript/wymeditor/plugins/semantic/wymeditor.semantic.js',
+               'javascript/json2.js',
                )]
 
     def render_extra(self, name, value, attrs=None):

@@ -235,6 +235,8 @@ def format_html(html, styleinfo):
     return _html_extract(root)
 
 def _html_extract(root):
+    if len(root) == 0 and root.text is None and root.tail is None:
+        return ''
     return ET.tostring(root).replace('<html>','').replace('</html>','')
 
 def _strip_presentation(tree):
@@ -411,7 +413,7 @@ def extract_presentation(html):
                     # This is the first child, therefore the beginning
                     # of the row.
                     pres[name].add(NEWROW)
-                    pres[name].remove(NEWCOL) # not technically necessary
+                    pres[name].discard(NEWCOL) # not technically necessary
 
     _strip_presentation(root)
     out_html = _html_extract(root)

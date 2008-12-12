@@ -2,9 +2,14 @@ from django.http import HttpResponse
 from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_headings, extract_presentation, AllUserErrors, NEWROW, NEWCOL, PresentationClass
+from semanticeditor.utils import extract_headings, extract_presentation, format_html, AllUserErrors, NEWROW, NEWCOL, PresentationInfo, PresentationClass
 from semanticeditor.models import CssClass
 import sys
+try:
+    from functools import wraps
+except ImportError:
+    from django.utils.functional import wraps  # Python 2.3, 2.4 fallback.
+
 
 def json_view(func):
     """
@@ -24,7 +29,7 @@ def json_view(func):
      'message': an_error_message
     }
     """
-    def wrap(request, *a, **kw):
+    def wrapper(request, *a, **kw):
         response = None
         try:
             response = func(request, *a, **kw)
@@ -50,12 +55,13 @@ def json_view(func):
             if hasattr(e, 'message'):
                 msg = e.message
             else:
-                msg = _('Internal error')+': '+str(e)
+                msg = _('Internal error')+': '+ str(e)
             response = error(msg)
 
         json = simplejson.dumps(response)
         return HttpResponse(json, mimetype='application/json')
-    return wrap
+
+    return wraps(func)(wrapper)
 
 def error(msg):
     """
@@ -78,7 +84,7 @@ def success(value):
 
 # Anything that depends on values the user may have entered and might
 # contain 'errors' should use this, normally passing in AllUserErrors
-# as 'exceptions'.
+# as 'exceptions'.  'server' errors are handled by @json_view
 def graceful_errors(exceptions, callback):
     """
     Retrieve a value from a callback, handling the exceptions that
@@ -105,6 +111,9 @@ def PI_to_dict(pi):
     """
     return pi.__dict__
 
+def dict_to_PI(d):
+    return PresentationInfo(prestype=d['prestype'], name=d['name'])
+
 @json_view
 def retrieve_styles(request):
     retval = [NEWROW, NEWCOL]
@@ -126,13 +135,30 @@ def separate_presentation(request):
     if data is None:
         return failure("No HTML sent for parsing")
 
-    def _ret():
+    def _handled():
         pres, html = extract_presentation(data)
-        # Rewrite pres so that we can serialise it
+        # Rewrite pres so that we can serialise it to JSON
         pres2 = {}
         for k, v in pres.items():
-            pres2[k] = list(v)
+            pres2[k] = [PI_to_dict(p) for p in v]
         return dict(presentation=pres2,
                     html=html)
 
-    return graceful_errors(AllUserErrors, _ret)
+    return graceful_errors(AllUserErrors, _handled)
+
+@json_view
+def combine_presentation(request):
+    """
+    Combines submitted 'html' and 'presentation' data,
+    returning a dictionary containg { html: <combined html> }
+    """
+    html = request.POST.get('html', '')
+    presentation = request.POST.get('presentation', '{}')
+    presentation = simplejson.loads(presentation)
+    # Convert dictionaries into PresentationInfo classes
+    for k, v in presentation.items():
+        # v is list of PI dicts
+        for i, item in enumerate(v):
+            v[i] = dict_to_PI(item)
+
+    return graceful_errors(AllUserErrors, lambda: dict(html=format_html(html, presentation)))

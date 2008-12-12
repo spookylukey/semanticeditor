@@ -50,6 +50,9 @@ class TestPresentationInfo(TestCase):
         self.assertEqual(set([p1]), set([p2]))
 
 class TestFormat(TestCase):
+    def test_empty(self):
+        self.assertEqual('', format_html('', {}));
+
     def test_no_headings(self):
         html = "<p>Test</p>"
         self.assertEqual(html, format_html(html, {}))
