@@ -223,3 +223,22 @@ class TestExtractPresentation(TestCase):
         pres2, html2 = extract_presentation(combined)
         self.assertEqual(presentation, pres2)
         self.assertEqual(html, html2)
+
+    def test_extract_2(self):
+        html = """
+<div class="row3col"><div class="col"><div><h1>Hello Jane</h1><p>Some fancy content, entered using WYMeditor</p><p>Another paragraph</p><p>Hello</p></div></div><div class="col"><div><h1>Another &lt;heading&gt;</h1><div><h2>this is a test</h2></div><div><h2>hello1</h2><div><h3>hello2</h3></div><div><h3>hello3</h3></div><div><h3>hello4</h3></div></div></div></div><div class="col"><div><h1>hello5</h1><div><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div></div></div>
+"""
+        pres = {'Hello Jane':set([NEWROW]),
+                'Another <heading>':set([NEWCOL]),
+                'this is a test':set(),
+                'hello1':set(),
+                'hello2':set(),
+                'hello3':set(),
+                'hello4':set(),
+                'hello5':set([NEWCOL]),
+                'hello6':set()
+                }
+
+        pres2, html2 = extract_presentation(html)
+        self.assertEqual(pres, pres2)
+

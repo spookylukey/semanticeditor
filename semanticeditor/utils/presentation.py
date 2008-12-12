@@ -28,6 +28,8 @@ headingdef = ['h1','h2','h3','h4','h5','h6']
 
 MAXCOLS = 4
 COLUMNCLASS = 'col'
+ROWCLASSPREFIX = 'row'
+ROWCLASS = ROWCLASSPREFIX + '%dcol'
 
 ### Parsing ###
 
@@ -88,6 +90,12 @@ NEWCOL = PresentationCommand('newcol',
                              description = "TODO")
 
 ## General utilities
+
+def any(seq):
+    for i in seq:
+        if i:
+            return True
+    return False
 
 def _invert_dict(d):
     return dict((v,k) for (k,v) in d.items())
@@ -348,7 +356,7 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
 def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
     # Add the row
     newrow = wrap_elements_in_tag(parent, start_idx, stop_idx, 'div')
-    newrow.set('class', 'row%dcol' % len(columns))
+    newrow.set('class', ROWCLASS % len(columns))
 
     # Add the columns
     if len(columns) > MAXCOLS:
@@ -405,13 +413,8 @@ def extract_presentation(html):
                 pres[name].add(NEWCOL)
             gp = get_parent(root, p)
             if gp is not None and gp.tag == 'div':
-                # Could add a redundant check for a 'rowXcol'
-                # class. If it's not there, we probably want to assume
-                # it, otherwise we have to cancel the columns we have
-                # found.
-                if get_index(gp, p) == 0:
-                    # This is the first child, therefore the beginning
-                    # of the row.
+                if any(c.startswith(ROWCLASSPREFIX) for c in _get_classes_for_node(gp)) \
+                        and get_index(gp, p) == 0:
                     pres[name].add(NEWROW)
                     pres[name].discard(NEWCOL) # not technically necessary
 
