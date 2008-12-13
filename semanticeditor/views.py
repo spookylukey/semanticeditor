@@ -98,10 +98,7 @@ def graceful_errors(exceptions, callback):
 
 @json_view
 def extract_headings_view(request):
-    data = request.POST.get('html')
-    if data is None:
-        return failure("No HTML sent for parsing")
-
+    data = request.POST.get('html','').encode("utf-8")
     return graceful_errors(AllUserErrors, lambda: extract_headings(data))
 
 def PI_to_dict(pi):
@@ -131,9 +128,7 @@ def separate_presentation(request):
        html: <input html stripped of presentation>
      }
     """
-    data = request.POST.get('html')
-    if data is None:
-        return failure("No HTML sent for parsing")
+    data = request.POST.get('html','').encode("utf-8")
 
     def _handled():
         pres, html = extract_presentation(data)
@@ -152,7 +147,7 @@ def combine_presentation(request):
     Combines submitted 'html' and 'presentation' data,
     returning a dictionary containg { html: <combined html> }
     """
-    html = request.POST.get('html', '')
+    html = request.POST.get('html', '').encode("utf-8")
     presentation = request.POST.get('presentation', '{}')
     presentation = simplejson.loads(presentation)
     # Convert dictionaries into PresentationInfo classes
