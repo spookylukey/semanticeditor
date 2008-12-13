@@ -152,6 +152,10 @@ PresentationControls.prototype.update_optsbox = function() {
     var headingIndex = parseInt(selected, 10);
     var heading = this.stored_headings[headingIndex][1];
     var styles = this.presentation_info[heading];
+    if (styles == null) {
+	styles = new Array();
+	this.presentation_info[heading] = styles;
+    }
     this.optsbox.find("input").each(
 	function(i, input) {
 	    // Set state
