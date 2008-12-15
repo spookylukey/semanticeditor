@@ -129,8 +129,6 @@ PresentationControls.prototype.build_optsbox = function() {
     this.optsbox.empty();
     var self = this;
     jQuery.each(this.available_styles, function(i, item) {
-	// TODO name, value
-	// TODO - tooltip with description
 	var val = flattenPresStyle(item);
 	self.optsbox.append("<div><label><input type=\"checkbox\" value=\"" +
 			    escapeHtml(val) + "\" /> " +
@@ -138,13 +136,13 @@ PresentationControls.prototype.build_optsbox = function() {
 			    "</label></div>");
 	// Attach tooltip to label we just added:
 	self.optsbox.find("input[value='" + val + "']").parent().each(function() {
-	    // Assign an id, because orbitaltooltip
-            // doesn't work without it.
 	    var help = item.description;
 	    if (help == "") {
 		help = "(No help available)";
 	    }
 	    help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
+	    // Assign an id, because orbitaltooltip
+            // doesn't work without it.
 	    $(this).attr('id', 'id_optsbox_label_' + i);
 	    $(this).orbitaltooltip({
 		orbitalPosition: 270,
