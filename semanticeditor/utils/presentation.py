@@ -449,18 +449,19 @@ def extract_presentation(html):
         # Parent/grandparent of section - newcol/newrow
         p = get_parent(root, section_node)
         if p is not None and p.tag == 'div':
-            classes = _get_classes_for_node(p)
-            if COLUMNCLASS in classes:
-                pres[name].add(NEWCOL)
-            gp = get_parent(root, p)
-            if gp is not None and gp.tag == 'div':
-                if any(ROWCLASSRE.match(c) is not None for c in _get_classes_for_node(gp)) \
-                        and get_index(gp, p) == 0:
-                    pres[name].add(NEWROW)
-                    pres[name].discard(NEWCOL) # not technically necessary
+            # We only care if section_node is the first child of the div
+            if get_index(p, section_node) == 0:
+                classes = _get_classes_for_node(p)
+                if COLUMNCLASS in classes:
+                    pres[name].add(NEWCOL)
+                gp = get_parent(root, p)
+                if gp is not None and gp.tag == 'div':
+                    if any(ROWCLASSRE.match(c) is not None for c in _get_classes_for_node(gp)) \
+                            and get_index(gp, p) == 0:
+                        pres[name].add(NEWROW)
+                        pres[name].discard(NEWCOL) # for tidiness, not technically necessary
 
     _strip_presentation(root)
     out_html = _html_extract(root)
 
     return (pres, out_html)
-

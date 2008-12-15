@@ -259,3 +259,15 @@ class TestExtractPresentation(TestCase):
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
 
+    def test_extract_3(self):
+        # Tests some other boundary conditions e.g. 1 column row,
+        # multiple sections within the column.
+        html = """
+<div><h1>1</h1><div class="row1col"><div class="col"><div><h2>1.1</h2></div><div><h2>1.2</h2></div></div></div></div>
+"""
+        pres = {'1': set(),
+                '1.1':set([NEWROW]),
+                '1.2': set(),
+                }
+        pres2, html2 = extract_presentation(html)
+        self.assertEqual(pres, pres2)
