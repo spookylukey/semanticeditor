@@ -224,7 +224,6 @@ PresentationControls.prototype.remove_style = function(heading, presinfo) {
 	this.clear_error();
 	callback(data.value);
     } else {
-	this.clear_error();
 	// TODO - perhaps distinguish between a server error
 	// and a user error
 	this.show_error(data.message);
@@ -236,6 +235,7 @@ PresentationControls.prototype.clear_error = function() {
 };
 
 PresentationControls.prototype.show_error = function(message) {
+    this.clear_error();
     this.errorbox.append(escapeHtml(message));
 };
 
