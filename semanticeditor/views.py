@@ -25,6 +25,11 @@ def json_view(func):
 
     or
 
+    {'result': 'usererror',
+     'message': an_error_message
+
+    or
+
     {'result': 'error',
      'message': an_error_message
     }
