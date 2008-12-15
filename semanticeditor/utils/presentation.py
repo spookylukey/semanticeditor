@@ -5,6 +5,7 @@ Utilities for manipulating the content provided by the user.
 from elementtree import ElementTree as ET
 from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_index, wrap_elements_in_tag
 from xml.parsers import expat
+import re
 
 ### Errors ###
 
@@ -28,8 +29,8 @@ headingdef = ['h1','h2','h3','h4','h5','h6']
 
 MAXCOLS = 4
 COLUMNCLASS = 'col'
-ROWCLASSPREFIX = 'row'
-ROWCLASS = ROWCLASSPREFIX + '%dcol'
+ROWCLASSRE = re.compile('^row(\d+)col$')
+ROWCLASS = 'row%dcol'
 
 ### Parsing ###
 
@@ -453,7 +454,7 @@ def extract_presentation(html):
                 pres[name].add(NEWCOL)
             gp = get_parent(root, p)
             if gp is not None and gp.tag == 'div':
-                if any(c.startswith(ROWCLASSPREFIX) for c in _get_classes_for_node(gp)) \
+                if any(ROWCLASSRE.match(c) is not None for c in _get_classes_for_node(gp)) \
                         and get_index(gp, p) == 0:
                     pres[name].add(NEWROW)
                     pres[name].discard(NEWCOL) # not technically necessary
