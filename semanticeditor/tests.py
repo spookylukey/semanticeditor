@@ -167,6 +167,23 @@ class TestFormat(TestCase):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
         self.assertRaises(BadStructure, format_html, html, {'2':[NEWCOL]})
 
+    def test_columns_nested_newcols(self):
+        """
+        Check that attempting to add columns at a different level
+        will generate an error
+        """
+        html = "<h1>1</h1><h2>1.1</h2><h1>2</h1>"
+        self.assertRaises(BadStructure, format_html, html, {'1':[NEWROW],
+                                                            '1.1':[NEWCOL]})
+    def test_columns_nested_newrow(self):
+        """
+        Check that attempting to add new row at a different level
+        will generate an error
+        """
+        html = "<h1>1</h1><h2>1.1</h2>"
+        self.assertRaises(BadStructure, format_html, html, {'1':[NEWROW],
+                                                            '1.1':[NEWROW]})
+
 
 class TestElementTreeUtils(TestCase):
     def test_get_parent(self):

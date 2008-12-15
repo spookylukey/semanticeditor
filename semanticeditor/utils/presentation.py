@@ -87,7 +87,7 @@ NEWROW = PresentationCommand('newrow',
 <p>Use this command to start a new row.</p>
 
 <p>This must be used in conjunction with 'New column'
-to create a column layout.</p>.
+to create a column layout.</p>
 
 <p>Please note that new rows and columns cannot be started at any
 point in the document.  Within a given row, new columns can only be
@@ -95,6 +95,10 @@ started on section headings of the same level.  The 'New row' command
 must be applied to the first section heading for which a column layout
 is required and subsequent headings of the same level may be given
 a 'New column' command.</p>
+
+<p>If you wish to stop an existing column layout for a section, then you will
+need to apply a 'New row' command to that section, creating a row with
+just one column in it.</p>
 
 """)
 
@@ -318,6 +322,22 @@ def _apply_commands(root, section_nodes, styleinfo, headers):
     # TODO: due to HTML/CSS quirks, we may need to add an empty <div
     # class="rowclear"> after every <div class="row">
 
+def _assert_no_column_structure(node, known_nodes, styleinfo, current_level):
+    # Check that no NEWROW/NEWCOL commands are found in the *children*
+    # of node
+    for n in node.getiterator():
+        if n == node:
+            continue
+        name = known_nodes.get(n)
+        if name is not None:
+            commands = styleinfo[name]
+            if NEWROW in commands or NEWCOL in commands:
+                raise BadStructure("Heading '%(heading)s' has a 'New row' or 'New column' command applied to "
+                                   "it, but it is at a section level %(level)s, which is lower than current "
+                                   "column structure, which is defined at level %(curlevel)s." %
+                                   dict(heading=name, level=n[0].tag, curlevel=current_level))
+
+
 def _add_rows_and_columns(topnode, known_nodes, styleinfo):
     cur_row_start = None
     cur_col = None
@@ -353,14 +373,17 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
             else:
                 columns.append((idx + idx_offset, name))
 
-        if not cur_row_start:
-            # Rows/columns can only be added within the same level of nesting
-            # of the HTML document.  This means we do not need to recurse if
-            # we have started adding rows/columns.
+        if cur_row_start:
+            # Rows/columns can only be added within the same level of
+            # nesting of the HTML document.  This means we do not need
+            # to recurse if we have started adding rows/columns.
+            # However, it is helpful to recurse and check that no
+            # NEWROW/COL commands were found, and complain to the user
+            # if they are.
+            _assert_no_column_structure(node, known_nodes, styleinfo,
+                                        cur_row_start[0].tag)
+        else:
             _add_rows_and_columns(node, known_nodes, styleinfo)
-            # However, it would be good to recurse and check that no
-            # NEWROW/COL commands were found, and warn the user if
-            # they are.
 
         # If we are at last node, and are still in a row, there won't
         # be a NEWROW command, so we have to close implicitly,
