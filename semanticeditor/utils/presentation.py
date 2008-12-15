@@ -210,7 +210,7 @@ def format_html(html, styleinfo):
 
     # Strip existing divs, otherwise we cannot format properly.  If
     # there are other block level elements that mess things up, we
-    # raise BadStructure later, but divs have so semantics so can just
+    # raise BadStructure later, but divs have no semantics so can just
     # be removed.
     _strip_presentation(root)
 
