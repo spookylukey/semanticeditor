@@ -140,8 +140,21 @@
 	.prescontrol td             { padding: 0; }
 	.prescontrolheadings        {  }
 	.prescontrolheadings select { min-width: 150px; }
-	.prescontroloptsboxcont     {  }
+	.prescontroloptsboxcont div { clear:left; }
 	.prescontroloptsbox         { overflow-y: scroll; }
 	.prescontrolrefresh         {  }
 	.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
 	/* TODO - styling for checkboxes and labels in prescontroloptsbox */
+
+/* TOOLTIPS */
+
+	.orbitaltooltip-simplebox {
+	    background: #ddd;
+	    width: 400px;
+	    height: auto;
+	    min-height: 100px;
+	    max-height: 400px;
+	    overflow-y: scroll;
+	    overflow-x: hidden;
+	    border: 2px solid #607e98;
+	}

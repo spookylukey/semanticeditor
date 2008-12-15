@@ -13,6 +13,7 @@ class SemanticEditor(WYMEditor):
         js = [join(settings.SE_MEDIA_URL, path) for path in
               ('javascript/wymeditor/plugins/semantic/wymeditor.semantic.js',
                'javascript/json2.js',
+               'javascript/orbitaltooltip.js',
                )]
 
     def render_extra(self, name, value, attrs=None):

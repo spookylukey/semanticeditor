@@ -83,11 +83,28 @@ def PresentationCommand(name, verbose_name="", description=""):
 
 NEWROW = PresentationCommand('newrow',
                              verbose_name = "New row",
-                             description = "TODO")
+                             description = """
+<p>Use this command to start a new row.</p>
+
+<p>This must be used in conjunction with 'New column'
+to create a column layout.</p>.
+
+<p>Please note that new rows and columns cannot be started at any
+point in the document.  Within a given row, new columns can only be
+started on section headings of the same level.  The 'New row' command
+must be applied to the first section heading for which a column layout
+is required and subsequent headings of the same level may be given
+a 'New column' command.</p>
+
+""")
 
 NEWCOL = PresentationCommand('newcol',
                              verbose_name = "New column",
-                             description = "TODO")
+                             description = """
+<p>Use this command to start a new column, after a 'New row'
+command has been used to start a set of columns.</p>
+
+""")
 
 ## General utilities
 

@@ -132,7 +132,27 @@ PresentationControls.prototype.build_optsbox = function() {
 	// TODO name, value
 	// TODO - tooltip with description
 	var val = flattenPresStyle(item);
-	self.optsbox.append("<div style=\"clear: left;\"><div><label><input type=\"checkbox\" value=\"" + escapeHtml(val) + "\" /> " + escapeHtml(item.verbose_name) + "</label></div></div>");
+	self.optsbox.append("<div><label><input type=\"checkbox\" value=\"" +
+			    escapeHtml(val) + "\" /> " +
+			    escapeHtml(item.verbose_name) +
+			    "</label></div>");
+	// Attach tooltip to label we just added:
+	self.optsbox.find("input[value='" + val + "']").parent().each(function() {
+	    // Assign an id, because orbitaltooltip
+            // doesn't work without it.
+	    var help = item.description;
+	    if (help == "") {
+		help = "(No help available)";
+	    }
+	    help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
+	    $(this).attr('id', 'id_optsbox_label_' + i);
+	    $(this).orbitaltooltip({
+		orbitalPosition: 270,
+		spacing:         10,
+		tooltipClass: 	 'orbitaltooltip-simplebox',
+		html:            help
+	    });
+	});
     });
 };
 
@@ -166,7 +186,8 @@ PresentationControls.prototype.update_optsbox = function() {
 			input.checked = true;
 		    }
 		});
-	    // Add event handler
+	    // Add event handlers
+	    // Change
 	    jQuery(this).change(function(event) {
 				    var style = expandPresStyle(input.value);
 				    if (input.checked) {
