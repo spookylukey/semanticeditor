@@ -144,7 +144,12 @@
 	.prescontroloptsbox         { overflow-y: scroll; }
 	.prescontrolrefresh         {  }
 	.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
-	/* TODO - styling for checkboxes and labels in prescontroloptsbox */
+	.prescontrol .prescontroloptsbox label {
+	    /* Override some stuff set by Django admin CSS*/
+	    display: inline;
+	    width: auto;
+	    float: none;
+	}
 
 /* TOOLTIPS */
 
