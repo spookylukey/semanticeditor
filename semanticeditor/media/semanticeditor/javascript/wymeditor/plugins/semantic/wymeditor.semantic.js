@@ -235,7 +235,10 @@ PresentationControls.prototype.update_headingbox = function() {
     this.unbind_optsbox();
     this.headingscontrol.empty();
     jQuery.each(this.stored_headings, function(i, item) {
-		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + escapeHtml(item[1]) + "</option>");
+		    // item[0] is the heading level,
+		    // item[1] is the heading name
+		    var spaces = (new Array((item[0]-1)*2)).join("&nbsp;");
+		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + spaces + escapeHtml(item[1]) + "</option>");
     });
 };
 
