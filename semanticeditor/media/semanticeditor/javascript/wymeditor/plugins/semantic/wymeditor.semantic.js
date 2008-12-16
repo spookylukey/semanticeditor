@@ -160,7 +160,7 @@ PresentationControls.prototype.build_optsbox = function() {
 		// Small spacing means we can move onto the tooltip
 		// in order to scroll it if the help text has
 		// produced scroll bars.
-		spacing:         5,
+		spacing:         8,
 		tooltipClass: 	 'orbitaltooltip-simplebox',
 		html:            help
 	    });
