@@ -6,7 +6,7 @@ from semanticeditor.utils.presentation import PresentationInfo, PresentationClas
 
 PC = PresentationClass
 
-class TestExtract(TestCase):
+class TestExtractStructure(TestCase):
     def test_extract_headings(self):
         self.assertEqual(extract_headings("""
 <h1>Heading <b>with </b><i>embedded <em>stuff</em> in</i> it</h1> Hmm<p>A paragraph</p>
@@ -16,13 +16,13 @@ class TestExtract(TestCase):
 <h5>level 5</h5>
 <h6>level 6</h6>
 <h1>Heading two</h1>
-"""), [(1, "Heading with embedded stuff in it"),
-       (2, "A sub heading"),
-       (3, "level 3"),
-       (4, "level 4"),
-       (5, "level 5"),
-       (6, "level 6"),
-       (1, "Heading two"),
+"""), [(1, "Heading with embedded stuff in it", "H1"),
+       (2, "A sub heading", "H2"),
+       (3, "level 3", "H3"),
+       (4, "level 4", "H4"),
+       (5, "level 5", "H5"),
+       (6, "level 6", "H6"),
+       (1, "Heading two", "H1"),
        ])
 
     def test_extract_headings_missing(self):

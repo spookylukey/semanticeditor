@@ -135,13 +135,13 @@ def get_heading_nodes(root):
 
 def extract_headings(content):
     """
-    Extracts H1, H2, etc headings, and returns a list of tuples
-    containing (level, name)
+    Extracts H1, H2, etc headings, and other block level elements and
+    returns a list of tuples containing (level, name, tag)
     """
     # Parse
     tree = parse(content)
     nodes = [n for n in tree.getiterator() if n.tag in headingdef]
-    headings = [(int(h.tag[1]), flatten(h)) for h in nodes]
+    headings = [(int(h.tag[1]), flatten(h), h.tag.upper()) for h in nodes]
 
     # Check ordering
     if len(headings) > 0 and headings[0][0] > 1:
@@ -151,7 +151,7 @@ def extract_headings(content):
     # and they should have unique names
     lastnum = 0
     names = {}
-    for num, name in headings:
+    for num, name, tag in headings:
         if num > lastnum + 1:
             raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
                                     ' but it should be level H%(rightnum)d or less' %
