@@ -4,6 +4,14 @@ Package install
 The 'semanticeditor' package must be on your Python path, by whatever
 method.
 
+Dependencies
+============
+
+ * Django, tested on trunk r9538 (1.0 perhaps OK?)
+ * django-cms2, test on r172 or later
+ * elementtree 1.2.7 or greater
+ * Javascript dependencies are included in media/
+
 Settings
 ========
 
@@ -21,7 +29,6 @@ Media
 =====
 media files: media/semanticeditor needs to be copied/linked/served so that it is
 under MEDIA_URL.  (i.e. side-by-side with the media/cms directory).
-
 
 URLS
 ====
