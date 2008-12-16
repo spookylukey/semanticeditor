@@ -63,7 +63,13 @@
             });
 
             // Enable the 'semantic' plugin
-            wym.semantic({});
+            symanticopts = {
+                extract_headings_url: "{% url semantic.extract_headings %}",
+                retrieve_styles_url: "{% url semantic.retrieve_styles %}",
+                separate_presentation_url: "{% url semantic.separate_presentation %}",
+                combine_presentation_url: "{% url semantic.combine_presentation %}"
+            };
+            wym.semantic(symanticopts);
         },
         //handle click event on dialog's submit button
         postInitDialog: function( wym, wdw ) {

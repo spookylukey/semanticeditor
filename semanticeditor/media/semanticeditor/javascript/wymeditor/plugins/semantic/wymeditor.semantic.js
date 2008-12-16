@@ -5,9 +5,10 @@
  * parsing and provide list of allowed CSS classes.
  */
 
-function PresentationControls(wym) {
-    this.name = wym._element.get(0).name;
+function PresentationControls(wym, opts) {
     this.wym = wym;
+    this.opts = opts;
+    this.name = wym._element.get(0).name;
     // available_styles: an array of dictionaries corresponding to PresentationInfo objects
     this.available_styles = new Array();
     // stored_headings: an array of 2 elements arrays, [heading level, heading name]
@@ -93,7 +94,7 @@ PresentationControls.prototype.setup_controls = function(container) {
 // Splits the HTML into 'content HTML' and 'presentation'
 PresentationControls.prototype.separate_presentation = function() {
     var self = this;
-    jQuery.post("/semantic/separate_presentation/", { html: self.wym.xhtml() } ,
+    jQuery.post(this.opts.separate_presentation_url, { html: self.wym.xhtml() } ,
 		function(data) {
 		    self.with_good_data(data,
 			function(value) {
@@ -114,7 +115,7 @@ PresentationControls.prototype.form_submit = function(event) {
 		      html: this.wym.xhtml(),
 		      presentation: JSON.stringify(this.presentation_info)
 		  },
-		  url: "/semantic/combine_presentation/",
+		  url: this.opts.combine_presentation_url,
 		  dataType: "json",
 		  async: false
     }).responseText;
@@ -259,7 +260,7 @@ PresentationControls.prototype.show_error = function(message) {
 PresentationControls.prototype.refresh_headings = function() {
     var self = this;
     var html = this.wym.xhtml();
-    jQuery.post("/semantic/extract_headings/", { 'html':html },
+    jQuery.post(this.opts.extract_headings_url, { 'html':html },
 	function(data) {
 	    self.with_good_data(data, function(value) {
 		self.stored_headings = value;
@@ -299,7 +300,7 @@ PresentationControls.prototype.retrieve_styles = function() {
     // Retrieve via AJAX
     // TODO - remove hardcoded URL
     var self = this;
-    jQuery.getJSON("/semantic/retrieve_styles/", {},
+    jQuery.getJSON(this.opts.retrieve_styles_url, {},
 		   function (data) {
 		       self.with_good_data(data, function(value) {
 			   self.available_styles = data.value;
@@ -314,5 +315,5 @@ WYMeditor.editor.prototype.semantic = function(options) {
     // TODO - options need to specify the AJAX callbacks
     // we are going to need.
     var wym = this;
-    var c = new PresentationControls(wym);
+    var c = new PresentationControls(wym, options);
 };
