@@ -350,23 +350,23 @@ def _assert_sane_sections(root, structure):
                                "Please move the heading out of the '%(element)s'"
                                " element that contains it." % dict(name=name, element=parent.tag))
 
-def _apply_commands(root, section_nodes, styleinfo, headers):
+def _apply_commands(root, section_nodes, styleinfo, structure):
     # Rules:
     #  - No nesting of columns within columns
     #  - Within a given row, newcolumn must be applied to
     #    divs that are at the same level.
     #  - No columns allowed if newrow has not been started.
 
-    # Headers has the sections in document order
+    # 'structure' has the sections in document order
     sections = [(level, name, section_nodes[name])
-                for level, name, tag, n in headers]
+                for level, name, tag, n in structure]
 
     # Inverted dict
     known_nodes = _invert_dict(section_nodes)
 
     # Preprocess:
     #  - insert 'newcolumn' on everything that has 'newrow'
-    for level, name, tag, hn in headers:
+    for level, name, tag, hn in structure:
         if NEWROW in styleinfo[name]:
             styleinfo[name].add(NEWCOL)
 
