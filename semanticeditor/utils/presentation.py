@@ -392,29 +392,34 @@ def _apply_commands(root, section_nodes, styleinfo, structure):
     # TODO: due to HTML/CSS quirks, we may need to add an empty <div
     # class="rowclear"> after every <div class="row">
 
-def _assert_no_column_structure(node, known_nodes, styleinfo, current_level):
-    # Check that no NEWROW/NEWCOL commands are found in the *children*
-    # of node
+def _find_child_with_column_structure(node, known_nodes, styleinfo):
     for n in node.getiterator():
         if n == node:
-            continue
+            continue # ignore root
         name = known_nodes.get(n)
         if name is not None:
             commands = styleinfo[name]
             if NEWROW in commands or NEWCOL in commands:
-                raise BadStructure("Heading '%(heading)s' has a 'New row' or 'New column' command applied to "
-                                   "it, but it is at a section level %(level)s, which is lower than current "
-                                   "column structure, which is defined at level %(curlevel)s." %
-                                   dict(heading=name, level=n[0].tag, curlevel=current_level))
+                return (name, n)
+    return None
 
+def _get_next_section_node(nodelist, known_nodes):
+    for n in nodelist:
+        name = known_nodes.get(n)
+        if name is not None:
+            return name
+    return None
 
 def _add_rows_and_columns(topnode, known_nodes, styleinfo):
     # This is the most involved and tricky part.  See the comments
     # above the 'format_html' function.
 
+    # NB: known_nodes, and all nodes passed around and manipulated,
+    # are the nodes of the containing divs we have added to the
+    # document structure.
+
     cur_row_start = None
-    cur_col = None
-    children = list(topnode.getchildren())
+    children = list(topnode.getchildren()) # our own copy, which we don't change
     # Offset used to cope with the fact that we are pulling sub-nodes
     # out of topnode as we go along.
     idx_offset = 0
@@ -450,11 +455,32 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
             # Rows/columns can only be added within the same level of
             # nesting of the HTML document.  This means we do not need
             # to recurse if we have started adding rows/columns.
-            # However, it is helpful to recurse and check that no
-            # NEWROW/COL commands were found, and complain to the user
-            # if they are.
-            _assert_no_column_structure(node, known_nodes, styleinfo,
-                                        cur_row_start[0].tag)
+
+            # However, if we are actually in a '1 column row', we
+            # allow a nested column structure, but only by imposing
+            # constraints on what follows.
+            child = _find_child_with_column_structure(node, known_nodes, styleinfo)
+            if child is not None:
+                if len(columns) > 1:
+                    # Can't do it.
+                    cname, cnode = child
+                    raise BadStructure("Item '%(tag)s: %(name)s' has a 'New row' or 'New column' command applied to "
+                                       "it, but it is a subsection of '%(ptag)s: %(pname)s' which is already in a column "
+                                       "and columns cannot be created within columns." %
+                                       dict(tag=cnode[0].tag, name=cname, ptag=cur_row_start[0].tag, pname=name))
+                else:
+                    # Allow it, but next section on this level must
+                    # not be NEWCOL (unless it is also NEWROW)
+                    nextnodename = _get_next_section_node(children[idx+1:], known_nodes)
+                    if nextnodename is not None:
+                        nextnode_commands = styleinfo[nextnodename]
+                        if NEWCOL in nextnode_commands and (NEWROW not in nextnode_commands):
+                            raise BadStructure("Item '%(ptag)s: %(pname)s' has a column structure within in "
+                                               "but section '%(name)s' has a 'New column' command applied to "
+                                               "it.  This would create a nested column structure, which is "
+                                               "not allowed." % (dict(name=nextnodename, ptag=cur_row_start[0].tag, pname=name)))
+                    _add_rows_and_columns(node, known_nodes, styleinfo)
+
         else:
             _add_rows_and_columns(node, known_nodes, styleinfo)
 

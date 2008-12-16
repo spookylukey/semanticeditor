@@ -184,19 +184,17 @@ class TestFormat(TestCase):
             "<h1>3</h1>" \
             "<p>P1</p>" \
             "<p>P2</p>" \
-            "<p>P2</p>" \
+            "<p>P3</p>" \
             "<h1>4</h1>"
         pres = {
             '1':[NEWROW],
             '2':[NEWCOL],
             '3':[NEWROW],
-            'P1':[NEWROW],
-            'P2':[NEWCOL],
-            'P3':[NEWCOL],
+            'P1...':[NEWROW],
+            'P2...':[NEWCOL],
+            'P3...':[NEWCOL],
             '4':[NEWROW],
             }
-
-        pres_bad1 = pres.copy().update({'4':[NEWCOL]})
 
         outh = \
             "<div class=\"row2col\">" \
@@ -204,7 +202,7 @@ class TestFormat(TestCase):
                 "<div><h1>1</h1></div>" \
               "</div>" \
               "<div class=\"col\">" \
-                "<div><h1>2</h2></div>" \
+                "<div><h1>2</h1></div>" \
               "</div>" \
             "</div>" \
             "<div class=\"row1col\">" \
@@ -218,7 +216,7 @@ class TestFormat(TestCase):
                       "<div><p>P2</p></div>" \
                     "</div>" \
                     "<div class=\"col\">" \
-                      "<div><p>P2</p></div>" \
+                      "<div><p>P3</p></div>" \
                     "</div>" \
                   "</div>" \
                 "</div>" \
@@ -231,7 +229,12 @@ class TestFormat(TestCase):
             "</div>"
 
         actualhtml = format_html(html, pres)
+
         self.assertEqual(outh, actualhtml)
+
+        # Check that if we add NEWCOL to '4', we get BadStructure
+        pres_bad1 = pres.copy()
+        pres_bad1.update({'4':[NEWCOL]})
         self.assertRaises(BadStructure, format_html, html, pres_bad1)
 
 
@@ -244,16 +247,18 @@ class TestFormat(TestCase):
         Check that attempting to add columns at a different level
         will generate an error
         """
-        html = "<h1>1</h1><h2>1.1</h2><h1>2</h1>"
+        html = "<h1>1</h1><h1>2</h1><h2>1.1</h2><h1>3</h1>"
         self.assertRaises(BadStructure, format_html, html, {'1':[NEWROW],
+                                                            '2':[NEWCOL],
                                                             '1.1':[NEWCOL]})
     def test_columns_nested_newrow(self):
         """
         Check that attempting to add new row at a different level
         will generate an error
         """
-        html = "<h1>1</h1><h2>1.1</h2>"
+        html = "<h1>1</h1><h1>2</h1><h2>1.1</h2>"
         self.assertRaises(BadStructure, format_html, html, {'1':[NEWROW],
+                                                            '2':[NEWCOL],
                                                             '1.1':[NEWROW]})
 
 
