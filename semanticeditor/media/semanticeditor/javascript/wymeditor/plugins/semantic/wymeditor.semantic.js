@@ -45,7 +45,8 @@ PresentationControls.prototype.setup_controls = function(container) {
     var headingsbox_id = id_prefix + 'headings';
     var optsbox_id = id_prefix + 'optsbox';
     var headingsfilter_id = id_prefix + 'headingsfilter';
-    var layoutpreview_id = id_prefix + 'layoutpreview';
+    var previewbutton_id = id_prefix + 'previewbutton';
+    var previewbox_id = id_prefix + 'previewbox';
     var refresh_id = id_prefix + 'refresh';
     var self = this;
 
@@ -57,15 +58,18 @@ PresentationControls.prototype.setup_controls = function(container) {
 	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div></td></tr></table>" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>" +
 	    "<td><input type=\"submit\" value=\"Refresh structure\" id=\"" + refresh_id + "\" /></td>" +
-	    "<td><input type=\"submit\" value=\"Preview (click then hover)\" id=\"" + layoutpreview_id + "\" /></td>" +
+	    "<td><input type=\"submit\" value=\"Preview\" id=\"" + previewbutton_id + "\" /></td>" +
             "<td width=\"100%\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
         "</div>");
+
+    jQuery("body").append("<div style=\"position: absolute; display: none\" class=\"previewbox\" id=\"" + previewbox_id + "\">");
 
     this.optsbox = jQuery('#' + optsbox_id);
     this.headingscontrol = jQuery('#' + headingsbox_id);
     this.headingsfilter = jQuery('#' + headingsfilter_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
-    this.layoutpreview = jQuery('#' + layoutpreview_id);
+    this.previewbutton = jQuery('#' + previewbutton_id);
+    this.previewbox = jQuery('#' + previewbox_id);
     this.refreshbutton = jQuery('#' + refresh_id);
     this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
 
@@ -84,10 +88,13 @@ PresentationControls.prototype.setup_controls = function(container) {
 				 self.headingscontrol.get(0).focus();
 				 return false;
 			     });
-    this.layoutpreview.click(function(event) {
-				 self.show_layout_preview();
+    this.previewbutton.toggle(function(event) {
+				 self.show_preview();
 				 return false;
-			     });
+			      },
+			      function(event) {
+				  self.previewbox.hide();
+			      });
     this.headingsfilter.change(function(event) {
 				   self.update_active_heading_list();
 				   self.update_headingbox();
@@ -229,7 +236,7 @@ PresentationControls.prototype.update_optsbox = function() {
     this.optsbox.find("input").removeAttr("disabled");
 };
 
-PresentationControls.prototype.show_layout_preview = function() {
+PresentationControls.prototype.show_preview = function() {
     var self = this;
     jQuery.post(this.opts.preview_url, { 'html': self.wym.xhtml(),
 					 'presentation': JSON.stringify(this.presentation_info)
@@ -237,13 +244,14 @@ PresentationControls.prototype.show_layout_preview = function() {
 		function(data) {
 		    self.with_good_data(data,
 			function(value) {
-			    jQuery(".orbitaltooltip-previewbox").remove();
-			    self.layoutpreview.orbitaltooltip({
-				orbitalPosition: 0,
-				spacing:         8,
-				tooltipClass: 	 'orbitaltooltip-previewbox',
-				html:            value.html
-			    });
+			    var btn = self.previewbutton;
+			    var box = self.previewbox;
+			    var pos = btn.offset();
+			    box.html(value.html);
+			    var height = box.height() + parseInt(box.css('padding-top')) + parseInt(box.css('padding-bottom')) +
+				parseInt(box.css('border-top-width')) + parseInt(box.css('border-bottom-width'));
+			    box.css("top", pos.top - height).css("left", pos.left);
+			    box.show();
 			});
 		}, "json");
     return false;

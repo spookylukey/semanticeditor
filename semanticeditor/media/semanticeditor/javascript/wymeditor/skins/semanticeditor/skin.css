@@ -164,8 +164,8 @@
 	    padding: 2px;
 	}
 
-
-	.orbitaltooltip-previewbox {
+/* PREVIEW */
+	.previewbox {
 	    background: #fff;
 	    width: 400px;
 	    height: 400px;
@@ -175,24 +175,24 @@
 	    padding: 4px;
 	}
 
-	.orbitaltooltip-previewbox .structural {
+	.previewbox .structural {
 	    border: 2px solid #888;
 	    margin: 2px;
 	}
 
-	.orbitaltooltip-previewbox .tagh1,
-	.orbitaltooltip-previewbox .tagh2,
-	.orbitaltooltip-previewbox .tagh3,
-	.orbitaltooltip-previewbox .tagh4,
-	.orbitaltooltip-previewbox .tagh5,
-	.orbitaltooltip-previewbox .tagh6 {
+	.previewbox .tagh1,
+	.previewbox .tagh2,
+	.previewbox .tagh3,
+	.previewbox .tagh4,
+	.previewbox .tagh5,
+	.previewbox .tagh6 {
 	    font-weight: bold;
 	}
 
-	.orbitaltooltip-previewbox .row1col,
-	.orbitaltooltip-previewbox .row2col,
-	.orbitaltooltip-previewbox .row3col,
-	.orbitaltooltip-previewbox .row4col
+	.previewbox .row1col,
+	.previewbox .row2col,
+	.previewbox .row3col,
+	.previewbox .row4col
 	{
 	    clear: left;
 	    border: 1px solid red;
@@ -200,20 +200,21 @@
 	    margin-bottom: 3px;
 	}
 
-	.orbitaltooltip-previewbox .rowclear
+	.previewbox .rowclear
 	{
 	    clear: left;
 	}
 
-	.orbitaltooltip-previewbox .row2col .col {
+	.previewbox .row2col .col {
 	    float: left;
 	    width: 50%;
 	}
-	.orbitaltooltip-previewbox .row3col .col {
+
+	.previewbox .row3col .col {
 	    float: left;
 	    width: 32%;
 	}
-	.orbitaltooltip-previewbox .row4col .col {
+	.previewbox .row4col .col {
 	    float: left;
 	    width: 25%;
 	}
