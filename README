@@ -11,7 +11,6 @@ customisations:
    same page, one using the normal WYMeditor + CMS controls, another with
    the full 'semantic editor' controls, for longer pieces of content.
 
-
  - The skin.js file removes the 'classes' panel, since this is not needed
    and is replaced by dynamic elements.
 

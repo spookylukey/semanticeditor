@@ -1,13 +1,16 @@
+Package install
+===============
+
+The 'semanticeditor' package must be on your Python path, by whatever
+method.
 
 Settings
 ========
 
  * Normal Django settings
  * Normal django-cms2 settings
- * widget overrides::
-
-     CMS_ADMIN_WIDGETS = lambda: __import__('semanticeditor.widgets', {}, {}, ['widgets']).__dict__
-
+ * INSTALLED_APPS - add "semanticeditor"
+ * SE_MEDIA_URL = os.path.join(MEDIA_URL, "semanticeditor/")
 
 Templates
 =========
@@ -17,9 +20,7 @@ is in TEMPLATE_LOADERS.
 Media
 =====
 media files: media/semanticeditor needs to be copied/linked/served so that it is
-under MEDIA_URL.  (i.e. side-by-side with the media/cms directory).  Then::
-
-  SE_MEDIA_URL = os.path.join(MEDIA_URL, "semanticeditor/")
+under MEDIA_URL.  (i.e. side-by-side with the media/cms directory).
 
 
 URLS
@@ -28,7 +29,7 @@ Add the following to the root URL conf::
 
   (r'^semantic/', include('semanticeditor.urls')),
 
-These are needed for views
+These are needed for views.
 
 Models
 ======
@@ -37,9 +38,3 @@ Install the models
 
   ./manage.py syncdb
 
-
-Usage
-=====
-
-Use 'SemanticEditor' as the widget in {% placeholder %} tags instead of
-'WYMEditor' or 'Textarea'
