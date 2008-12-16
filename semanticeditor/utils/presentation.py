@@ -35,7 +35,6 @@ ROWCLASS = 'row%dcol'
 
 # The number of chars we trim block level elements to.
 BLOCK_LEVEL_TRIM_LENGTH = 20
-# TODO - trimming 
 
 ### Parsing ###
 
@@ -48,7 +47,7 @@ def parse(content):
 
 # NB: ElementTree is bizarre - after parsing some UTF-8 bytestrings,
 # it will then return nodes that are 'str's if the text is all ASCII,
-# otherwise 'unicode's (having correctly interpreted as UTF-8).  When
+# otherwise 'unicode's (having correctly interpreted the UTF-8).  When
 # serialising to JSON, this works out OK actually, so we leave it as
 # is for the moment.
 
