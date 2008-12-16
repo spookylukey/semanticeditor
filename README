@@ -6,14 +6,16 @@ The semantic editor application provides its own version of WYMeditor.  This
 is derived from the skins/templates found in django-cms2, with the following
 customisations:
 
-
  - name of the skin changed from 'django' to 'semanticeditor'.  This is
    necessary if we are to allow two different versions of WYMeditor on the
    same page, one using the normal WYMeditor + CMS controls, another with
    the full 'semantic editor' controls, for longer pieces of content.
 
- - The skin.js file removes the 'classes' panel, since it is replaced by
-   dynamic elements.
+ - updateSelector option changed to 'input[value=Save]', since we now
+   have other submit buttons that we don't want to bind to.
+
+ - The skin.js file removes the 'classes' panel, since this is not needed
+   and is replaced by dynamic elements.
 
  - skins.css - added styling for additional presentation controls
 
@@ -29,3 +31,44 @@ customisations:
     - the WYMeditor plugin javascript file can be added to Media
     - our editorwdiget.html template can be used.
 
+
+Column layouts
+==============
+
+Since you often need to know the number of columns, the system produces HTML
+like the following, for 2 columns in a row:
+
+ div class=row2col
+   div class=col
+     ...one or more sections
+   div class=col
+     ...one or more sections
+
+For 3 columns in a row
+ div class=row3col
+    ...etc
+
+Columns can be applied to sections at any heading level, but you can't nest
+columns within columns, and you can't "mix" the heading level the columns
+apply to *within* a row.  So you *can* have layouts at least as complex as
+this:
+
+ H1 
+  H2 - new row (2 column row)     - NB col structure at H2 level
+  H2 (same col as above)
+  H2 - new col
+  H2 - new row (3 column row)
+  H2 - new col
+  H2 - new col
+ H1 - new row (2 column row)      - NB col structure as H1 level
+ H1 - new col
+
+But you can't have:
+
+ H1 - new row
+  ... content ...
+  H2 - new col                   - this would be within the row started 
+                                   at the H1 level.
+
+The reason for this explained in the source code.  Users get helpful error
+messages if they try to ask for something impossible.

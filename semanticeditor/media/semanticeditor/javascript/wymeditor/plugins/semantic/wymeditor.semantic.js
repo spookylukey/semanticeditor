@@ -146,7 +146,7 @@ PresentationControls.prototype.build_optsbox = function() {
 	    $(this).attr('id', 'id_optsbox_label_' + i);
 	    $(this).orbitaltooltip({
 		orbitalPosition: 270,
-		spacing:         15,
+		spacing:         5,
 		tooltipClass: 	 'orbitaltooltip-simplebox',
 		html:            help
 	    });
