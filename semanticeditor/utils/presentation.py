@@ -32,6 +32,7 @@ MAXCOLS = 4
 COLUMNCLASS = 'col'
 ROWCLASSRE = re.compile('^row(\d+)col$')
 ROWCLASS = 'row%dcol'
+ROWCLEARCLASS = 'rowclear'
 
 # The number of chars we trim block level elements to.
 BLOCK_LEVEL_TRIM_LENGTH = 20
@@ -389,8 +390,13 @@ def _apply_commands(root, section_nodes, styleinfo, structure):
             styleinfo[name].add(NEWCOL)
 
     _add_rows_and_columns(root, known_nodes, styleinfo)
-    # TODO: due to HTML/CSS quirks, we may need to add an empty <div
+    # Due to HTML/CSS quirks, we add an empty <div
     # class="rowclear"> after every <div class="row">
+    for n in root.getiterator():
+        if n.tag == 'div' and ROWCLASSRE.match(n.get('class','')) is not None:
+            newdiv = ET.Element('div')
+            newdiv.set('class', ROWCLEARCLASS)
+            n.append(newdiv)
 
 def _find_child_with_column_structure(node, known_nodes, styleinfo):
     for n in node.getiterator():
