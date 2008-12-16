@@ -127,6 +127,9 @@ PresentationControls.prototype.form_submit = function(event) {
 
 PresentationControls.prototype.build_optsbox = function() {
     this.optsbox.empty();
+    // Remove any tooltips
+    jQuery(".orbitaltooltip-simplebox").unbind().remove();
+
     var self = this;
     jQuery.each(this.available_styles, function(i, item) {
 	var val = flattenPresStyle(item);
@@ -146,12 +149,20 @@ PresentationControls.prototype.build_optsbox = function() {
 	    $(this).attr('id', 'id_optsbox_label_' + i);
 	    $(this).orbitaltooltip({
 		orbitalPosition: 270,
+		// Small spacing means we can move onto the tooltip
+		// in order to scroll it if the help text has
+		// produced scroll bars.
 		spacing:         5,
 		tooltipClass: 	 'orbitaltooltip-simplebox',
 		html:            help
 	    });
 	});
     });
+    // Stop the tooltips from getting in the way
+    // - dismiss with a click.
+    jQuery(".orbitaltooltip-simplebox").click(function(event) {
+						  jQuery(this).hide();
+					      });
 };
 
 PresentationControls.prototype.unbind_optsbox = function() {
