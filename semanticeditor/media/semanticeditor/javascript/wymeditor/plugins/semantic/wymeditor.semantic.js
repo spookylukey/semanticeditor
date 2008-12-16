@@ -12,6 +12,8 @@ function PresentationControls(wym) {
     this.available_styles = new Array();
     // stored_headings: an array of 2 elements arrays, [heading level, heading name]
     this.stored_headings = new Array();
+    // active_heading_list - a possibly filtered version of stored_headings
+    this.active_heading_list = new Array();
     // presentation_info: a dictionary of { heading name : [PresentationInfo] }
     this.presentation_info = {};
 
@@ -41,12 +43,14 @@ PresentationControls.prototype.setup_controls = function(container) {
     var id_prefix = "id_prescontrol_" + this.name + "_";
     var headingsbox_id = id_prefix + 'headings';
     var optsbox_id = id_prefix + 'optsbox';
+    var headingsfilter_id = id_prefix + 'headingsfilter';
     var self = this;
 
     // Create elements
     container.after(
 	"<div class=\"prescontrol\">" +
-	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select></div></td>" +
+	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
+	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\" checked=\"checked\"> Headings only</label></div></td>" +
 	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div></td></tr></table>" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td><div class=\"prescontrolrefresh\"><input type=\"submit\" value=\"Refresh headings\" id=\"" + id_prefix + "refresh" + "\" /></div></td>" +
 	"<td width=\"*\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
@@ -54,6 +58,7 @@ PresentationControls.prototype.setup_controls = function(container) {
 
     this.optsbox = jQuery('#' + optsbox_id);
     this.headingscontrol = jQuery('#' + headingsbox_id);
+    this.headingsfilter = jQuery('#' + headingsfilter_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
     this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
 
@@ -65,14 +70,17 @@ PresentationControls.prototype.setup_controls = function(container) {
 
     // Event handlers
     this.headingscontrol.change(function(event) {
-	self.update_optsbox();
+				    self.update_optsbox();
     });
     jQuery("#" + id_prefix + "refresh").click(function(event) {
 						  self.refresh_headings();
 						  self.headingscontrol.get(0).focus();
 						  return false;
 					      });
-
+    this.headingsfilter.change(function(event) {
+				   self.update_active_heading_list();
+				   self.update_headingbox();
+			       });
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
     jQuery(this.wym._options.updateSelector)
 	.bind(this.wym._options.updateEvent, function(event) {
@@ -166,7 +174,7 @@ PresentationControls.prototype.build_optsbox = function() {
 };
 
 PresentationControls.prototype.unbind_optsbox = function() {
-    // Remove existing event handlers
+    // Remove existing event handlers, reset state
     this.optsbox.find("input").unbind().removeAttr("checked").attr("disabled", true);
 };
 
@@ -179,7 +187,7 @@ PresentationControls.prototype.update_optsbox = function() {
 	return;
     }
     var headingIndex = parseInt(selected, 10);
-    var heading = this.stored_headings[headingIndex][1];
+    var heading = this.active_heading_list[headingIndex][1];
     var styles = this.presentation_info[heading];
     if (styles == null) {
 	styles = new Array();
@@ -255,16 +263,31 @@ PresentationControls.prototype.refresh_headings = function() {
 	function(data) {
 	    self.with_good_data(data, function(value) {
 		self.stored_headings = value;
+		self.update_active_heading_list();
 		self.update_headingbox();
 	    });
 	}, "json");
+};
+
+PresentationControls.prototype.update_active_heading_list = function() {
+    var self = this;
+    var items;
+    if (this.headingsfilter.get(0).checked) {
+	items = jQuery.grep(self.stored_headings,
+                            function(item, idx) {
+				return (item[2].toUpperCase()).match(/H\d/);
+			    });
+    } else {
+	items = self.stored_headings;
+    }
+    self.active_heading_list = items;
 };
 
 PresentationControls.prototype.update_headingbox = function() {
     var self = this;
     this.unbind_optsbox();
     this.headingscontrol.empty();
-    jQuery.each(this.stored_headings, function(i, item) {
+    jQuery.each(this.active_heading_list, function(i, item) {
 		    // item[0] is the heading level,
 		    // item[1] is the heading name
 		    var spaces = (new Array((item[0]-1)*2)).join("&nbsp;");
