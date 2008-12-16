@@ -49,10 +49,10 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Create elements
     container.after(
 	"<div class=\"prescontrol\">" +
-	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Headings:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
+	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Structure:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
 	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\" checked=\"checked\"> Headings only</label></div></td>" +
 	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div></td></tr></table>" +
-	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td><div class=\"prescontrolrefresh\"><input type=\"submit\" value=\"Refresh headings\" id=\"" + id_prefix + "refresh" + "\" /></div></td>" +
+	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td><div class=\"prescontrolrefresh\"><input type=\"submit\" value=\"Refresh structure\" id=\"" + id_prefix + "refresh" + "\" /></div></td>" +
 	"<td width=\"*\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
         "</div>");
 
