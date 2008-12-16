@@ -170,8 +170,6 @@ def combine_presentation(request):
 def preview(request):
     html = request.POST.get('html', '').encode("utf-8")
     presentation = request.POST.get('presentation', '{}')
-    print html
-    print presentation
     presentation = simplejson.loads(presentation)
     _convert_pres(presentation)
 

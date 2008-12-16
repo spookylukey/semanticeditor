@@ -544,16 +544,13 @@ def _create_preview(node, structure, known_nodes):
         else:
             parent = node
             name = known_nodes.get(parent)
-            if name is not None:
+            if name is not None and (n.tag in blockdef):
                 n.set('class', 'structural ' + "tag" + n.tag.lower() )
                 n.tag = "div"
                 n[:] = []
                 n.text = name
             else:
-                n[:] = []
-                n.tail = None
-                n.text = None
-                n.tag = None
+                node.remove(n)
 
 def extract_presentation(html):
     """
