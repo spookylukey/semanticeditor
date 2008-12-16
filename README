@@ -11,8 +11,6 @@ customisations:
    same page, one using the normal WYMeditor + CMS controls, another with
    the full 'semantic editor' controls, for longer pieces of content.
 
- - updateSelector option changed to 'input[value=Save]', since we now
-   have other submit buttons that we don't want to bind to.
 
  - The skin.js file removes the 'classes' panel, since this is not needed
    and is replaced by dynamic elements.
@@ -24,6 +22,8 @@ customisations:
 
  - the editorwidget.html template has been changed.  In particular
    - the skin has been changed to 'semanticeditor'
+   - updateSelector option changed to 'input[value=Save]', since we now
+     have other submit buttons that we don't want to bind to.
    - a call to wymeditor.semantic() has been added to set up the plugin.
 
  - a new django widget 'SemanticEditor' has been created that inherits from
