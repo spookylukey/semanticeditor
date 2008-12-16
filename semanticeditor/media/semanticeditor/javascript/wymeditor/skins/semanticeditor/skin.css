@@ -142,7 +142,6 @@
 	.prescontrolheadings select { min-width: 150px; }
 	.prescontroloptsboxcont div { clear:left; }
 	.prescontroloptsbox         { overflow-y: scroll; }
-	.prescontrolrefresh         {  }
 	.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
 	.prescontrol .prescontroloptsbox label {
 	    /* Override some stuff set by Django admin CSS*/
@@ -197,8 +196,8 @@
 	{
 	    clear: left;
 	    border: 1px solid red;
-	    padding: 3px;
-	    margin-bottom: 2px;
+	    padding: 2px;
+	    margin-bottom: 3px;
 	}
 
 	.orbitaltooltip-previewbox .rowclear
