@@ -174,6 +174,67 @@ class TestFormat(TestCase):
                                                   '4':[NEWCOL],
                                                   }))
 
+    def test_columns_3(self):
+        # This checks that we are allowed to nest columns within a
+        # 'row1col' div, and tests applying columns to paragraphs.
+        # See example in presentation.py
+        html = \
+            "<h1>1</h1>" \
+            "<h1>2</h1>" \
+            "<h1>3</h1>" \
+            "<p>P1</p>" \
+            "<p>P2</p>" \
+            "<p>P2</p>" \
+            "<h1>4</h1>"
+        pres = {
+            '1':[NEWROW],
+            '2':[NEWCOL],
+            '3':[NEWROW],
+            'P1':[NEWROW],
+            'P2':[NEWCOL],
+            'P3':[NEWCOL],
+            '4':[NEWROW],
+            }
+
+        pres_bad1 = pres.copy().update({'4':[NEWCOL]})
+
+        outh = \
+            "<div class=\"row2col\">" \
+              "<div class=\"col\">" \
+                "<div><h1>1</h1></div>" \
+              "</div>" \
+              "<div class=\"col\">" \
+                "<div><h1>2</h2></div>" \
+              "</div>" \
+            "</div>" \
+            "<div class=\"row1col\">" \
+              "<div class=\"col\">" \
+                "<div><h1>3</h1>" \
+                  "<div class=\"row3col\">" \
+                    "<div class=\"col\">" \
+                      "<div><p>P1</p></div>" \
+                    "</div>" \
+                    "<div class=\"col\">" \
+                      "<div><p>P2</p></div>" \
+                    "</div>" \
+                    "<div class=\"col\">" \
+                      "<div><p>P2</p></div>" \
+                    "</div>" \
+                  "</div>" \
+                "</div>" \
+              "</div>" \
+            "</div>" \
+            "<div class=\"row1col\">" \
+              "<div class=\"col\">" \
+                "<div><h1>4</h1></div>" \
+              "</div>" \
+            "</div>"
+
+        actualhtml = format_html(html, pres)
+        self.assertEqual(outh, actualhtml)
+        self.assertRaises(BadStructure, format_html, html, pres_bad1)
+
+
     def test_columns_missing_newrow(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
         self.assertRaises(BadStructure, format_html, html, {'2':[NEWCOL]})
