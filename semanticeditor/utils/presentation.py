@@ -227,6 +227,24 @@ def extract_headings(content):
 # Section 2, this would require a div structure incompatible with the
 # above. Thus the column layout is limited by the logical structure of
 # the document.
+#
+# While the above is a real constraint, we try to be as flexible as
+# possible within it.  The user may want to be able to apply column
+# breaks to paragraphs, not just section headings.  In order to
+# support this, consider the following
+#
+# - H1 - NEWROW  - 2 col row
+# - H1 - NEWCOL
+# - H1 - NEWROW  - simply to finish the existing column structure
+#  - p - NEWROW  - this is where the column structure actual starts
+#  - p - NEWCOL
+#
+# The first 'p' will be contained in the 'row1col' div that wraps the
+# preceding H1 and its contents. So, for the case of being at the
+# beginning of a single column row, we allow a nested column
+# structure.  This imposes a constraint on what follows - a H1
+# following the second 'p' cannot have 'NEWCOL' because that would
+# make the previous H1 into the start of a *2* column row!
 
 
 def format_html(html, styleinfo):
@@ -234,7 +252,6 @@ def format_html(html, styleinfo):
     Formats the XHTML given using a dictionary of style information.
     The dictionary has keys which are the names of headings,
     and values which are lists of CSS classes or special commands.
-    Commands start with 'command:', CSS classes start with 'class:'
     """
     root = parse(html)
     structure = get_structure(root, assert_structure=True)
@@ -253,6 +270,7 @@ def format_html(html, styleinfo):
                if tag.lower() in headingdef]
 
     # Cut the HTML up into sections
+
     # First deal with headers only.  This makes life simple,
     # as headers always produce nested structures, and the
     # indexes passed to wrap_elements_in_tag don't need
@@ -391,6 +409,9 @@ def _assert_no_column_structure(node, known_nodes, styleinfo, current_level):
 
 
 def _add_rows_and_columns(topnode, known_nodes, styleinfo):
+    # This is the most involved and tricky part.  See the comments
+    # above the 'format_html' function.
+
     cur_row_start = None
     cur_col = None
     children = list(topnode.getchildren())
