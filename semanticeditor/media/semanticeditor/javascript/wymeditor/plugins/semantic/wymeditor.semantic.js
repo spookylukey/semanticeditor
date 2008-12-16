@@ -45,6 +45,8 @@ PresentationControls.prototype.setup_controls = function(container) {
     var headingsbox_id = id_prefix + 'headings';
     var optsbox_id = id_prefix + 'optsbox';
     var headingsfilter_id = id_prefix + 'headingsfilter';
+    var layoutpreview_id = id_prefix + 'layoutpreview';
+    var refresh_id = id_prefix + 'refresh';
     var self = this;
 
     // Create elements
@@ -53,7 +55,10 @@ PresentationControls.prototype.setup_controls = function(container) {
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Structure:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
 	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\" checked=\"checked\"> Headings only</label></div></td>" +
 	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div></td></tr></table>" +
-	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td><div class=\"prescontrolrefresh\"><input type=\"submit\" value=\"Refresh structure\" id=\"" + id_prefix + "refresh" + "\" /></div></td>" +
+	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td><div class=\"prescontrolrefresh\">" +
+	    "<input type=\"submit\" value=\"Refresh structure\" id=\"" + refresh_id + "\" />" +
+	    "<input type=\"submit\" value=\"Preview (hover/click)\" id=\"" + layoutpreview_id + "\" />" +
+	"</div></td>" +
 	"<td width=\"*\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
         "</div>");
 
@@ -61,6 +66,8 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.headingscontrol = jQuery('#' + headingsbox_id);
     this.headingsfilter = jQuery('#' + headingsfilter_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
+    this.layoutpreview = jQuery('#' + layoutpreview_id);
+    this.refreshbutton = jQuery('#' + refresh_id);
     this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
 
     // Initial set up
@@ -73,11 +80,15 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.headingscontrol.change(function(event) {
 				    self.update_optsbox();
     });
-    jQuery("#" + id_prefix + "refresh").click(function(event) {
-						  self.refresh_headings();
-						  self.headingscontrol.get(0).focus();
-						  return false;
-					      });
+    this.refreshbutton.click(function(event) {
+				 self.refresh_headings();
+				 self.headingscontrol.get(0).focus();
+				 return false;
+			     });
+    this.layoutpreview.click(function(event) {
+				 self.show_layout_preview();
+				 return false;
+			     });
     this.headingsfilter.change(function(event) {
 				   self.update_active_heading_list();
 				   self.update_headingbox();
@@ -217,6 +228,26 @@ PresentationControls.prototype.update_optsbox = function() {
 			 });
 	});
     this.optsbox.find("input").removeAttr("disabled");
+};
+
+PresentationControls.prototype.show_layout_preview = function() {
+    var self = this;
+    jQuery.post(this.opts.preview_url, { 'html': self.wym.xhtml(),
+					 'presentation': JSON.stringify(this.presentation_info)
+					},
+		function(data) {
+		    self.with_good_data(data,
+			function(value) {
+			    jQuery(".orbitaltooltip-previewbox").remove();
+			    self.layoutpreview.orbitaltooltip({
+				orbitalPosition: 0,
+				spacing:         8,
+				tooltipClass: 	 'orbitaltooltip-previewbox',
+				html:            value.html
+			    });
+			});
+		}, "json");
+    return false;
 };
 
 PresentationControls.prototype.add_style = function(heading, presinfo) {

@@ -164,3 +164,58 @@
 	    border: 2px solid #607e98;
 	    padding: 2px;
 	}
+
+
+	.orbitaltooltip-previewbox {
+	    background: #fff;
+	    width: 400px;
+	    height: 400px;
+	    overflow-y: scroll;
+	    overflow-x: hidden;
+	    border: 2px solid #008000;
+	    padding: 4px;
+	}
+
+	.orbitaltooltip-previewbox .structural {
+	    border: 2px solid #888;
+	    margin: 2px;
+	}
+
+	.orbitaltooltip-previewbox .tagh1,
+	.orbitaltooltip-previewbox .tagh2,
+	.orbitaltooltip-previewbox .tagh3,
+	.orbitaltooltip-previewbox .tagh4,
+	.orbitaltooltip-previewbox .tagh5,
+	.orbitaltooltip-previewbox .tagh6 {
+	    font-weight: bold;
+	}
+
+	.orbitaltooltip-previewbox .row1col,
+	.orbitaltooltip-previewbox .row2col,
+	.orbitaltooltip-previewbox .row3col,
+	.orbitaltooltip-previewbox .row4col
+	{
+	    clear: left;
+	    border: 1px solid red;
+	    padding: 3px;
+	    margin-bottom: 2px;
+	}
+
+	.orbitaltooltip-previewbox .rowclear
+	{
+	    clear: left;
+	}
+
+	.orbitaltooltip-previewbox .row2col .col {
+	    float: left;
+	    width: 50%;
+	}
+	.orbitaltooltip-previewbox .row3col .col {
+	    float: left;
+	    width: 32%;
+	}
+	.orbitaltooltip-previewbox .row4col .col {
+	    float: left;
+	    width: 25%;
+	}
+

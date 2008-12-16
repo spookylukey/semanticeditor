@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_headings, extract_presentation, format_html, AllUserErrors, NEWROW, NEWCOL, PresentationInfo, PresentationClass
+from semanticeditor.utils import extract_headings, extract_presentation, format_html, preview_html, AllUserErrors, NEWROW, NEWCOL, PresentationInfo, PresentationClass
 from semanticeditor.models import CssClass
 import sys
 try:
@@ -146,6 +146,13 @@ def separate_presentation(request):
 
     return graceful_errors(AllUserErrors, _handled)
 
+def _convert_pres(pres):
+    # Convert dictionaries into PresentationInfo classes
+    for k, v in pres.items():
+        # v is list of PI dicts
+        for i, item in enumerate(v):
+            v[i] = dict_to_PI(item)
+
 @json_view
 def combine_presentation(request):
     """
@@ -155,10 +162,17 @@ def combine_presentation(request):
     html = request.POST.get('html', '').encode("utf-8")
     presentation = request.POST.get('presentation', '{}')
     presentation = simplejson.loads(presentation)
-    # Convert dictionaries into PresentationInfo classes
-    for k, v in presentation.items():
-        # v is list of PI dicts
-        for i, item in enumerate(v):
-            v[i] = dict_to_PI(item)
+    _convert_pres(presentation)
 
     return graceful_errors(AllUserErrors, lambda: dict(html=format_html(html, presentation)))
+
+@json_view
+def preview(request):
+    html = request.POST.get('html', '').encode("utf-8")
+    presentation = request.POST.get('presentation', '{}')
+    print html
+    print presentation
+    presentation = simplejson.loads(presentation)
+    _convert_pres(presentation)
+
+    return graceful_errors(AllUserErrors, lambda: dict(html=preview_html(html, presentation)))

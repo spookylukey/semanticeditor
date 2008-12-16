@@ -248,7 +248,7 @@ def extract_headings(content):
 # make the previous H1 into the start of a *2* column row!
 
 
-def format_html(html, styleinfo):
+def format_html(html, styleinfo, return_tree=False):
     """
     Formats the XHTML given using a dictionary of style information.
     The dictionary has keys which are the names of headings,
@@ -331,7 +331,10 @@ def format_html(html, styleinfo):
     # Apply row/column commands
     _apply_commands(root, section_nodes, styleinfo, structure)
 
-    return _html_extract(root)
+    if return_tree:
+        return (root, structure, section_nodes)
+    else:
+        return _html_extract(root)
 
 def _html_extract(root):
     if len(root) == 0 and root.text is None and root.tail is None:
@@ -355,7 +358,6 @@ def _sanitise_styleinfo(styleinfo, sectionnames):
 
     return out
 
-# TODO - this might be redundant now
 def _assert_sane_sections(root, structure):
     # First, all h1, h2 etc tags will be children of the root.
     # remove_tag should have ensured that, otherwise we will be unable
@@ -524,6 +526,34 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
         newcol = wrap_elements_in_tag(newrow, idx, columns[i - 1][0], 'div')
         newcol.set('class', COLUMNCLASS)
 
+def preview_html(html, pres):
+    root, structure, section_nodes = format_html(html, pres, return_tree=True)
+    known_nodes = _invert_dict(section_nodes)
+    _create_preview(root, structure, known_nodes)
+    return _html_extract(root)
+
+def _replace_with_text(n, text):
+    n[:] = []
+    n.tail = ""
+    n.text = text
+
+def _create_preview(node, structure, known_nodes):
+    for n in node.getchildren():
+        if n.tag == 'div':
+            _create_preview(n, structure, known_nodes)
+        else:
+            parent = node
+            name = known_nodes.get(parent)
+            if name is not None:
+                n.set('class', 'structural ' + "tag" + n.tag.lower() )
+                n.tag = "div"
+                n[:] = []
+                n.text = name
+            else:
+                n[:] = []
+                n.tail = None
+                n.text = None
+                n.tag = None
 
 def extract_presentation(html):
     """
