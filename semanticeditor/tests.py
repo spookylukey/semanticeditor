@@ -9,20 +9,30 @@ PC = PresentationClass
 class TestExtractStructure(TestCase):
     def test_extract_headings(self):
         self.assertEqual(extract_headings("""
-<h1>Heading <b>with </b><i>embedded <em>stuff</em> in</i> it</h1> Hmm<p>A paragraph</p>
-<h2>A sub heading</h2><p>Another para</p>
+<h1>Heading <b>with </b><i>embedded <em>stuff</em> in</i> it</h1> Hmm
+<p>A long paragraph with some actual content</p>
+<h2>A sub heading</h2>
+<p>Another para</p>
 <h3>level 3</h3>
+<p>A long paragraph with some actual content</p>
 <h4>level 4</h4>
+<p>Another para</p>
 <h5>level 5</h5>
+<p>nasty  éééééééééééééééééééééééééé</p>
 <h6>level 6</h6>
 <h1>Heading two</h1>
-"""), [(1, "Heading with embedded stuff in it", "H1"),
-       (2, "A sub heading", "H2"),
-       (3, "level 3", "H3"),
-       (4, "level 4", "H4"),
-       (5, "level 5", "H5"),
-       (6, "level 6", "H6"),
-       (1, "Heading two", "H1"),
+"""), [(1, u"Heading with embedded stuff in it", u"H1"),
+       (2, u"A long paragraph wit...", u"P"),
+       (2, u"A sub heading", u"H2"),
+       (3, u"Another para...", u"P"),
+       (3, u"level 3", u"H3"),
+       (4, u"A long paragraph wit...2", u"P"),
+       (4, u"level 4", u"H4"),
+       (5, u"Another para...2", u"P"),
+       (5, u"level 5", u"H5"),
+       (6, u"nasty  ééééééééééééé...", u"P"),
+       (6, u"level 6", u"H6"),
+       (1, u"Heading two", u"H1"),
        ])
 
     def test_extract_headings_missing(self):

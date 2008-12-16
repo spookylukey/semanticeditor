@@ -25,12 +25,17 @@ AllUserErrors = (InvalidHtml, IncorrectHeadings, BadStructure, TooManyColumns)
 
 ### Definitions ###
 
-headingdef = ['h1','h2','h3','h4','h5','h6']
+blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote'])
+headingdef = set(['h1','h2','h3','h4','h5','h6'])
 
 MAXCOLS = 4
 COLUMNCLASS = 'col'
 ROWCLASSRE = re.compile('^row(\d+)col$')
 ROWCLASS = 'row%dcol'
+
+# The number of chars we trim block level elements to.
+BLOCK_LEVEL_TRIM_LENGTH = 20
+# TODO - trimming 
 
 ### Parsing ###
 
@@ -40,6 +45,12 @@ def parse(content):
     except expat.ExpatError, e:
         raise InvalidHtml("HTML content is not well formed.")
     return tree
+
+# NB: ElementTree is bizarre - after parsing some UTF-8 bytestrings,
+# it will then return nodes that are 'str's if the text is all ASCII,
+# otherwise 'unicode's (having correctly interpreted as UTF-8).  When
+# serialising to JSON, this works out OK actually, so we leave it as
+# is for the moment.
 
 ### Semantic editor functionality ###
 
@@ -125,11 +136,58 @@ def _invert_dict(d):
 def _get_classes_for_node(node):
     return filter(len, node.get('class','').split(' '))
 
-def get_heading_nodes(root):
+def _find_next_available_name(stem, used_names):
+    i = 2
+    while True:
+        attempt = stem + str(i)
+        if attempt not in used_names:
+            return attempt
+        else:
+            i += 1
+
+def get_structure(root, assert_structure=False):
     """
-    Return the heading nodes, as (level, name, node) tuples
+    Return the heading nodes, as (level, name, tag, node) tuples
     """
-    return [(int(n.tag[1]), flatten(n), n) for n in root.getiterator() if n.tag in headingdef]
+    retval = []
+    names = set()
+    heading_names = set()
+    cur_level = 1
+    last_heading_num = 0
+    for n in root.getiterator():
+        if n.tag in blockdef:
+            text = flatten(n)
+            if n.tag in headingdef:
+                name = text
+                level = int(n.tag[1])
+                cur_level = level
+                if assert_structure:
+                    if len(heading_names) == 0 and level > 1:
+                        raise IncorrectHeadings("First heading must be H1.")
+
+                    if name in heading_names:
+                        raise IncorrectHeadings('There are duplicate headings with the name'
+                                                ' "%s".' % name)
+
+                    # Headings should decrease or monotonically increase
+                    if level > last_heading_num + 1:
+                        raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
+                                                ' but it should be level H%(rightnum)d or less' %
+                                                dict(name=name,foundnum=level,rightnum=last_heading_num + 1))
+                last_heading_num = level
+                heading_names.add(name)
+            else:
+                name = text[0:BLOCK_LEVEL_TRIM_LENGTH]
+                name = name + "..."
+                if name in names:
+                    name = _find_next_available_name(name, names)
+                # Paragraphs etc within a section should be indented
+                # one further than the heading above them.
+                level = cur_level + 1
+            names.add(name)
+            retval.append((level, name, n.tag.upper(), n))
+
+    return retval
 
 ## Main functions and sub functions
 
@@ -140,29 +198,8 @@ def extract_headings(content):
     """
     # Parse
     tree = parse(content)
-    nodes = [n for n in tree.getiterator() if n.tag in headingdef]
-    headings = [(int(h.tag[1]), flatten(h), h.tag.upper()) for h in nodes]
-
-    # Check ordering
-    if len(headings) > 0 and headings[0][0] > 1:
-        raise IncorrectHeadings("First heading must be H1.")
-
-    # Headings should decrease or monotonically increase
-    # and they should have unique names
-    lastnum = 0
-    names = {}
-    for num, name, tag in headings:
-        if num > lastnum + 1:
-            raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
-                                    ' but it should be level H%(rightnum)d or less' %
-                                    dict(name=name,foundnum=num,rightnum=lastnum+1))
-        lastnum = num
-        if name in names:
-            raise IncorrectHeadings('There are duplicate headings with the name'
-                                    ' "%s".' % name)
-        names[name] = True
-
-    return headings
+    structure = get_structure(tree, assert_structure=True)
+    return [(l,name,tag) for (l,name,tag,node) in structure]
 
 # == Formatting HTML ==
 #
@@ -200,27 +237,23 @@ def format_html(html, styleinfo):
     and values which are lists of CSS classes or special commands.
     Commands start with 'command:', CSS classes start with 'class:'
     """
-    # Use extract_headings to ensure that the headings are well formed
-    # and the HTML is valid.
-    headingnames = [name for (level, name) in extract_headings(html)]
-
-    styleinfo = _sanitise_styleinfo(styleinfo, headingnames)
-
     root = parse(html)
+    structure = get_structure(root, assert_structure=True)
+    sectionnames = [name for (level, name, tag, node) in structure]
+    styleinfo = _sanitise_styleinfo(styleinfo, sectionnames)
 
     # Strip existing divs, otherwise we cannot format properly.  If
     # there are other block level elements that mess things up, we
     # raise BadStructure later, but divs have no semantics so can just
     # be removed.
     _strip_presentation(root)
-
-    headers = get_heading_nodes(root)
-
-    _assert_sane_sections(root, headers)
+#    _assert_sane_sections(root, structure)
 
     section_nodes = {}
+    headers = [(level,name,tag,h) for (level,name,tag,h) in structure
+               if tag in headingdef]
     # Cut the HTML up into sections
-    for idx, (level, name, h) in enumerate(headers):
+    for idx, (level, name, tag, h) in enumerate(structure):
         # We can no longer assume that parent = root, because the divs
         # we insert will change that.  However, the divs we insert
         # will keep sub-section headings on the same level.
@@ -231,7 +264,7 @@ def format_html(html, styleinfo):
 
         # 'scope' of each section is from heading node to before the next
         # heading with a level the same or higher
-        nextnodes = [(l,n) for (l,nname,n) in headers[idx+1:] if l <= level]
+        nextnodes = [(l,n) for (l,nname,tag,n) in headers[idx+1:] if l <= level]
         # Bug in elementtree - throws AssertionError if we try
         # to set a slice with [something:None]. So we use len()
         # instead of None
@@ -260,7 +293,7 @@ def format_html(html, styleinfo):
 
         section_nodes[name] = newdiv
 
-    _apply_commands(root, section_nodes, styleinfo, headers)
+    _apply_commands(root, section_nodes, styleinfo, structure)
 
     return _html_extract(root)
 
@@ -273,26 +306,26 @@ def _strip_presentation(tree):
     cleanup(tree, lambda t: t.tag != 'div')
 
 
-def _sanitise_styleinfo(styleinfo, headingnames):
+def _sanitise_styleinfo(styleinfo, sectionnames):
     # Replace lists with sets
     out = {}
     for k, v in styleinfo.items():
         out[k] = set(v)
 
     # Ensure that all sections have an entry in styleinfo
-    for name in headingnames:
+    for name in sectionnames:
         if not name in out:
             out[name] = set()
 
     return out
 
-def _assert_sane_sections(root, headers):
+def _assert_sane_sections(root, structure):
     # First, all h1, h2 etc tags will be children of the root.
     # remove_tag should have ensured that, otherwise we will be unable
     # to cut the HTML into sections.
-    for level, name, h in headers:
+    for level, name, tag, h in structure:
         parent = get_parent(root, h)
-        if parent is not root:
+        if tag in headingdef and parent is not root:
             raise BadStructure("Section heading \"%(name)s\" is not at the top level of "
                                "the document. This interferes with the ability to "
                                "format the sections and apply columns. "
@@ -308,14 +341,14 @@ def _apply_commands(root, section_nodes, styleinfo, headers):
 
     # Headers has the sections in document order
     sections = [(level, name, section_nodes[name])
-                for level, name, n in headers]
+                for level, name, tag, n in headers]
 
     # Inverted dict
     known_nodes = _invert_dict(section_nodes)
 
     # Preprocess:
     #  - insert 'newcolumn' on everything that has 'newrow'
-    for level, name, hn in headers:
+    for level, name, tag, hn in headers:
         if NEWROW in styleinfo[name]:
             styleinfo[name].add(NEWCOL)
 
@@ -433,9 +466,9 @@ def extract_presentation(html):
     # affect tests.
 
     root = parse(html)
-    headers = get_heading_nodes(root)
+    structure = get_structure(root)
     pres = {}
-    for level, name, node in headers:
+    for level, name, tag, node in structure:
         pres[name] = set()
         section_node = get_parent(root, node)
         if section_node is None or section_node.tag != 'div':
