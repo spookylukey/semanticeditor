@@ -218,12 +218,13 @@ class TestElementTreeUtils(TestCase):
 
 class TestExtractPresentation(TestCase):
     def test_extract_presentation(self):
-        html = "<div class=\"foo\"><h1>Heading 1</h1><div class=\"bar baz\"><h2>Heading 2</h2></div></div>"
+        html = "<div class=\"foo\"><h1>Heading 1</h1><div class=\"bar baz\"><h2>Heading 2</h2><div class=\"whatsit\"><p>Some paragraph</p></div></div></div>"
         pres, html2 = extract_presentation(html)
         self.assertEqual({'Heading 1':set([PC('foo')]),
-                          'Heading 2':set([PC('bar'), PC('baz')])
+                          'Heading 2':set([PC('bar'), PC('baz')]),
+                          'Some paragraph...':set([PC('whatsit')]),
                           }, pres)
-        self.assertEqual("<h1>Heading 1</h1><h2>Heading 2</h2>", html2)
+        self.assertEqual("<h1>Heading 1</h1><h2>Heading 2</h2><p>Some paragraph</p>", html2)
 
     # Lazy method - assume that combine works and check the round-trip.
     # This only works currently if we 'normalise' the presentation dict.
@@ -254,9 +255,12 @@ class TestExtractPresentation(TestCase):
 
     def test_extract_2(self):
         html = """
-<div class="row3col"><div class="col"><div><h1>Hello Jane</h1><p>Some fancy content, entered using WYMeditor</p><p>Another paragraph</p><p>Hello</p></div></div><div class="col"><div><h1>Another &lt;heading&gt;</h1><div><h2>this is a test</h2></div><div><h2>hello1</h2><div><h3>hello2</h3></div><div><h3>hello3</h3></div><div><h3>hello4</h3></div></div></div></div><div class="col"><div><h1>hello5</h1><div><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div></div></div>
+<div class="row3col"><div class="col"><div><h1>Hello Jane</h1><div><p>Some fancy content, entered using WYMeditor</p></div><div><p>Another paragraph</p></div><div><p>Hello</p></div></div></div><div class="col"><div><h1>Another &lt;heading&gt;</h1><div><h2>this is a test</h2></div><div><h2>hello1</h2><div><h3>hello2</h3></div><div><h3>hello3</h3></div><div><h3>hello4</h3></div></div></div></div><div class="col"><div><h1>hello5</h1><div><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div></div></div>
 """
         pres = {'Hello Jane':set([NEWROW]),
+                'Some fancy content, ...': set(),
+                'Another paragraph...': set(),
+                'Hello...': set(),
                 'Another <heading>':set([NEWCOL]),
                 'this is a test':set(),
                 'hello1':set(),
@@ -264,7 +268,9 @@ class TestExtractPresentation(TestCase):
                 'hello3':set(),
                 'hello4':set(),
                 'hello5':set([NEWCOL]),
-                'hello6':set()
+                'hello6':set(),
+                'asdasd...': set(),
+                'asdxx...': set(),
                 }
 
         pres2, html2 = extract_presentation(html)

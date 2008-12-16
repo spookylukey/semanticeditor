@@ -246,7 +246,6 @@ def format_html(html, styleinfo):
     # raise BadStructure later, but divs have no semantics so can just
     # be removed.
     _strip_presentation(root)
-#    _assert_sane_sections(root, structure)
 
     section_nodes = {}
     headers = [(level,name,tag,h) for (level,name,tag,h) in structure
@@ -336,6 +335,7 @@ def _sanitise_styleinfo(styleinfo, sectionnames):
 
     return out
 
+# TODO - this might be redundant now
 def _assert_sane_sections(root, structure):
     # First, all h1, h2 etc tags will be children of the root.
     # remove_tag should have ensured that, otherwise we will be unable
