@@ -178,6 +178,8 @@
 	.previewbox .structural {
 	    border: 2px solid #888;
 	    margin: 2px;
+	    padding: 2px;
+	    overflow: hidden;
 	}
 
 	.previewbox .tagh1,
@@ -195,9 +197,17 @@
 	.previewbox .row4col
 	{
 	    clear: left;
+	}
+
+	.previewbox .row2col,
+	.previewbox .row3col,
+	.previewbox .row4col
+	{
+	    /* Can show row structure here if desired
+
 	    border: 1px solid red;
 	    padding: 2px;
-	    margin-bottom: 3px;
+	    margin-bottom: 3px; */
 	}
 
 	.previewbox .rowclear
@@ -212,7 +222,7 @@
 
 	.previewbox .row3col .col {
 	    float: left;
-	    width: 32%;
+	    width: 33%;
 	}
 	.previewbox .row4col .col {
 	    float: left;
