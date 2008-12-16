@@ -246,6 +246,7 @@ def format_html(html, styleinfo):
     # raise BadStructure later, but divs have no semantics so can just
     # be removed.
     _strip_presentation(root)
+    _assert_sane_sections(root, structure)
 
     section_nodes = {}
     headers = [(level,name,tag,h) for (level,name,tag,h) in structure
@@ -340,8 +341,8 @@ def _assert_sane_sections(root, structure):
     # First, all h1, h2 etc tags will be children of the root.
     # remove_tag should have ensured that, otherwise we will be unable
     # to cut the HTML into sections.
-    for level, name, tag, h in structure:
-        parent = get_parent(root, h)
+    for level, name, tag, node in structure:
+        parent = get_parent(root, node)
         if tag.lower() in headingdef and parent is not root:
             raise BadStructure("Section heading \"%(name)s\" is not at the top level of "
                                "the document. This interferes with the ability to "
