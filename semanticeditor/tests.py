@@ -65,16 +65,17 @@ class TestFormat(TestCase):
 
     def test_no_headings(self):
         html = "<p>Test</p>"
-        self.assertEqual(html, format_html(html, {}))
+        outh = "<div><p>Test</p></div>"
+        self.assertEqual(outh, format_html(html, {}))
 
     def test_creates_section_divs(self):
         html = "<h1>Hello</h1><p>P 1</p><h2>Heading 2</h2> trailing text<h1>Another</h1><p>So</p> trail"
-        outh = "<div><h1>Hello</h1><p>P 1</p><div><h2>Heading 2</h2> trailing text</div></div><div><h1>Another</h1><p>So</p> trail</div>"
+        outh = "<div><h1>Hello</h1><div><p>P 1</p></div><div><h2>Heading 2</h2> trailing text</div></div><div><h1>Another</h1><div><p>So</p> trail</div></div>"
         self.assertEqual(outh, format_html(html, {}))
 
     def test_existing_divs(self):
         html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
-        outh = "<foo><bar><fribble>Some text <p>para</p> some more more <span> of </span> this stuff </fribble></bar></foo>"
+        outh = "<foo><bar><fribble>Some text <div><p>para</p> some more more </div><span> of </span> this stuff </fribble></bar></foo>"
         self.assertEqual(outh, format_html(html, {}))
 
     def test_add_css_classes(self):
@@ -89,7 +90,7 @@ class TestFormat(TestCase):
 
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
-        outh = "<div class=\"row2col\"><div class=\"col\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"col\"><div><h1>2</h1></div><div><h1>3</h1></div></div></div>"
+        outh = "<div class=\"row2col\"><div class=\"col\"><div><h1>1</h1><div><p>para 1</p></div></div></div><div class=\"col\"><div><h1>2</h1></div><div><h1>3</h1></div></div></div>"
         self.assertEqual(outh, format_html(html, {'1':[NEWROW],
                                                   '2':[NEWCOL]}))
 

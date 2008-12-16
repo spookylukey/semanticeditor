@@ -251,25 +251,31 @@ def format_html(html, styleinfo):
 
     section_nodes = {}
     headers = [(level,name,tag,h) for (level,name,tag,h) in structure
-               if tag in headingdef]
+               if tag.lower() in headingdef]
+
     # Cut the HTML up into sections
-    for idx, (level, name, tag, h) in enumerate(structure):
+    # First deal with headers only.  This makes life simple,
+    # as headers always produce nested structures, and the
+    # indexes passed to wrap_elements_in_tag don't need
+    # adjusting for the changes we have made.
+    for idx, (level, name, tag, node) in enumerate(headers):
         # We can no longer assume that parent = root, because the divs
         # we insert will change that.  However, the divs we insert
         # will keep sub-section headings on the same level.
-        parent = get_parent(root, h)
+        parent = get_parent(root, node)
 
-        thisidx = get_index(parent, h)
+        thisidx = get_index(parent, node)
         first_elem = thisidx
 
-        # 'scope' of each section is from heading node to before the next
-        # heading with a level the same or higher
-        nextnodes = [(l,n) for (l,nname,tag,n) in headers[idx+1:] if l <= level]
-        # Bug in elementtree - throws AssertionError if we try
-        # to set a slice with [something:None]. So we use len()
-        # instead of None
+        # if a heading, then the 'scope' of each section is from
+        # heading node to before the next heading with a level the
+        # same or higher
+        nextnodes = [(l,n) for (l,nname,t,n) in headers[idx+1:] if l <= level]
         if not nextnodes:
             # scope extends to end
+            # Bug in elementtree - throws AssertionError if we try
+            # to set a slice with [something:None]. So we use len()
+            # instead of None
             last_elem = len(parent)
         else:
             # scope extends to node before n
@@ -284,15 +290,27 @@ def format_html(html, styleinfo):
                 last_elem = len(parent)
 
         newdiv = wrap_elements_in_tag(parent, first_elem, last_elem, "div")
+        section_nodes[name] = newdiv
 
+    # Now deal with everything else
+    for idx, (level, name, tag, node) in enumerate(structure):
+        if tag.lower() not in headingdef:
+            # Normal block level - these simply get a div that wraps
+            # them.
+            parent = get_parent(root, node)
+            thisidx = get_index(parent, node)
+            newdiv = wrap_elements_in_tag(parent, thisidx, thisidx + 1, "div")
+            section_nodes[name] = newdiv
+
+    # Apply normal CSS classes.
+    for name, newdiv in section_nodes.items():
         # Apply css styles
         classes = [s.name for s in styleinfo[name] if s.prestype == "class"]
         classes.sort()
         if classes:
             newdiv.set("class", " ".join(classes))
 
-        section_nodes[name] = newdiv
-
+    # Apply row/column commands
     _apply_commands(root, section_nodes, styleinfo, structure)
 
     return _html_extract(root)
@@ -325,7 +343,7 @@ def _assert_sane_sections(root, structure):
     # to cut the HTML into sections.
     for level, name, tag, h in structure:
         parent = get_parent(root, h)
-        if tag in headingdef and parent is not root:
+        if tag.lower() in headingdef and parent is not root:
             raise BadStructure("Section heading \"%(name)s\" is not at the top level of "
                                "the document. This interferes with the ability to "
                                "format the sections and apply columns. "
