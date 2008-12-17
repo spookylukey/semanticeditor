@@ -350,8 +350,6 @@ PresentationControls.prototype.retrieve_styles = function() {
 
 // The actual WYMeditor plugin:
 WYMeditor.editor.prototype.semantic = function(options) {
-    // TODO - options need to specify the AJAX callbacks
-    // we are going to need.
     var wym = this;
     var c = new PresentationControls(wym, options);
 };
