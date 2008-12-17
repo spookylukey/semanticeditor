@@ -329,8 +329,8 @@ PresentationControls.prototype.update_headingbox = function() {
     jQuery.each(this.active_heading_list, function(i, item) {
 		    // item[0] is the heading level,
 		    // item[1] is the heading name
-		    var spaces = (new Array((item[0]-1)*2)).join("&nbsp;");
-		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + spaces + item[2].toUpperCase() + ": " + escapeHtml(item[1]) + "</option>");
+		    var spaces = (new Array((item[0]-1)*3)).join("&nbsp;");
+		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + spaces + item[2].toLowerCase() + ": " + escapeHtml(item[1]) + "</option>");
     });
 };
 
