@@ -154,7 +154,7 @@ def get_structure(root, assert_structure=False):
     heading_names = set()
     cur_level = 1
     last_heading_num = 0
-    first_heading_level = 0
+    first_heading_level = 1
     for n in root.getiterator():
         if n.tag in blockdef:
             text = flatten(n)
@@ -187,9 +187,14 @@ def get_structure(root, assert_structure=False):
                     name = _find_next_available_name(name, names)
                 # Paragraphs etc within a section should be indented
                 # one further than the heading above them.
-                level = cur_level + 1
+                if len(heading_names) == 0:
+                    level = 1
+                else:
+                    level = cur_level + 1
             names.add(name)
-            retval.append((level, name, n.tag.upper(), n))
+            # Level is adjusted so that e.g. H3 is level 1, if it is
+            # the first to appear in the document.
+            retval.append((level - first_heading_level + 1, name, n.tag.upper(), n))
 
     return retval
 
