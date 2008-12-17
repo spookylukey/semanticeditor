@@ -148,6 +148,8 @@
 	    display: inline;
 	    width: auto;
 	    float: none;
+	    /* Make them harder to 'fall off' w.r.t tooltips */
+	    line-height: 1.5em;
 	}
 
 /* TOOLTIPS */
