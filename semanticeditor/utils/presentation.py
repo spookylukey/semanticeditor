@@ -369,7 +369,7 @@ def _assert_sane_sections(root, structure):
                                "the document. This interferes with the ability to "
                                "format the sections and apply columns. "
                                "Please move the heading out of the '%(element)s'"
-                               " element that contains it." % dict(name=name, element=parent.tag))
+                               " element that contains it." % dict(name=name, element=parent.tag.upper()))
 
 def _apply_commands(root, section_nodes, styleinfo, structure):
     # Rules:
@@ -473,9 +473,9 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
                     # Can't do it.
                     cname, cnode = child
                     raise BadStructure("Item '%(tag)s: %(name)s' has a 'New row' or 'New column' command applied to "
-                                       "it, but it is a subsection of '%(ptag)s: %(pname)s' which is already in a column "
-                                       "and columns cannot be created within columns." %
-                                       dict(tag=cnode[0].tag, name=cname, ptag=cur_row_start[0].tag, pname=name))
+                                       "it, but it is a subsection of '%(ptag)s: %(pname)s' which is already in a column. "
+                                       "This would create a nested column structure, which is not allowed." %
+                                       dict(tag=cnode[0].tag.upper(), name=cname, ptag=cur_row_start[0].tag.upper(), pname=name))
                 else:
                     # Allow it, but next section on this level must
                     # not be NEWCOL (unless it is also NEWROW)
@@ -483,10 +483,10 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
                     if nextnodename is not None:
                         nextnode_commands = styleinfo[nextnodename]
                         if NEWCOL in nextnode_commands and (NEWROW not in nextnode_commands):
-                            raise BadStructure("Item '%(ptag)s: %(pname)s' has a column structure within in "
+                            raise BadStructure("Item '%(ptag)s: %(pname)s' has a column structure within it "
                                                "but section '%(name)s' has a 'New column' command applied to "
                                                "it.  This would create a nested column structure, which is "
-                                               "not allowed." % (dict(name=nextnodename, ptag=cur_row_start[0].tag, pname=name)))
+                                               "not allowed." % (dict(name=nextnodename, ptag=cur_row_start[0].tag.upper(), pname=name)))
                     _add_rows_and_columns(node, known_nodes, styleinfo)
 
         else:
