@@ -154,6 +154,7 @@ def get_structure(root, assert_structure=False):
     heading_names = set()
     cur_level = 1
     last_heading_num = 0
+    first_heading_level = 0
     for n in root.getiterator():
         if n.tag in blockdef:
             text = flatten(n)
@@ -162,15 +163,18 @@ def get_structure(root, assert_structure=False):
                 level = int(n.tag[1])
                 cur_level = level
                 if assert_structure:
-                    if len(heading_names) == 0 and level > 1:
-                        raise IncorrectHeadings("First heading must be H1.")
+                    if len(heading_names) == 0:
+                        first_heading_level = level
+                    else:
+                        if level < first_heading_level:
+                            raise IncorrectHeadings("No heading can be higher than the first heading, which was H%d." % first_heading_level)
 
                     if name in heading_names:
                         raise IncorrectHeadings('There are duplicate headings with the name'
                                                 ' "%s".' % name)
 
                     # Headings should decrease or monotonically increase
-                    if level > last_heading_num + 1:
+                    if len(heading_names) > 0 and level > last_heading_num + 1:
                         raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
                                                 ' but it should be level H%(rightnum)d or less' %
                                                 dict(name=name,foundnum=level,rightnum=last_heading_num + 1))

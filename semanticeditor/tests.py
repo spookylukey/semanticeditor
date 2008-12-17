@@ -41,8 +41,12 @@ class TestExtractStructure(TestCase):
     def test_rejects_bad_html(self):
         self.assertRaises(InvalidHtml, extract_headings, "<h1>Foo")
 
-    def test_rejects_headings_not_start_at_1(self):
-        self.assertRaises(IncorrectHeadings, extract_headings, "<h2>Hello</h2>")
+    def test_rejects_higher_headings_later(self):
+        """
+        Ensures that if the first heading is e.g. h2, no h1 headings
+        are allowed
+        """
+        self.assertRaises(IncorrectHeadings, extract_headings, "<h2>Hello</h2><h1>Hi</h1>")
 
     def test_rejects_improper_headings(self):
         self.assertRaises(IncorrectHeadings, extract_headings, "<h1>Hello</h1><h3>Bad heading</h3>")
