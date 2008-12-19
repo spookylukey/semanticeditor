@@ -164,7 +164,7 @@ def combine_presentation(request):
     presentation = simplejson.loads(presentation)
     _convert_pres(presentation)
 
-    return graceful_errors(AllUserErrors, lambda: dict(html=format_html(html, presentation)))
+    return graceful_errors(AllUserErrors, lambda: dict(html=format_html(html, presentation, pretty_print=True)))
 
 @json_view
 def preview(request):
