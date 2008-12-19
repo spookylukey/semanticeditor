@@ -3,7 +3,7 @@ Utilities for manipulating the content provided by the user.
 """
 
 from elementtree import ElementTree as ET
-from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_index, wrap_elements_in_tag
+from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_index, wrap_elements_in_tag, indent
 from xml.parsers import expat
 import re
 
@@ -257,7 +257,7 @@ def extract_headings(content):
 # make the previous H1 into the start of a *2* column row!
 
 
-def format_html(html, styleinfo, return_tree=False):
+def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     """
     Formats the XHTML given using a dictionary of style information.
     The dictionary has keys which are the names of headings,
@@ -339,6 +339,10 @@ def format_html(html, styleinfo, return_tree=False):
 
     # Apply row/column commands
     _apply_commands(root, section_nodes, styleinfo, structure)
+
+    # Pretty print
+    if pretty_print:
+        indent(root)
 
     if return_tree:
         return (root, structure, section_nodes)

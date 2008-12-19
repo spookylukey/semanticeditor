@@ -5,7 +5,8 @@ ElementTree utils
 from elementtree import ElementTree as ET
 from xml.parsers import expat
 
-# ElementTree utilities
+# ElementTree utilities.  Lots of these are pinched
+# from proposed 'ElementLib' module on effbot.
 
 def textjoin(a, b):
     a = a or ''
@@ -80,3 +81,19 @@ def wrap_elements_in_tag(parent, start_idx, stop_idx, tag):
     parent[start_idx:stop_idx] = [newelem]
     return newelem
 
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for child in elem:
+            indent(child, level+1)
+        if not child.tail or not child.tail.strip():
+            child.tail = i
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
