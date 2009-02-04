@@ -167,7 +167,9 @@ def get_structure(root, assert_structure=False):
                         first_heading_level = level
                     else:
                         if level < first_heading_level:
-                            raise IncorrectHeadings("No heading can be higher than the first heading, which was H%d." % first_heading_level)
+                            raise IncorrectHeadings("No heading can be higher than the first "
+                                                    "heading, which was H%d." %
+                                                    first_heading_level)
 
                     if name in heading_names:
                         raise IncorrectHeadings('There are duplicate headings with the name'
@@ -175,9 +177,10 @@ def get_structure(root, assert_structure=False):
 
                     # Headings should decrease or monotonically increase
                     if len(heading_names) > 0 and level > last_heading_num + 1:
-                        raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d,'
-                                                ' but it should be level H%(rightnum)d or less' %
-                                                dict(name=name,foundnum=level,rightnum=last_heading_num + 1))
+                        raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d, '
+                                                'but it should be level H%(rightnum)d or less' %
+                                                dict(name=name,foundnum=level,
+                                                     rightnum=last_heading_num + 1))
                 last_heading_num = level
                 heading_names.add(name)
             else:
