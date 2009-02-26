@@ -151,6 +151,11 @@
 	    /* Make them harder to 'fall off' w.r.t tooltips */
 	    line-height: 1.5em;
 	}
+        .prescontrol .prescontrolheadings label {
+            display: inline; /* override hiding */
+            width: auto;
+            float: none;
+        }
 
 /* TOOLTIPS */
 
