@@ -5,7 +5,7 @@
         lang: '{{ language }}',
         skin: 'semanticeditor',
         skinPath: "{{ SE_MEDIA_URL }}javascript/wymeditor/skins/semanticeditor/",
-        updateSelector: 'input[value=Save],',
+        updateSelector: 'input[type=submit],',
         updateEvent: 'click',
         postInit: function(wym) {
             wym.resizable({handles: "s", maxHeight: 600});
