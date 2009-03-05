@@ -71,6 +71,10 @@
                 preview_url: "{% url semantic.preview %}"
             };
             wym.semantic(symanticopts);
+
+            // Enable the placeholderbridge plugin, to allow
+            // the placeholder controls to talk to editor
+            wym.placeholderbridge({'name': '{{ name }}'});
         },
         //handle click event on dialog's submit button
         postInitDialog: function( wym, wdw ) {
