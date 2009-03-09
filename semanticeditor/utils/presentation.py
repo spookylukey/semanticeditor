@@ -38,10 +38,25 @@ ROWCLEARCLASS = 'rowclear'
 BLOCK_LEVEL_TRIM_LENGTH = 20
 
 ### Parsing ###
+import htmlentitydefs
+def fixentities(htmltext):
+    # replace HTML character entities with numerical references
+    # note: this won't handle CDATA sections properly
+    def repl(m):
+        entity = htmlentitydefs.entitydefs.get(m.group(1).lower())
+        if not entity:
+            return m.group(0)
+        elif len(entity) == 1:
+            if entity in "&<>'\"":
+                return m.group(0)
+            return "&#%d;" % ord(entity)
+        else:
+            return entity
+    return re.sub("&(\w+);?", repl, htmltext)
 
 def parse(content):
     try:
-        tree = ET.fromstring("<html>" + content + "</html>")
+        tree = ET.fromstring("<html>" + fixentities(content) + "</html>")
     except expat.ExpatError, e:
         raise InvalidHtml("HTML content is not well formed.")
     return tree
