@@ -172,15 +172,18 @@ PresentationControls.prototype.build_optsbox = function() {
 	    // Assign an id, because orbitaltooltip
             // doesn't work without it.
 	    $(this).attr('id', 'id_optsbox_label_' + i);
-	    $(this).orbitaltooltip({
-		orbitalPosition: 270,
-		// Small spacing means we can move onto the tooltip
-		// in order to scroll it if the help text has
-		// produced scroll bars.
-		spacing:         8,
-		tooltipClass: 	 'orbitaltooltip-simplebox',
-		html:            help
-	    });
+            var inputitem = this;
+            setTimeout(function() {
+	        $(inputitem).orbitaltooltip({
+	            orbitalPosition: 270,
+		    // Small spacing means we can move onto the tooltip
+                    // in order to scroll it if the help text has
+		    // produced scroll bars.
+		    spacing:         8,
+		    tooltipClass: 	 'orbitaltooltip-simplebox',
+		    html:            help
+	        });
+            }, 1000); // Delay, otherwise tooltips can end up in wrong position.
 	});
     });
     // Stop the tooltips from getting in the way
