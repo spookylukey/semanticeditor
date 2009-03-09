@@ -146,7 +146,6 @@ PresentationControls.prototype.form_submit = function(event) {
     } else {
 	event.preventDefault();
 	this.show_error(data.message);
-	var pos = this.wym._box.offset();
         alert("Data in " + this.name + " can't be saved - see error message.");
     }
 };
