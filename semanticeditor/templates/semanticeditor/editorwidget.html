@@ -5,8 +5,8 @@
         lang: '{{ language }}',
         skin: 'semanticeditor',
         skinPath: "{{ SE_MEDIA_URL }}javascript/wymeditor/skins/semanticeditor/",
-        updateSelector: 'input[type=submit],',
-        updateEvent: 'click',
+        updateSelector: '#page_form',
+        updateEvent: 'submit',
         postInit: function(wym) {
             //wym.resizable({handles: "s", maxHeight: 600});
             //construct the button's html
