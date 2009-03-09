@@ -108,6 +108,14 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Other event handlers added in update_optsbox
 };
 
+PresentationControls.prototype.set_html = function(html) {
+    // WUMEditor ought to call .listen() after setting
+    // the HTML (to rebind events for images),
+    // but it doesn't at the moment, so we work around it by wrapping.
+    self.wym.html(html);
+    self.wym.listen();
+};
+
 // Splits the HTML into 'content HTML' and 'presentation'
 PresentationControls.prototype.separate_presentation = function() {
     var self = this;
@@ -118,7 +126,7 @@ PresentationControls.prototype.separate_presentation = function() {
 			    // Store the presentation
 			    self.presentation_info = value.presentation;
 			    // Update the HTML
-			    self.wym.html(value.html);
+                            self.set_html(value.html);
 			});
 		}, "json");
 };
@@ -139,7 +147,7 @@ PresentationControls.prototype.form_submit = function(event) {
     var data = JSON.parse(res);
     if (data.result == 'ok') {
 	// Replace existing HTML with combined.
-	this.wym.html(data.value.html);
+        this.set_html(data.value.html);
 	// In case the normal WYMeditor update got called *before* this
 	// event handler, we do another update.
 	this.wym.update();
