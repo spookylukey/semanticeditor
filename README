@@ -21,13 +21,11 @@ customisations:
 
  - the editorwidget.html template has been changed.  In particular
    - the skin has been changed to 'semanticeditor'
-   - updateSelector option changed to 'input[value=Save]', since we now
-     have other submit buttons that we don't want to bind to.
    - a call to wymeditor.semantic() has been added to set up the plugin.
 
  - a new django widget 'SemanticEditor' has been created that inherits from
    the django 'WYMEditor' widget in django-cms2.  This is needed so that
-    - the WYMeditor plugin javascript file can be added to Media
+    - the WYMeditor 'semantic' plugin javascript file can be added to Media
     - our editorwdiget.html template can be used.
 
 
