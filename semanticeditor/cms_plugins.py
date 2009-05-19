@@ -10,7 +10,7 @@ from cms.plugins.text.utils import plugin_tags_to_user_html
 from django.forms.fields import CharField
 
 class SemanticTextPlugin(TextPlugin):
-    def get_editor_widget(self, request, plugins, objects):
-        return SemanticEditor(installed_plugins=plugins, objects=objects)
+    def get_editor_widget(self, request, plugins):
+        return SemanticEditor(installed_plugins=plugins)
 
 plugin_pool.register_plugin(SemanticTextPlugin)

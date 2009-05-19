@@ -29,7 +29,6 @@ class SemanticEditor(WYMEditor):
             'WYM_CONTAINERS': mark_safe(wym_settings.WYM_CONTAINERS),
             'WYM_CLASSES': mark_safe(wym_settings.WYM_CLASSES),
             'installed_plugins': self.installed_plugins,
-            'objects': self.objects,
         }
 
         return mark_safe(render_to_string(
