@@ -77,7 +77,11 @@
 			 tt.animate({
 			     opacity: 1.0
 			 }, 0);
-		     }, function(event) { });
+		     },
+                     function(event) {
+                         fly_orbit = false;
+                         hideTooltip(tt);
+                     });
 
             return this.hover(
                 function(e) {
@@ -94,13 +98,13 @@
                 		*/
                 		alert('orbiting functionality is not currently functioning');
                   	} else {
-                		position(jQuery("#" + uniqueID), tooltipPosition[0], tooltipPosition[1]);
+                		position(tt, tooltipPosition[0], tooltipPosition[1]);
                 	}
                 },
                 function(e) {
 					// off hover
 					fly_orbit = false;
-					hideTooltip(jQuery("#" + uniqueID));
+					hideTooltip(tt);
                 }
             );
         }
