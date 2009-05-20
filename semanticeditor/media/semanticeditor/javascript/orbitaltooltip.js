@@ -12,7 +12,7 @@
 (function(jQuery) {
 
 	// Decalre important math functions
-	Math.cot = function(x) { return 1 / Math.tan(x); }
+	Math.cot = function(x) { return 1 / Math.tan(x); };
 
 	function degrees_to_radians(deg) {
     	return deg * (Math.PI/180);
@@ -75,7 +75,7 @@
 	    tt.hover(function(event) {
 			 tt.stop();
 			 tt.animate({
-			     opacity: 1.0,
+			     opacity: 1.0
 			 }, 0);
 		     }, function(event) { });
 
@@ -123,7 +123,7 @@
 		var tooltip_width = tooltip.width();
 		var tooltip_height = tooltip.height();
 
-		var coordinates = element_to_add_tooltip.offset()
+		var coordinates = element_to_add_tooltip.offset();
 		var x = coordinates.left + ((element_width / 2) - (tooltip_width / 2));
 		var y = coordinates.top - tooltip_height;
 
@@ -257,7 +257,7 @@
 	{
 		var center_of_element = new Array();
 
-		var element_top_left_coords = element.offset()
+		var element_top_left_coords = element.offset();
 		center_of_element[0] = element_top_left_coords.left + Math.round((element.width() + get_horizontal_padding(element)) / 2);
 		center_of_element[1] = element_top_left_coords.top + Math.round((element.height() + get_vertical_padding(element)) / 2);
 
