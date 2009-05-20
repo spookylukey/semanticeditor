@@ -10,6 +10,9 @@ from cms.plugins.text.utils import plugin_tags_to_user_html
 from django.forms.fields import CharField
 
 class SemanticTextPlugin(TextPlugin):
+
+    name = _("Text with presentation")
+
     def get_editor_widget(self, request, plugins):
         return SemanticEditor(installed_plugins=plugins)
 
