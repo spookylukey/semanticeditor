@@ -112,8 +112,8 @@ PresentationControls.prototype.set_html = function(html) {
     // WUMEditor ought to call .listen() after setting
     // the HTML (to rebind events for images),
     // but it doesn't at the moment, so we work around it by wrapping.
-    self.wym.html(html);
-    self.wym.listen();
+    this.wym.html(html);
+    this.wym.listen();
 };
 
 // Splits the HTML into 'content HTML' and 'presentation'
