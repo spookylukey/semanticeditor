@@ -303,7 +303,7 @@ def extract_structure(content):
     # Parse
     tree = parse(content)
     structure = get_structure(tree, assert_structure=True)
-    return [(s.level, s.name, s.tag) for s in structure]
+    return structure
 
 # == Formatting HTML ==
 #

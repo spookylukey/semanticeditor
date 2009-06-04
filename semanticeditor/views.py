@@ -101,10 +101,18 @@ def graceful_errors(exceptions, callback):
         return failure(e.args[0])
     return success(val)
 
+def SI_to_dict(si):
+    """
+    Convert a StructureItem to dictionary for use client side
+    """
+    return dict((k,v) for k,v in si.__dict__.items() if k != 'node')
+
 @json_view
 def extract_structure_view(request):
     data = request.POST.get('html','').encode("utf-8")
-    return graceful_errors(AllUserErrors, lambda: extract_structure(data))
+    def _handled():
+        return map(SI_to_dict, extract_structure(data))
+    return graceful_errors(AllUserErrors, _handled)
 
 def PI_to_dict(pi):
     """
@@ -114,6 +122,9 @@ def PI_to_dict(pi):
     return pi.__dict__
 
 def dict_to_PI(d):
+    """
+    Convert a dictionary to a PresentationInfo
+    """
     return PresentationInfo(prestype=d['prestype'], name=d['name'])
 
 @json_view

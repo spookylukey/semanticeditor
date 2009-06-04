@@ -2,23 +2,13 @@
 
 from django.test import TestCase
 from semanticeditor.utils import extract_structure, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure
-from semanticeditor.utils.presentation import PresentationInfo, PresentationClass
+from semanticeditor.utils.presentation import PresentationInfo, PresentationClass, StructureItem
 
 PC = PresentationClass
 
-class TestStructure(TestCase):
-    """
-    Tests for how the structure is extracted and labelled
-    """
-    def test_use_existing_sect_ids(self):
-        html = "<h1 id='h1_10'>Hi</h1><h1>There</h1>"
-        structure = get_structure(parse(html))
-        self.assertEqual(structure[0].sect_id, "h1_10")
-        self.assertEqual(structure[1].sect_id, "h1_1")
-
 class TestExtractStructure(TestCase):
     def test_extract_structure(self):
-        self.assertEqual(extract_structure("""
+        self.assertEqual([(s.level, s.sect_id, s.name, s.tag) for s in extract_structure("""
 <h1>Heading <b>with </b><i>embedded <em>stuff</em> in</i> it</h1> Hmm
 <p>A long paragraph with some actual content</p>
 <h2>A sub heading</h2>
@@ -31,19 +21,20 @@ class TestExtractStructure(TestCase):
 <p>nasty  éééééééééééééééééééééééééé</p>
 <h6>level 6</h6>
 <h1>Heading two</h1>
-"""), [(1, u"Heading with embedded stuff in it", u"H1"),
-       (2, u"A long paragraph wit...", u"P"),
-       (2, u"A sub heading", u"H2"),
-       (3, u"Another para...", u"P"),
-       (3, u"level 3", u"H3"),
-       (4, u"A long paragraph wit...2", u"P"),
-       (4, u"level 4", u"H4"),
-       (5, u"Another para...2", u"P"),
-       (5, u"level 5", u"H5"),
-       (6, u"nasty  ééééééééééééé...", u"P"),
-       (6, u"level 6", u"H6"),
-       (1, u"Heading two", u"H1"),
-       ])
+""")],
+        [(1, "h1_1", u"Heading with embedded stuff in it", u"H1"),
+         (2, "p_1", u"A long paragraph wit...", u"P"),
+         (2, "h2_1", u"A sub heading", u"H2"),
+         (3, "p_2", u"Another para...", u"P"),
+         (3, "h3_1", u"level 3", u"H3"),
+         (4, "p_3", u"A long paragraph wit...2", u"P"),
+         (4, "h4_1", u"level 4", u"H4"),
+         (5, "p_4", u"Another para...2", u"P"),
+         (5, "h5_1", u"level 5", u"H5"),
+         (6, "p_5", u"nasty  ééééééééééééé...", u"P"),
+         (6, "h6_1", u"level 6", u"H6"),
+         (1, "h1_2", u"Heading two", u"H1"),
+         ])
 
     def test_extract_structure_missing(self):
         self.assertEqual(extract_structure("Hello"), [])
@@ -63,6 +54,12 @@ class TestExtractStructure(TestCase):
 
     def test_rejects_duplicate_headings(self):
         self.assertRaises(IncorrectHeadings, extract_structure, "<h1>Hello</h1><h2>Hello</h2>")
+
+    def test_use_existing_sect_ids(self):
+        html = "<h1 id='h1_10'>Hi</h1><h1>There</h1>"
+        structure = get_structure(parse(html))
+        self.assertEqual(structure[0].sect_id, "h1_10")
+        self.assertEqual(structure[1].sect_id, "h1_1")
 
 class TestPresentationInfo(TestCase):
     def test_equality(self):
