@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure
+from semanticeditor.utils import extract_structure, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure
 from semanticeditor.utils.presentation import PresentationInfo, PresentationClass
 
 PC = PresentationClass
@@ -17,8 +17,8 @@ class TestStructure(TestCase):
         self.assertEqual(structure[1].sect_id, "h1_1")
 
 class TestExtractStructure(TestCase):
-    def test_extract_headings(self):
-        self.assertEqual(extract_headings("""
+    def test_extract_structure(self):
+        self.assertEqual(extract_structure("""
 <h1>Heading <b>with </b><i>embedded <em>stuff</em> in</i> it</h1> Hmm
 <p>A long paragraph with some actual content</p>
 <h2>A sub heading</h2>
@@ -45,24 +45,24 @@ class TestExtractStructure(TestCase):
        (1, u"Heading two", u"H1"),
        ])
 
-    def test_extract_headings_missing(self):
-        self.assertEqual(extract_headings("Hello"), [])
+    def test_extract_structure_missing(self):
+        self.assertEqual(extract_structure("Hello"), [])
 
     def test_rejects_bad_html(self):
-        self.assertRaises(InvalidHtml, extract_headings, "<h1>Foo")
+        self.assertRaises(InvalidHtml, extract_structure, "<h1>Foo")
 
     def test_rejects_higher_headings_later(self):
         """
         Ensures that if the first heading is e.g. h2, no h1 headings
         are allowed
         """
-        self.assertRaises(IncorrectHeadings, extract_headings, "<h2>Hello</h2><h1>Hi</h1>")
+        self.assertRaises(IncorrectHeadings, extract_structure, "<h2>Hello</h2><h1>Hi</h1>")
 
     def test_rejects_improper_headings(self):
-        self.assertRaises(IncorrectHeadings, extract_headings, "<h1>Hello</h1><h3>Bad heading</h3>")
+        self.assertRaises(IncorrectHeadings, extract_structure, "<h1>Hello</h1><h3>Bad heading</h3>")
 
     def test_rejects_duplicate_headings(self):
-        self.assertRaises(IncorrectHeadings, extract_headings, "<h1>Hello</h1><h2>Hello</h2>")
+        self.assertRaises(IncorrectHeadings, extract_structure, "<h1>Hello</h1><h2>Hello</h2>")
 
 class TestPresentationInfo(TestCase):
     def test_equality(self):
