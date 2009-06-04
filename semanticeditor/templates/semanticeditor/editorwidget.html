@@ -28,8 +28,8 @@ $(document).ready(function(){
         lang: '{{ language }}',
         skin: 'semanticeditor',
         skinPath: "{{ SE_MEDIA_URL }}javascript/wymeditor/skins/semanticeditor/",
-        updateSelector: 'input[type=submit]',
-        updateEvent: 'click',
+        updateSelector: '#text_form',
+        updateEvent: 'submit',
 		logoHtml: '',
 		toolsItems: [
 			    {{ WYM_TOOLS }}
