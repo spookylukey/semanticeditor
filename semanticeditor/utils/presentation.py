@@ -344,6 +344,13 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     if pretty_print:
         indent(root)
 
+    # Remove the temporary IDs we may have added when splitting the HTML
+    # into content and presentation.  We don't do this before this point,
+    # as the IDs need to be there to identify sections
+    for si in structure:
+        if 'id' in si.node.attrib:
+            del si.node.attrib['id']
+
     if return_tree:
         return (root, structure, section_nodes)
     else:
@@ -594,7 +601,8 @@ def extract_presentation(html):
             if 'class' in si.node.attrib:
                 del si.node.attrib['class']
 
-        # Add custom ids
+        # Add custom ids.  These are only for purpose of editing,
+        # and will be removed again at end of format_html
         si.node.set('id', si.sect_id)
 
         # Parent/grandparent of section - newcol/newrow
