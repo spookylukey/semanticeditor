@@ -295,7 +295,7 @@ def get_structure(root, assert_structure=False):
 
 ## Main functions and sub functions
 
-def extract_headings(content):
+def extract_structure(content):
     """
     Extracts H1, H2, etc headings, and other block level elements and
     returns a list of tuples containing (level, name, tag)

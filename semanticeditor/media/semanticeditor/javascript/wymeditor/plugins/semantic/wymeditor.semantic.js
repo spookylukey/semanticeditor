@@ -308,7 +308,7 @@ PresentationControls.prototype.show_error = function(message) {
 PresentationControls.prototype.refresh_headings = function() {
     var self = this;
     var html = this.wym.xhtml();
-    jQuery.post(this.opts.extract_headings_url, { 'html':html },
+    jQuery.post(this.opts.extract_structure_url, { 'html':html },
 	function(data) {
 	    self.with_good_data(data, function(value) {
 		self.stored_headings = value;
