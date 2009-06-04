@@ -4,6 +4,7 @@ Utilities for manipulating the content provided by the user.
 
 from elementtree import ElementTree as ET
 from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_index, wrap_elements_in_tag, indent
+from semanticeditor.utils.datastructures import struct
 from xml.parsers import expat
 import re
 
@@ -217,15 +218,19 @@ def get_layout_details_strategy():
     # TODO - make configurable
     return LayoutDetails()
 
+
+class StructureItem(object):
+    __metaclass__ = struct
+    level = 0     #    level is the 'outline level' in the document i.e. an integer
+    sect_id = ''  #    sect_id is a unique ID used for storing presentation information against
+    name = ''     #    name is a user presentable name for the section
+    tag = ''      #    tag is the HTML element e.g. H1
+    node = None   #    node is the ElementTree node
+
+
 def get_structure(root, assert_structure=False):
     """
-    Return the structure nodes, as (level, sect_id, name, tag, node) tuples
-
-    level is the 'outline level' in the document i.e. an integer
-    sect_id is a unique ID used for storing presentation information against
-    name is a user presentable name for the section
-    tag is the HTML element e.g. H1
-    node is the ElementTree node
+    Return the structure nodes, as a list of StructureItems
     """
     retval = []
     names = set()
@@ -280,7 +285,11 @@ def get_structure(root, assert_structure=False):
             names.add(name)
             # Level is adjusted so that e.g. H3 is level 1, if it is
             # the first to appear in the document.
-            retval.append((level - first_heading_level + 1, sect_id, name, n.tag.upper(), n))
+            retval.append(StructureItem(level=level - first_heading_level + 1,
+                                        sect_id=sect_id,
+                                        name=name,
+                                        tag=n.tag.upper(),
+                                        node=n))
 
     return retval
 
@@ -294,7 +303,7 @@ def extract_headings(content):
     # Parse
     tree = parse(content)
     structure = get_structure(tree, assert_structure=True)
-    return [(l,name,tag) for (l,sect_id,name,tag,node) in structure]
+    return [(s.level, s.name, s.tag) for s in structure]
 
 # == Formatting HTML ==
 #
@@ -352,7 +361,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     layout_strategy = get_layout_details_strategy()
     root = parse(html)
     structure = get_structure(root, assert_structure=True)
-    sect_ids = [sect_id for (level, sect_id, name, tag, node) in structure]
+    sect_ids = [s.sect_id for s in structure]
     styleinfo = _sanitise_styleinfo(styleinfo, sect_ids)
 
     # Strip existing divs, otherwise we cannot format properly.  If
@@ -363,8 +372,8 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     _assert_sane_sections(root, structure)
 
     section_nodes = {}
-    headers = [(level,sect_id,tag,h) for (level,sect_id,name,tag,h) in structure
-               if tag.lower() in headingdef]
+    headers = [si for si in structure
+               if si.tag.lower() in headingdef]
 
     # Cut the HTML up into sections
 
@@ -372,19 +381,19 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # as headers always produce nested structures, and the
     # indexes passed to wrap_elements_in_tag don't need
     # adjusting for the changes we have made.
-    for idx, (level, sect_id, tag, node) in enumerate(headers):
+    for idx, si in enumerate(headers):
         # We can no longer assume that parent = root, because the divs
         # we insert will change that.  However, the divs we insert
         # will keep sub-section headings on the same level.
-        parent = get_parent(root, node)
+        parent = get_parent(root, si.node)
 
-        thisidx = get_index(parent, node)
+        thisidx = get_index(parent, si.node)
         first_elem = thisidx
 
         # if a heading, then the 'scope' of each section is from
         # heading node to before the next heading with a level the
         # same or higher
-        nextnodes = [(l,n) for (l,_sect_id,t,n) in headers[idx+1:] if l <= level]
+        nextnodes = [(si2.level, si2.node) for si2 in headers[idx+1:] if si2.level <= si.level]
         if not nextnodes:
             # scope extends to end
             # Bug in elementtree - throws AssertionError if we try
@@ -404,17 +413,17 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
                 last_elem = len(parent)
 
         newdiv = wrap_elements_in_tag(parent, first_elem, last_elem, "div")
-        section_nodes[sect_id] = newdiv
+        section_nodes[si.sect_id] = newdiv
 
     # Now deal with everything else
-    for idx, (level, sect_id, name, tag, node) in enumerate(structure):
-        if tag.lower() not in headingdef:
+    for idx, si in enumerate(structure):
+        if si.tag.lower() not in headingdef:
             # Normal block level - these simply get a div that wraps
             # them.
-            parent = get_parent(root, node)
-            thisidx = get_index(parent, node)
+            parent = get_parent(root, si.node)
+            thisidx = get_index(parent, si.node)
             newdiv = wrap_elements_in_tag(parent, thisidx, thisidx + 1, "div")
-            section_nodes[sect_id] = newdiv
+            section_nodes[si.sect_id] = newdiv
 
     # Apply normal CSS classes.
     for sect_id, newdiv in section_nodes.items():
@@ -462,14 +471,14 @@ def _assert_sane_sections(root, structure):
     # First, all h1, h2 etc tags will be children of the root.
     # remove_tag should have ensured that, otherwise we will be unable
     # to cut the HTML into sections.
-    for level, sect_id, name, tag, node in structure:
-        parent = get_parent(root, node)
-        if tag.lower() in headingdef and parent is not root:
+    for si in structure:
+        parent = get_parent(root, si.node)
+        if si.tag.lower() in headingdef and parent is not root:
             raise BadStructure("Section heading \"%(name)s\" is not at the top level of "
                                "the document. This interferes with the ability to "
                                "format the sections and apply columns. "
                                "Please move the heading out of the '%(element)s'"
-                               " element that contains it." % dict(name=name, element=parent.tag.upper()))
+                               " element that contains it." % dict(name=si.name, element=parent.tag.upper()))
 
 def _apply_commands(root, section_nodes, styleinfo, structure, layout_strategy=None):
     # Rules:
@@ -479,17 +488,17 @@ def _apply_commands(root, section_nodes, styleinfo, structure, layout_strategy=N
     #  - No columns allowed if newrow has not been started.
 
     # 'structure' has the sections in document order
-    sections = [(level, sect_id, section_nodes[sect_id])
-                for level, sect_id, name, tag, n in structure]
+    sections = [(si.level, si.sect_id, section_nodes[si.sect_id])
+                for si in structure]
 
     # Inverted dict
     known_nodes = _invert_dict(section_nodes)
 
     # Preprocess:
     #  - insert 'newcolumn' on everything that has 'newrow'
-    for level, sect_id, name, tag, hn in structure:
-        if NEWROW in styleinfo[sect_id]:
-            styleinfo[sect_id].add(NEWCOL)
+    for si in structure:
+        if NEWROW in styleinfo[si.sect_id]:
+            styleinfo[si.sect_id].add(NEWCOL)
 
     _add_rows_and_columns(root, known_nodes, styleinfo, layout_strategy=layout_strategy)
     # Due to HTML/CSS quirks, we add an empty <div
@@ -673,16 +682,16 @@ def extract_presentation(html):
     root = parse(html)
     structure = get_structure(root)
     pres = {}
-    for level, sect_id, name, tag, node in structure:
-        pres[sect_id] = set()
-        section_node = get_parent(root, node)
+    for si in structure:
+        pres[si.sect_id] = set()
+        section_node = get_parent(root, si.node)
         if section_node is None or section_node.tag != 'div':
             # Not in standard format, we can't say anything about it
             continue
 
         # Section - extract classes
         for c in _get_classes_for_node(section_node):
-            pres[sect_id].add(PresentationClass(c))
+            pres[si.sect_id].add(PresentationClass(c))
 
         # Parent/grandparent of section - newcol/newrow
         p = get_parent(root, section_node)
@@ -691,13 +700,13 @@ def extract_presentation(html):
             if get_index(p, section_node) == 0:
                 classes = _get_classes_for_node(p)
                 if layout_strategy.is_column_class(classes):
-                    pres[sect_id].add(NEWCOL)
+                    pres[si.sect_id].add(NEWCOL)
                 gp = get_parent(root, p)
                 if gp is not None and gp.tag == 'div':
                     if layout_strategy.is_row_class(_get_classes_for_node(gp)) \
                             and get_index(gp, p) == 0:
-                        pres[sect_id].add(NEWROW)
-                        pres[sect_id].discard(NEWCOL) # for tidiness, not technically necessary
+                        pres[si.sect_id].add(NEWROW)
+                        pres[si.sect_id].discard(NEWCOL) # for tidiness, not technically necessary
 
     _strip_presentation(root)
     out_html = _html_extract(root)
