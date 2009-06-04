@@ -94,7 +94,7 @@ class TestFormat(TestCase):
 
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
-        outh = "<div class=\"row2col\"><div class=\"col\"><div><h1>1</h1><div><p>para 1</p></div></div></div><div class=\"col\"><div><h1>2</h1></div><div><h1>3</h1></div></div><div class=\"rowclear\" /></div>"
+        outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><div><h1>1</h1><div><p>para 1</p></div></div></div><div class=\"column lastcolumn\"><div><h1>2</h1></div><div><h1>3</h1></div></div><div class=\"rowclear\" /></div>"
         self.assertEqual(outh, format_html(html, {'1':[NEWROW],
                                                   '2':[NEWCOL]}))
 
@@ -145,28 +145,28 @@ class TestFormat(TestCase):
         outh = \
             "<div><h1>1</h1></div>" \
             "<div><h1>2</h1>" \
-            "<div class=\"row2col\">" \
-            "<div class=\"col\">" \
+            "<div class=\"row columns2\">" \
+            "<div class=\"column firstcolumn\">" \
             "<div><h2>2.1</h2></div>" \
             "</div>" \
-            "<div class=\"col\">" \
+            "<div class=\"column lastcolumn\">" \
             "<div><h2>2.2</h2></div>" \
             "</div>" \
             "<div class=\"rowclear\" /></div>" \
-            "<div class=\"row2col\">" \
-            "<div class=\"col\">" \
+            "<div class=\"row columns2\">" \
+            "<div class=\"column firstcolumn\">" \
             "<div><h2>2.3</h2></div>" \
             "</div>" \
-            "<div class=\"col\">" \
+            "<div class=\"column lastcolumn\">" \
             "<div><h2>2.4</h2></div>" \
             "</div>" \
             "<div class=\"rowclear\" /></div>" \
             "</div>" \
-            "<div class=\"row2col\">" \
-            "<div class=\"col\">" \
+            "<div class=\"row columns2\">" \
+            "<div class=\"column firstcolumn\">" \
             "<div><h1>3</h1></div>" \
             "</div>" \
-            "<div class=\"col\">" \
+            "<div class=\"column lastcolumn\">" \
             "<div><h1>4</h1></div>" \
             "</div>" \
             "<div class=\"rowclear\" /></div>"
@@ -201,33 +201,33 @@ class TestFormat(TestCase):
             }
 
         outh = \
-            "<div class=\"row2col\">" \
-              "<div class=\"col\">" \
+            "<div class=\"row columns2\">" \
+              "<div class=\"column firstcolumn\">" \
                 "<div><h1>1</h1></div>" \
               "</div>" \
-              "<div class=\"col\">" \
+              "<div class=\"column lastcolumn\">" \
                 "<div><h1>2</h1></div>" \
               "</div>" \
             "<div class=\"rowclear\" /></div>" \
-            "<div class=\"row1col\">" \
-              "<div class=\"col\">" \
+            "<div class=\"row columns1\">" \
+              "<div class=\"column firstcolumn lastcolumn\">" \
                 "<div><h1>3</h1>" \
-                  "<div class=\"row3col\">" \
-                    "<div class=\"col\">" \
+                  "<div class=\"row columns3\">" \
+                    "<div class=\"column firstcolumn\">" \
                       "<div><p>P1</p></div>" \
                     "</div>" \
-                    "<div class=\"col\">" \
+                    "<div class=\"column\">" \
                       "<div><p>P2</p></div>" \
                     "</div>" \
-                    "<div class=\"col\">" \
+                    "<div class=\"column lastcolumn\">" \
                       "<div><p>P3</p></div>" \
                     "</div>" \
                   "<div class=\"rowclear\" /></div>" \
                 "</div>" \
               "</div>" \
             "<div class=\"rowclear\" /></div>" \
-            "<div class=\"row1col\">" \
-              "<div class=\"col\">" \
+            "<div class=\"row columns1\">" \
+              "<div class=\"column firstcolumn lastcolumn\">" \
                 "<div><h1>4</h1></div>" \
               "</div>" \
             "<div class=\"rowclear\" /></div>"
@@ -325,7 +325,7 @@ class TestExtractPresentation(TestCase):
 
     def test_extract_2(self):
         html = """
-<div class="row3col"><div class="col"><div><h1>Hello Jane</h1><div><p>Some fancy content, entered using WYMeditor</p></div><div><p>Another paragraph</p></div><div><p>Hello</p></div></div></div><div class="col"><div><h1>Another &lt;heading&gt;</h1><div><h2>this is a test</h2></div><div><h2>hello1</h2><div><h3>hello2</h3></div><div><h3>hello3</h3></div><div><h3>hello4</h3></div></div></div></div><div class="col"><div><h1>hello5</h1><div><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div></div></div>
+<div class="row columns3"><div class="column firstcolumn"><div><h1>Hello Jane</h1><div><p>Some fancy content, entered using WYMeditor</p></div><div><p>Another paragraph</p></div><div><p>Hello</p></div></div></div><div class="column"><div><h1>Another &lt;heading&gt;</h1><div><h2>this is a test</h2></div><div><h2>hello1</h2><div><h3>hello2</h3></div><div><h3>hello3</h3></div><div><h3>hello4</h3></div></div></div></div><div class="column lastcolumn"><div><h1>hello5</h1><div><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div></div></div>
 """
         pres = {'Hello Jane':set([NEWROW]),
                 'Some fancy content, ...': set(),
@@ -350,7 +350,7 @@ class TestExtractPresentation(TestCase):
         # Tests some other boundary conditions e.g. 1 column row,
         # multiple sections within the column.
         html = """
-<div><h1>1</h1><div class="row1col"><div class="col"><div><h2>1.1</h2></div><div><h2>1.2</h2></div></div></div></div>
+<div><h1>1</h1><div class="row columns1"><div class="column firstcolumn lastcolumn"><div><h2>1.1</h2></div><div><h2>1.2</h2></div></div></div></div>
 """
         pres = {'1': set(),
                 '1.1':set([NEWROW]),

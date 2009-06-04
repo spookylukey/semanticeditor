@@ -29,13 +29,57 @@ blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote'])
 headingdef = set(['h1','h2','h3','h4','h5','h6'])
 
 MAXCOLS = 4
-COLUMNCLASS = 'col'
-ROWCLASSRE = re.compile('^row(\d+)col$')
-ROWCLASS = 'row%dcol'
-ROWCLEARCLASS = 'rowclear'
 
 # The number of chars we trim block level elements to.
 BLOCK_LEVEL_TRIM_LENGTH = 20
+
+### Layout CSS class names ###
+
+# This is designed to be user supplyable if necessary
+
+class LayoutDetails(object):
+    ROW_CLASS = "row"
+    COLUMN_CLASS = "column"
+
+    def row_classes(self, column_count):
+        """
+        Returns a list of CSS classes to be used for a row
+        containing column_count columns
+        """
+        return [self.ROW_CLASS, "columns%d" % column_count]
+
+    def column_classes(self, column_num, column_count):
+        """
+        Returns the CSS class to be used for a column
+        which is number column_num out of column_count.
+        """
+        retval = [self.COLUMN_CLASS]
+        if column_num == 1:
+            retval.append("firstcolumn")
+        if column_num == column_count:
+            retval.append("lastcolumn")
+        return retval
+
+    def is_row_class(self, classes):
+        """
+        Returns true if the classes (list of strings) correspond
+        to the classes used for a row.
+        """
+        return self.ROW_CLASS in classes
+
+    def is_column_class(self, classes):
+        """
+        Returns true if the classes (list of strings) correspond
+        to the classes used for a column.
+        """
+        return self.COLUMN_CLASS in classes
+
+    def row_end_html(self):
+        """
+        Returns some raw HTML to be added at the end of a row
+        (e.g. for clearing floats) if necessary.
+        """
+        return "<div class=\"rowclear\" />"
 
 ### Parsing ###
 import htmlentitydefs
@@ -160,6 +204,10 @@ def _find_next_available_name(stem, used_names):
         else:
             i += 1
 
+def get_layout_details_strategy():
+    # TODO - make configurable
+    return LayoutDetails()
+
 def get_structure(root, assert_structure=False):
     """
     Return the heading nodes, as (level, name, tag, node) tuples
@@ -281,6 +329,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     The dictionary has keys which are the names of headings,
     and values which are lists of CSS classes or special commands.
     """
+    layout_strategy = get_layout_details_strategy()
     root = parse(html)
     structure = get_structure(root, assert_structure=True)
     sectionnames = [name for (level, name, tag, node) in structure]
@@ -356,7 +405,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
             newdiv.set("class", " ".join(classes))
 
     # Apply row/column commands
-    _apply_commands(root, section_nodes, styleinfo, structure)
+    _apply_commands(root, section_nodes, styleinfo, structure, layout_strategy=layout_strategy)
 
     # Pretty print
     if pretty_print:
@@ -402,7 +451,7 @@ def _assert_sane_sections(root, structure):
                                "Please move the heading out of the '%(element)s'"
                                " element that contains it." % dict(name=name, element=parent.tag.upper()))
 
-def _apply_commands(root, section_nodes, styleinfo, structure):
+def _apply_commands(root, section_nodes, styleinfo, structure, layout_strategy=None):
     # Rules:
     #  - No nesting of columns within columns
     #  - Within a given row, newcolumn must be applied to
@@ -422,14 +471,15 @@ def _apply_commands(root, section_nodes, styleinfo, structure):
         if NEWROW in styleinfo[name]:
             styleinfo[name].add(NEWCOL)
 
-    _add_rows_and_columns(root, known_nodes, styleinfo)
+    _add_rows_and_columns(root, known_nodes, styleinfo, layout_strategy=layout_strategy)
     # Due to HTML/CSS quirks, we add an empty <div
     # class="rowclear"> after every <div class="row">
     for n in root.getiterator():
-        if n.tag == 'div' and ROWCLASSRE.match(n.get('class','')) is not None:
-            newdiv = ET.Element('div')
-            newdiv.set('class', ROWCLEARCLASS)
-            n.append(newdiv)
+        if n.tag == 'div' and layout_strategy.is_row_class(_get_classes_for_node(n)):
+            rowclear = layout_strategy.row_end_html()
+            if rowclear:
+                elem = ET.fromstring(rowclear)
+                n.append(elem)
 
 def _find_child_with_column_structure(node, known_nodes, styleinfo):
     for n in node.getiterator():
@@ -449,7 +499,7 @@ def _get_next_section_node(nodelist, known_nodes):
             return name
     return None
 
-def _add_rows_and_columns(topnode, known_nodes, styleinfo):
+def _add_rows_and_columns(topnode, known_nodes, styleinfo, layout_strategy=None):
     # This is the most involved and tricky part.  See the comments
     # above the 'format_html' function.
 
@@ -473,7 +523,7 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
         if NEWROW in commands:
             if cur_row_start is not None:
                 # The previous row is finished
-                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + idx_offset, columns)
+                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + idx_offset, columns, layout_strategy=layout_strategy)
                 # We have removed (idx - cur_row_start_idx) elements,
                 # and added one back
                 idx_offset += -(idx - cur_row_start_idx) + 1
@@ -518,26 +568,27 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo):
                                                "but section '%(name)s' has a 'New column' command applied to "
                                                "it.  This would create a nested column structure, which is "
                                                "not allowed." % (dict(name=nextnodename, ptag=cur_row_start[0].tag.upper(), pname=name)))
-                    _add_rows_and_columns(node, known_nodes, styleinfo)
+                    _add_rows_and_columns(node, known_nodes, styleinfo, layout_strategy=layout_strategy)
 
         else:
-            _add_rows_and_columns(node, known_nodes, styleinfo)
+            _add_rows_and_columns(node, known_nodes, styleinfo, layout_strategy=layout_strategy)
 
         # If we are at last node, and are still in a row, there won't
         # be a NEWROW command, so we have to close implicitly,
         # including the current node in the row (hence idx + 1).
         if idx == len(children) - 1 and cur_row_start is not None \
                 and len(columns) > 0:
-                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + 1 + idx_offset, columns)
+                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + 1 + idx_offset, columns, layout_strategy=layout_strategy)
 
 
-def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
+def _apply_row_col_divs(parent, start_idx, stop_idx, columns, layout_strategy):
     # Add the row
+    total_columns = len(columns)
     newrow = wrap_elements_in_tag(parent, start_idx, stop_idx, 'div')
-    newrow.set('class', ROWCLASS % len(columns))
+    newrow.set('class', ' '.join(layout_strategy.row_classes(total_columns)))
 
     # Add the columns
-    if len(columns) > MAXCOLS:
+    if total_columns > MAXCOLS:
         raise TooManyColumns("The maximum number of columns is %(max)d. "
                              "Please move section '%(name)s' into a new "
                              "row." % dict(max=MAXCOLS, name=columns[MAXCOLS][1]))
@@ -555,7 +606,7 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns):
             # last dummy entry
             continue
         newcol = wrap_elements_in_tag(newrow, idx, columns[i - 1][0], 'div')
-        newcol.set('class', COLUMNCLASS)
+        newcol.set('class', ' '.join(layout_strategy.column_classes(total_columns - i + 1, total_columns)))
 
 def preview_html(html, pres):
     root, structure, section_nodes = format_html(html, pres, return_tree=True)
@@ -593,7 +644,7 @@ def extract_presentation(html):
     # there be an entry in the dictionary for sections with no
     # formatting?  This does not affect functionality, but it does
     # affect tests.
-
+    layout_strategy = get_layout_details_strategy()
     root = parse(html)
     structure = get_structure(root)
     pres = {}
@@ -614,11 +665,11 @@ def extract_presentation(html):
             # We only care if section_node is the first child of the div
             if get_index(p, section_node) == 0:
                 classes = _get_classes_for_node(p)
-                if COLUMNCLASS in classes:
+                if layout_strategy.is_column_class(classes):
                     pres[name].add(NEWCOL)
                 gp = get_parent(root, p)
                 if gp is not None and gp.tag == 'div':
-                    if any(ROWCLASSRE.match(c) is not None for c in _get_classes_for_node(gp)) \
+                    if layout_strategy.is_row_class(_get_classes_for_node(gp)) \
                             and get_index(gp, p) == 0:
                         pres[name].add(NEWROW)
                         pres[name].discard(NEWCOL) # for tidiness, not technically necessary
