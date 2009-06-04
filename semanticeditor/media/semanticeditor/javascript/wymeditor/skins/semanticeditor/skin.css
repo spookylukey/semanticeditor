@@ -198,17 +198,14 @@
 	    font-weight: bold;
 	}
 
-	.previewbox .row1col,
-	.previewbox .row2col,
-	.previewbox .row3col,
-	.previewbox .row4col
+	.previewbox .row
 	{
 	    clear: left;
 	}
 
-	.previewbox .row2col,
-	.previewbox .row3col,
-	.previewbox .row4col
+	.previewbox .columns2,
+	.previewbox .columns3,
+	.previewbox .columns4
 	{
 	    /* Can show row structure here if desired
 
@@ -217,21 +214,16 @@
 	    margin-bottom: 3px; */
 	}
 
-	.previewbox .rowclear
-	{
-	    clear: left;
-	}
-
-	.previewbox .row2col .col {
+	.previewbox .columns2 .column {
 	    float: left;
 	    width: 50%;
 	}
 
-	.previewbox .row3col .col {
+	.previewbox .columns3 .column {
 	    float: left;
 	    width: 33%;
 	}
-	.previewbox .row4col .col {
+	.previewbox .columns4 .column {
 	    float: left;
 	    width: 25%;
 	}
