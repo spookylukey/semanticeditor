@@ -594,6 +594,9 @@ def extract_presentation(html):
             if 'class' in si.node.attrib:
                 del si.node.attrib['class']
 
+        # Add custom ids
+        si.node.set('id', si.sect_id)
+
         # Parent/grandparent of section - newcol/newrow
         p = get_parent(root, si.node)
         if p is not None and p.tag == 'div':

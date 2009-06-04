@@ -189,7 +189,7 @@ class TestExtractPresentation(TestCase):
                           'h2_1':set([PC('bar'), PC('baz')]),
                           'p_1':set([PC('whatsit')]),
                           }, pres)
-        self.assertEqual("<h1>Heading 1</h1><h2>Heading 2</h2><p>Some paragraph</p>", html2)
+        self.assertEqual("<h1 id=\"h1_1\">Heading 1</h1><h2 id=\"h2_1\">Heading 2</h2><p id=\"p_1\">Some paragraph</p>", html2)
 
     # Lazy method - assume that combine works and check the round-trip.
     # This only works currently if we 'normalise' the presentation dict.
@@ -216,7 +216,6 @@ class TestExtractPresentation(TestCase):
         combined = format_html(html, presentation)
         pres2, html2 = extract_presentation(combined)
         self.assertEqual(presentation, pres2)
-        self.assertEqual(html, html2)
 
     def test_extract_2(self):
         html = """
