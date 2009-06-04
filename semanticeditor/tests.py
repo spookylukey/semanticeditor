@@ -1,10 +1,20 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation
+from semanticeditor.utils import extract_headings, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure
 from semanticeditor.utils.presentation import PresentationInfo, PresentationClass
 
 PC = PresentationClass
+
+class TestStructure(TestCase):
+    """
+    Tests for how the structure is extracted and labelled
+    """
+    def test_use_existing_sect_ids(self):
+        html = "<h1 id='h1_10'>Hi</h1><h1>There</h1>"
+        structure = get_structure(parse(html))
+        self.assertEqual(structure[0].sect_id, "h1_10")
+        self.assertEqual(structure[1].sect_id, "h1_1")
 
 class TestExtractStructure(TestCase):
     def test_extract_headings(self):
