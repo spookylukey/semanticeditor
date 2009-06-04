@@ -85,8 +85,8 @@ class TestFormat(TestCase):
     def test_add_css_classes(self):
         html = "<h1>Hello <em>you</em></h1><h2>Hi</h2>"
         outh = "<div class=\"myclass\"><h1>Hello <em>you</em></h1><div class=\"c1 c2\"><h2>Hi</h2></div></div>"
-        self.assertEqual(outh, format_html(html, {'Hello you':[PC('myclass')],
-                                                  'Hi':[PC('c1'), PC('c2')]}))
+        self.assertEqual(outh, format_html(html, {'h1_1':[PC('myclass')],
+                                                  'h2_1':[PC('c1'), PC('c2')]}))
 
     def test_sanity_check_sections(self):
         html = "<h1>Hello</h1><blockquote><h2>Hi</h2></blockquote>"
@@ -95,16 +95,16 @@ class TestFormat(TestCase):
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
         outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><div><h1>1</h1><div><p>para 1</p></div></div></div><div class=\"column lastcolumn\"><div><h1>2</h1></div><div><h1>3</h1></div></div></div>"
-        self.assertEqual(outh, format_html(html, {'1':[NEWROW],
-                                                  '2':[NEWCOL]}))
+        self.assertEqual(outh, format_html(html, {'h1_1':[NEWROW],
+                                                  'h1_2':[NEWCOL]}))
 
     def test_max_cols(self):
         html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1>"
-        self.assertRaises(TooManyColumns, format_html, html, {'1':[NEWROW],
-                                                              '2':[NEWCOL],
-                                                              '3':[NEWCOL],
-                                                              '4':[NEWCOL],
-                                                              '5':[NEWCOL]
+        self.assertRaises(TooManyColumns, format_html, html, {'h1_1':[NEWROW],
+                                                              'h1_2':[NEWCOL],
+                                                              'h1_3':[NEWCOL],
+                                                              'h1_4':[NEWCOL],
+                                                              'h1_5':[NEWCOL]
                                                             })
 
     def test_creates_section_divs_2(self):
@@ -170,12 +170,12 @@ class TestFormat(TestCase):
             "<div><h1>4</h1></div>" \
             "</div>" \
             "</div>"
-        self.assertEqual(outh, format_html(html, {'2.1':[NEWROW],
-                                                  '2.2':[NEWCOL],
-                                                  '2.3':[NEWROW],
-                                                  '2.4':[NEWCOL],
-                                                  '3':[NEWROW],
-                                                  '4':[NEWCOL],
+        self.assertEqual(outh, format_html(html, {'h2_1':[NEWROW],
+                                                  'h2_2':[NEWCOL],
+                                                  'h2_3':[NEWROW],
+                                                  'h2_4':[NEWCOL],
+                                                  'h1_3':[NEWROW],
+                                                  'h1_4':[NEWCOL],
                                                   }))
 
     def test_columns_3(self):
@@ -191,13 +191,13 @@ class TestFormat(TestCase):
             "<p>P3</p>" \
             "<h1>4</h1>"
         pres = {
-            '1':[NEWROW],
-            '2':[NEWCOL],
-            '3':[NEWROW],
-            'P1...':[NEWROW],
-            'P2...':[NEWCOL],
-            'P3...':[NEWCOL],
-            '4':[NEWROW],
+            'h1_1':[NEWROW],
+            'h1_2':[NEWCOL],
+            'h1_3':[NEWROW],
+            'p_1':[NEWROW],
+            'p_2':[NEWCOL],
+            'p_3':[NEWCOL],
+            'h1_4':[NEWROW],
             }
 
         outh = \
@@ -238,13 +238,13 @@ class TestFormat(TestCase):
 
         # Check that if we add NEWCOL to '4', we get BadStructure
         pres_bad1 = pres.copy()
-        pres_bad1.update({'4':[NEWCOL]})
+        pres_bad1.update({'h1_4':[NEWCOL]})
         self.assertRaises(BadStructure, format_html, html, pres_bad1)
 
 
     def test_columns_missing_newrow(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
-        self.assertRaises(BadStructure, format_html, html, {'2':[NEWCOL]})
+        self.assertRaises(BadStructure, format_html, html, {'h1_2':[NEWCOL]})
 
     def test_columns_nested_newcols(self):
         """
@@ -252,18 +252,18 @@ class TestFormat(TestCase):
         will generate an error
         """
         html = "<h1>1</h1><h1>2</h1><h2>1.1</h2><h1>3</h1>"
-        self.assertRaises(BadStructure, format_html, html, {'1':[NEWROW],
-                                                            '2':[NEWCOL],
-                                                            '1.1':[NEWCOL]})
+        self.assertRaises(BadStructure, format_html, html, {'h1_1':[NEWROW],
+                                                            'h1_2':[NEWCOL],
+                                                            'h2_1':[NEWCOL]})
     def test_columns_nested_newrow(self):
         """
         Check that attempting to add new row at a different level
         will generate an error
         """
         html = "<h1>1</h1><h1>2</h1><h2>1.1</h2>"
-        self.assertRaises(BadStructure, format_html, html, {'1':[NEWROW],
-                                                            '2':[NEWCOL],
-                                                            '1.1':[NEWROW]})
+        self.assertRaises(BadStructure, format_html, html, {'h1_1':[NEWROW],
+                                                            'h1_2':[NEWCOL],
+                                                            'h2_1':[NEWROW]})
 
 
 class TestElementTreeUtils(TestCase):
@@ -290,9 +290,9 @@ class TestExtractPresentation(TestCase):
     def test_extract_presentation(self):
         html = "<div class=\"foo\"><h1>Heading 1</h1><div class=\"bar baz\"><h2>Heading 2</h2><div class=\"whatsit\"><p>Some paragraph</p></div></div></div>"
         pres, html2 = extract_presentation(html)
-        self.assertEqual({'Heading 1':set([PC('foo')]),
-                          'Heading 2':set([PC('bar'), PC('baz')]),
-                          'Some paragraph...':set([PC('whatsit')]),
+        self.assertEqual({'h1_1':set([PC('foo')]),
+                          'h2_1':set([PC('bar'), PC('baz')]),
+                          'p_1':set([PC('whatsit')]),
                           }, pres)
         self.assertEqual("<h1>Heading 1</h1><h2>Heading 2</h2><p>Some paragraph</p>", html2)
 
@@ -309,14 +309,14 @@ class TestExtractPresentation(TestCase):
             "<h1>3</h1>" \
             "<h1>4</h1>"
 
-        presentation = {'1':set([PC('myclass1')]),
-                        '2':set([]),
-                        '2.1':set([NEWROW]),
-                        '2.2':set([NEWCOL]),
-                        '2.3':set([NEWROW]),
-                        '2.4':set([NEWCOL, PC('myclass2')]),
-                        '3':set([NEWROW]),
-                        '4':set([NEWCOL]),
+        presentation = {'h1_1':set([PC('myclass1')]),
+                        'h1_2':set([]),
+                        'h2_1':set([NEWROW]),
+                        'h2_2':set([NEWCOL]),
+                        'h2_3':set([NEWROW]),
+                        'h2_4':set([NEWCOL, PC('myclass2')]),
+                        'h1_3':set([NEWROW]),
+                        'h1_4':set([NEWCOL]),
                         }
         combined = format_html(html, presentation)
         pres2, html2 = extract_presentation(combined)
@@ -327,20 +327,20 @@ class TestExtractPresentation(TestCase):
         html = """
 <div class="row columns3"><div class="column firstcolumn"><div><h1>Hello Jane</h1><div><p>Some fancy content, entered using WYMeditor</p></div><div><p>Another paragraph</p></div><div><p>Hello</p></div></div></div><div class="column"><div><h1>Another &lt;heading&gt;</h1><div><h2>this is a test</h2></div><div><h2>hello1</h2><div><h3>hello2</h3></div><div><h3>hello3</h3></div><div><h3>hello4</h3></div></div></div></div><div class="column lastcolumn"><div><h1>hello5</h1><div><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div></div></div>
 """
-        pres = {'Hello Jane':set([NEWROW]),
-                'Some fancy content, ...': set(),
-                'Another paragraph...': set(),
-                'Hello...': set(),
-                'Another <heading>':set([NEWCOL]),
-                'this is a test':set(),
-                'hello1':set(),
-                'hello2':set(),
-                'hello3':set(),
-                'hello4':set(),
-                'hello5':set([NEWCOL]),
-                'hello6':set(),
-                'asdasd...': set(),
-                'asdxx...': set(),
+        pres = {'h1_1':set([NEWROW]),
+                'p_1': set(),
+                'p_2': set(),
+                'p_3': set(),
+                'h1_2':set([NEWCOL]),
+                'h2_1':set(),
+                'h2_2':set(),
+                'h3_1':set(),
+                'h3_2':set(),
+                'h3_3':set(),
+                'h1_3':set([NEWCOL]),
+                'h2_3':set(),
+                'p_4': set(),
+                'p_5': set(),
                 }
 
         pres2, html2 = extract_presentation(html)
@@ -352,9 +352,9 @@ class TestExtractPresentation(TestCase):
         html = """
 <div><h1>1</h1><div class="row columns1"><div class="column firstcolumn lastcolumn"><div><h2>1.1</h2></div><div><h2>1.2</h2></div></div></div></div>
 """
-        pres = {'1': set(),
-                '1.1':set([NEWROW]),
-                '1.2': set(),
+        pres = {'h1_1': set(),
+                'h2_1':set([NEWROW]),
+                'h2_2': set(),
                 }
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)

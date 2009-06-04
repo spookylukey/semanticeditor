@@ -204,16 +204,32 @@ def _find_next_available_name(stem, used_names):
         else:
             i += 1
 
+def make_sect_id(tag, used_ids):
+    i = 1
+    while True:
+        attempt = tag + "_" + str(i)
+        if attempt not in used_ids:
+            return attempt
+        else:
+            i += 1
+
 def get_layout_details_strategy():
     # TODO - make configurable
     return LayoutDetails()
 
 def get_structure(root, assert_structure=False):
     """
-    Return the heading nodes, as (level, name, tag, node) tuples
+    Return the structure nodes, as (level, sect_id, name, tag, node) tuples
+
+    level is the 'outline level' in the document i.e. an integer
+    sect_id is a unique ID used for storing presentation information against
+    name is a user presentable name for the section
+    tag is the HTML element e.g. H1
+    node is the ElementTree node
     """
     retval = []
     names = set()
+    sect_ids = set()
     heading_names = set()
     cur_level = 1
     last_heading_num = 0
@@ -221,6 +237,8 @@ def get_structure(root, assert_structure=False):
     for n in root.getiterator():
         if n.tag in blockdef:
             text = flatten(n)
+            sect_id = make_sect_id(n.tag, sect_ids)
+            sect_ids.add(sect_id)
             if n.tag in headingdef:
                 name = text
                 level = int(n.tag[1])
@@ -260,7 +278,7 @@ def get_structure(root, assert_structure=False):
             names.add(name)
             # Level is adjusted so that e.g. H3 is level 1, if it is
             # the first to appear in the document.
-            retval.append((level - first_heading_level + 1, name, n.tag.upper(), n))
+            retval.append((level - first_heading_level + 1, sect_id, name, n.tag.upper(), n))
 
     return retval
 
@@ -274,7 +292,7 @@ def extract_headings(content):
     # Parse
     tree = parse(content)
     structure = get_structure(tree, assert_structure=True)
-    return [(l,name,tag) for (l,name,tag,node) in structure]
+    return [(l,name,tag) for (l,sect_id,name,tag,node) in structure]
 
 # == Formatting HTML ==
 #
@@ -332,8 +350,8 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     layout_strategy = get_layout_details_strategy()
     root = parse(html)
     structure = get_structure(root, assert_structure=True)
-    sectionnames = [name for (level, name, tag, node) in structure]
-    styleinfo = _sanitise_styleinfo(styleinfo, sectionnames)
+    sect_ids = [sect_id for (level, sect_id, name, tag, node) in structure]
+    styleinfo = _sanitise_styleinfo(styleinfo, sect_ids)
 
     # Strip existing divs, otherwise we cannot format properly.  If
     # there are other block level elements that mess things up, we
@@ -343,7 +361,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     _assert_sane_sections(root, structure)
 
     section_nodes = {}
-    headers = [(level,name,tag,h) for (level,name,tag,h) in structure
+    headers = [(level,sect_id,tag,h) for (level,sect_id,name,tag,h) in structure
                if tag.lower() in headingdef]
 
     # Cut the HTML up into sections
@@ -352,7 +370,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # as headers always produce nested structures, and the
     # indexes passed to wrap_elements_in_tag don't need
     # adjusting for the changes we have made.
-    for idx, (level, name, tag, node) in enumerate(headers):
+    for idx, (level, sect_id, tag, node) in enumerate(headers):
         # We can no longer assume that parent = root, because the divs
         # we insert will change that.  However, the divs we insert
         # will keep sub-section headings on the same level.
@@ -364,7 +382,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
         # if a heading, then the 'scope' of each section is from
         # heading node to before the next heading with a level the
         # same or higher
-        nextnodes = [(l,n) for (l,nname,t,n) in headers[idx+1:] if l <= level]
+        nextnodes = [(l,n) for (l,_sect_id,t,n) in headers[idx+1:] if l <= level]
         if not nextnodes:
             # scope extends to end
             # Bug in elementtree - throws AssertionError if we try
@@ -384,22 +402,22 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
                 last_elem = len(parent)
 
         newdiv = wrap_elements_in_tag(parent, first_elem, last_elem, "div")
-        section_nodes[name] = newdiv
+        section_nodes[sect_id] = newdiv
 
     # Now deal with everything else
-    for idx, (level, name, tag, node) in enumerate(structure):
+    for idx, (level, sect_id, name, tag, node) in enumerate(structure):
         if tag.lower() not in headingdef:
             # Normal block level - these simply get a div that wraps
             # them.
             parent = get_parent(root, node)
             thisidx = get_index(parent, node)
             newdiv = wrap_elements_in_tag(parent, thisidx, thisidx + 1, "div")
-            section_nodes[name] = newdiv
+            section_nodes[sect_id] = newdiv
 
     # Apply normal CSS classes.
-    for name, newdiv in section_nodes.items():
+    for sect_id, newdiv in section_nodes.items():
         # Apply css styles
-        classes = [s.name for s in styleinfo[name] if s.prestype == "class"]
+        classes = [s.name for s in styleinfo[sect_id] if s.prestype == "class"]
         classes.sort()
         if classes:
             newdiv.set("class", " ".join(classes))
@@ -425,16 +443,16 @@ def _strip_presentation(tree):
     cleanup(tree, lambda t: t.tag != 'div')
 
 
-def _sanitise_styleinfo(styleinfo, sectionnames):
+def _sanitise_styleinfo(styleinfo, sect_ids):
     # Replace lists with sets
     out = {}
     for k, v in styleinfo.items():
         out[k] = set(v)
 
     # Ensure that all sections have an entry in styleinfo
-    for name in sectionnames:
-        if not name in out:
-            out[name] = set()
+    for sect_id in sect_ids:
+        if not sect_id in out:
+            out[sect_id] = set()
 
     return out
 
@@ -442,7 +460,7 @@ def _assert_sane_sections(root, structure):
     # First, all h1, h2 etc tags will be children of the root.
     # remove_tag should have ensured that, otherwise we will be unable
     # to cut the HTML into sections.
-    for level, name, tag, node in structure:
+    for level, sect_id, name, tag, node in structure:
         parent = get_parent(root, node)
         if tag.lower() in headingdef and parent is not root:
             raise BadStructure("Section heading \"%(name)s\" is not at the top level of "
@@ -459,17 +477,17 @@ def _apply_commands(root, section_nodes, styleinfo, structure, layout_strategy=N
     #  - No columns allowed if newrow has not been started.
 
     # 'structure' has the sections in document order
-    sections = [(level, name, section_nodes[name])
-                for level, name, tag, n in structure]
+    sections = [(level, sect_id, section_nodes[sect_id])
+                for level, sect_id, name, tag, n in structure]
 
     # Inverted dict
     known_nodes = _invert_dict(section_nodes)
 
     # Preprocess:
     #  - insert 'newcolumn' on everything that has 'newrow'
-    for level, name, tag, hn in structure:
-        if NEWROW in styleinfo[name]:
-            styleinfo[name].add(NEWCOL)
+    for level, sect_id, name, tag, hn in structure:
+        if NEWROW in styleinfo[sect_id]:
+            styleinfo[sect_id].add(NEWCOL)
 
     _add_rows_and_columns(root, known_nodes, styleinfo, layout_strategy=layout_strategy)
     # Due to HTML/CSS quirks, we add an empty <div
@@ -485,18 +503,18 @@ def _find_child_with_column_structure(node, known_nodes, styleinfo):
     for n in node.getiterator():
         if n == node:
             continue # ignore root
-        name = known_nodes.get(n)
-        if name is not None:
-            commands = styleinfo[name]
+        sect_id = known_nodes.get(n)
+        if sect_id is not None:
+            commands = styleinfo[sect_id]
             if NEWROW in commands or NEWCOL in commands:
-                return (name, n)
+                return (sect_id, n)
     return None
 
 def _get_next_section_node(nodelist, known_nodes):
     for n in nodelist:
-        name = known_nodes.get(n)
-        if name is not None:
-            return name
+        sect_id = known_nodes.get(n)
+        if sect_id is not None:
+            return sect_id
     return None
 
 def _add_rows_and_columns(topnode, known_nodes, styleinfo, layout_strategy=None):
@@ -513,12 +531,12 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo, layout_strategy=None)
     # out of topnode as we go along.
     idx_offset = 0
     for idx, node in enumerate(children):
-        name = known_nodes.get(node)
-        if name is None:
+        sect_id = known_nodes.get(node)
+        if sect_id is None:
             # If not a section node, it cannot contain sections.
             # or have commands
             continue
-        commands = styleinfo[name]
+        commands = styleinfo[sect_id]
 
         if NEWROW in commands:
             if cur_row_start is not None:
@@ -534,11 +552,12 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo, layout_strategy=None)
 
         if NEWCOL in commands:
             if cur_row_start is None:
+                # TODO - need name, not sect_id
                 raise BadStructure("'New column' command was found on section "
                                    "'%(name)s' without an appropriate 'new row' "
-                                   "command before it. " % dict(name=name))
+                                   "command before it. " % dict(name=sect_id))
             else:
-                columns.append((idx + idx_offset, name))
+                columns.append((idx + idx_offset, sect_id))
 
         if cur_row_start:
             # Rows/columns can only be added within the same level of
@@ -552,22 +571,24 @@ def _add_rows_and_columns(topnode, known_nodes, styleinfo, layout_strategy=None)
             if child is not None:
                 if len(columns) > 1:
                     # Can't do it.
-                    cname, cnode = child
-                    raise BadStructure("Item '%(tag)s: %(name)s' has a 'New row' or 'New column' command applied to "
+                    csect_id, cnode = child
+                    # TODO - names not sect_ids
+                    raise BadStructure("A '%(tag)s' item has a 'New row' or 'New column' command applied to "
                                        "it, but it is a subsection of '%(ptag)s: %(pname)s' which is already in a column. "
                                        "This would create a nested column structure, which is not allowed." %
-                                       dict(tag=cnode[0].tag.upper(), name=cname, ptag=cur_row_start[0].tag.upper(), pname=name))
+                                       dict(tag=cnode[0].tag.upper(), ptag=cur_row_start[0].tag.upper(), pname=sect_id))
                 else:
                     # Allow it, but next section on this level must
                     # not be NEWCOL (unless it is also NEWROW)
-                    nextnodename = _get_next_section_node(children[idx+1:], known_nodes)
-                    if nextnodename is not None:
-                        nextnode_commands = styleinfo[nextnodename]
+                    nextnode_sect_id = _get_next_section_node(children[idx+1:], known_nodes)
+                    if nextnode_sect_id is not None:
+                        nextnode_commands = styleinfo[nextnode_sect_id]
                         if NEWCOL in nextnode_commands and (NEWROW not in nextnode_commands):
+                            # TODO - need name not sect_id
                             raise BadStructure("Item '%(ptag)s: %(pname)s' has a column structure within it "
                                                "but section '%(name)s' has a 'New column' command applied to "
                                                "it.  This would create a nested column structure, which is "
-                                               "not allowed." % (dict(name=nextnodename, ptag=cur_row_start[0].tag.upper(), pname=name)))
+                                               "not allowed." % (dict(name=nextnode_sect_id, ptag=cur_row_start[0].tag.upper(), pname=sect_id)))
                     _add_rows_and_columns(node, known_nodes, styleinfo, layout_strategy=layout_strategy)
 
         else:
@@ -589,6 +610,7 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns, layout_strategy):
 
     # Add the columns
     if total_columns > MAXCOLS:
+        # TODO need name not sect_id
         raise TooManyColumns("The maximum number of columns is %(max)d. "
                              "Please move section '%(name)s' into a new "
                              "row." % dict(max=MAXCOLS, name=columns[MAXCOLS][1]))
@@ -625,6 +647,7 @@ def _create_preview(node, structure, known_nodes):
             _create_preview(n, structure, known_nodes)
         else:
             parent = node
+            # TODO - need to get the name, known_nodes uses sect_id as value
             name = known_nodes.get(parent)
             if name is not None and (n.tag in blockdef):
                 n.set('class', 'structural ' + "tag" + n.tag.lower() )
@@ -648,8 +671,8 @@ def extract_presentation(html):
     root = parse(html)
     structure = get_structure(root)
     pres = {}
-    for level, name, tag, node in structure:
-        pres[name] = set()
+    for level, sect_id, name, tag, node in structure:
+        pres[sect_id] = set()
         section_node = get_parent(root, node)
         if section_node is None or section_node.tag != 'div':
             # Not in standard format, we can't say anything about it
@@ -657,7 +680,7 @@ def extract_presentation(html):
 
         # Section - extract classes
         for c in _get_classes_for_node(section_node):
-            pres[name].add(PresentationClass(c))
+            pres[sect_id].add(PresentationClass(c))
 
         # Parent/grandparent of section - newcol/newrow
         p = get_parent(root, section_node)
@@ -666,13 +689,13 @@ def extract_presentation(html):
             if get_index(p, section_node) == 0:
                 classes = _get_classes_for_node(p)
                 if layout_strategy.is_column_class(classes):
-                    pres[name].add(NEWCOL)
+                    pres[sect_id].add(NEWCOL)
                 gp = get_parent(root, p)
                 if gp is not None and gp.tag == 'div':
                     if layout_strategy.is_row_class(_get_classes_for_node(gp)) \
                             and get_index(gp, p) == 0:
-                        pres[name].add(NEWROW)
-                        pres[name].discard(NEWCOL) # for tidiness, not technically necessary
+                        pres[sect_id].add(NEWROW)
+                        pres[sect_id].discard(NEWCOL) # for tidiness, not technically necessary
 
     _strip_presentation(root)
     out_html = _html_extract(root)
