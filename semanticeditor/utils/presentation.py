@@ -451,7 +451,7 @@ def _html_extract(root):
     return ET.tostring(root).replace('<html>','').replace('</html>','')
 
 def _strip_presentation(tree):
-    cleanup(tree, lambda t: t.tag != 'div')
+    cleanup(tree, lambda t: t.tag == 'div')
 
 
 def _sanitise_styleinfo(styleinfo, sect_ids):
