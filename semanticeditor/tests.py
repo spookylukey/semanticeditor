@@ -61,6 +61,12 @@ class TestExtractStructure(TestCase):
         self.assertEqual(structure[0].sect_id, "h1_10")
         self.assertEqual(structure[1].sect_id, "h1_1")
 
+    def test_dont_use_duplicate_existing_sect_id(self):
+        html = "<h1 id='h1_10'>Hi</h1><h1 id='h1_10'>There</h1>"
+        structure = get_structure(parse(html))
+        self.assertEqual(structure[0].sect_id, "h1_10")
+        self.assertEqual(structure[1].sect_id, "h1_1")
+
 class TestPresentationInfo(TestCase):
     def test_equality(self):
         p1 = PresentationInfo(prestype="command", name="foo", verbose_name="blah")

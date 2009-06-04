@@ -243,7 +243,7 @@ def get_structure(root, assert_structure=False):
         if n.tag in blockdef:
             text = flatten(n)
             sect_id = n.get('id', '')
-            if sect_id == '' or not sect_id.startswith(n.tag):
+            if sect_id == '' or not sect_id.startswith(n.tag) or sect_id in sect_ids:
                 sect_id = make_sect_id(n.tag, sect_ids)
             sect_ids.add(sect_id)
             if n.tag in headingdef:
