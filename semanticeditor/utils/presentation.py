@@ -79,7 +79,7 @@ class LayoutDetails(object):
         Returns some raw HTML to be added at the end of a row
         (e.g. for clearing floats) if necessary.
         """
-        return "<div class=\"rowclear\" />"
+        return ""
 
 ### Parsing ###
 import htmlentitydefs

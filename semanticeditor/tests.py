@@ -94,7 +94,7 @@ class TestFormat(TestCase):
 
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
-        outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><div><h1>1</h1><div><p>para 1</p></div></div></div><div class=\"column lastcolumn\"><div><h1>2</h1></div><div><h1>3</h1></div></div><div class=\"rowclear\" /></div>"
+        outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><div><h1>1</h1><div><p>para 1</p></div></div></div><div class=\"column lastcolumn\"><div><h1>2</h1></div><div><h1>3</h1></div></div></div>"
         self.assertEqual(outh, format_html(html, {'1':[NEWROW],
                                                   '2':[NEWCOL]}))
 
@@ -152,7 +152,7 @@ class TestFormat(TestCase):
             "<div class=\"column lastcolumn\">" \
             "<div><h2>2.2</h2></div>" \
             "</div>" \
-            "<div class=\"rowclear\" /></div>" \
+            "</div>" \
             "<div class=\"row columns2\">" \
             "<div class=\"column firstcolumn\">" \
             "<div><h2>2.3</h2></div>" \
@@ -160,7 +160,7 @@ class TestFormat(TestCase):
             "<div class=\"column lastcolumn\">" \
             "<div><h2>2.4</h2></div>" \
             "</div>" \
-            "<div class=\"rowclear\" /></div>" \
+            "</div>" \
             "</div>" \
             "<div class=\"row columns2\">" \
             "<div class=\"column firstcolumn\">" \
@@ -169,7 +169,7 @@ class TestFormat(TestCase):
             "<div class=\"column lastcolumn\">" \
             "<div><h1>4</h1></div>" \
             "</div>" \
-            "<div class=\"rowclear\" /></div>"
+            "</div>"
         self.assertEqual(outh, format_html(html, {'2.1':[NEWROW],
                                                   '2.2':[NEWCOL],
                                                   '2.3':[NEWROW],
@@ -208,7 +208,7 @@ class TestFormat(TestCase):
               "<div class=\"column lastcolumn\">" \
                 "<div><h1>2</h1></div>" \
               "</div>" \
-            "<div class=\"rowclear\" /></div>" \
+            "</div>" \
             "<div class=\"row columns1\">" \
               "<div class=\"column firstcolumn lastcolumn\">" \
                 "<div><h1>3</h1>" \
@@ -222,15 +222,15 @@ class TestFormat(TestCase):
                     "<div class=\"column lastcolumn\">" \
                       "<div><p>P3</p></div>" \
                     "</div>" \
-                  "<div class=\"rowclear\" /></div>" \
+                  "</div>" \
                 "</div>" \
               "</div>" \
-            "<div class=\"rowclear\" /></div>" \
+            "</div>" \
             "<div class=\"row columns1\">" \
               "<div class=\"column firstcolumn lastcolumn\">" \
                 "<div><h1>4</h1></div>" \
               "</div>" \
-            "<div class=\"rowclear\" /></div>"
+            "</div>"
 
         actualhtml = format_html(html, pres)
 
