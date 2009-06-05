@@ -124,7 +124,24 @@ class TestFormat(TestCase):
         self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
                                                   'newcol_h1_2':[NEWCOL]}))
 
+    def test_columns_with_double_width(self):
+        html = "<h1>1</h1><p>para 1</p><h1>2</h1>"
+        outh = "<div class=\"row columns3\"><div class=\"column firstcolumn doublewidth\"><h1>1</h1><p>para 1</p></div><div class=\"column lastcolumn\"><h1>2</h1></div></div>"
+        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
+                                                  'newcol_h1_1':[NEWCOL, PC('doublewidth', column_equiv=2)],
+                                                  'newcol_h1_2':[NEWCOL]}))
+
+    def test_columns_with_double_width_2(self):
+        html = "<h1>1</h1><p>para 1</p><h1>2</h1>"
+        outh = "<div class=\"row columns3\"><div class=\"column firstcolumn\"><h1>1</h1><p>para 1</p></div><div class=\"column lastcolumn doublewidth\"><h1>2</h1></div></div>"
+        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
+                                                  'newcol_h1_1':[NEWCOL],
+                                                  'newcol_h1_2':[NEWCOL, PC('doublewidth', column_equiv=2)]}))
+
     def test_max_cols(self):
+        """
+        Check we can't exceed max cols
+        """
         html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1>"
         self.assertRaises(TooManyColumns, format_html, html, {'newrow_h1_1':[NEWROW],
                                                               'newcol_h1_2':[NEWCOL],
@@ -132,6 +149,18 @@ class TestFormat(TestCase):
                                                               'newcol_h1_4':[NEWCOL],
                                                               'newcol_h1_5':[NEWCOL]
                                                             })
+    def test_max_cols_2(self):
+        """
+        Check we can't exceed max cols with double width cols
+        """
+        html = "<h1>1</h1><h1>2</h1><h1>3</h1>"
+        self.assertRaises(TooManyColumns, format_html, html, {'newrow_h1_1':[NEWROW],
+                                                              'newcol_h1_1':[NEWCOL, PC('doublewidth', column_equiv=2)],
+                                                              'newcol_h1_2':[NEWCOL, PC('doublewidth', column_equiv=2)],
+                                                              'newcol_h1_3':[NEWCOL],
+
+                                                            })
+
 
     def test_columns_2(self):
         html = \

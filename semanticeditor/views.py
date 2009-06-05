@@ -121,19 +121,31 @@ def PI_to_dict(pi):
     """
     return pi.__dict__
 
-def dict_to_PI(d):
+def dict_to_PI(d, classes):
     """
-    Convert a dictionary to a PresentationInfo
+    Convert a dictionary to a PresentationInfo,
+    using a pre-fetched dictionary of CssClass objects
     """
-    return PresentationInfo(prestype=d['prestype'], name=d['name'])
+    if d['prestype'] == 'command':
+        return PresentationInfo(prestype=d['prestype'], name=d['name'])
+    else:
+        c = classes.get(d['name'])
+        if c is None:
+            return None
+        else:
+            return css_class_to_presentation_class(c)
+
+def css_class_to_presentation_class(c):
+    return PresentationClass(c.name,
+                             verbose_name=c.verbose_name,
+                             description=c.description,
+                             allowed_elements=c.allowed_elements.lower().split(' '),
+                             column_equiv=c.column_equiv)
 
 @json_view
 def retrieve_styles(request):
-    retval = [PresentationClass(c.name,
-                                verbose_name=c.verbose_name,
-                                description=c.description,
-                                allowed_elements=c.allowed_elements.lower().split(' '))
-              for c in CssClass.objects.all().order_by('verbose_name')]
+    retval = map(css_class_to_presentation_class,
+                 CssClass.objects.all().order_by('verbose_name'))
     return success(map(PI_to_dict,retval))
 
 @json_view
@@ -158,11 +170,21 @@ def separate_presentation(request):
     return graceful_errors(AllUserErrors, _handled)
 
 def _convert_pres(pres):
-    # Convert dictionaries into PresentationInfo classes
+    # Convert dictionaries into PresentationInfo classes. We need actual
+    # CssClass instances in order to be able to restore column_equiv and
+    # allowed_elements info
+    classes = dict((c.name, c) for c in CssClass.objects.all())
+    retval = {}
     for k, v in pres.items():
         # v is list of PI dicts
+        newlist = []
         for i, item in enumerate(v):
-            v[i] = dict_to_PI(item)
+            pi = dict_to_PI(item, classes)
+            # if CssClass was removed from DB, pi can be None
+            if pi is not None:
+                newlist.append(pi)
+        retval[k]= newlist
+    return retval
 
 @json_view
 def combine_presentation(request):
@@ -173,7 +195,7 @@ def combine_presentation(request):
     html = request.POST.get('html', '').encode("utf-8")
     presentation = request.POST.get('presentation', '{}')
     presentation = simplejson.loads(presentation)
-    _convert_pres(presentation)
+    presentation = _convert_pres(presentation)
 
     return graceful_errors(AllUserErrors, lambda: dict(html=format_html(html, presentation, pretty_print=True)))
 
@@ -182,6 +204,6 @@ def preview(request):
     html = request.POST.get('html', '').encode("utf-8")
     presentation = request.POST.get('presentation', '{}')
     presentation = simplejson.loads(presentation)
-    _convert_pres(presentation)
+    presentation = _convert_pres(presentation)
 
     return graceful_errors(AllUserErrors, lambda: dict(html=preview_html(html, presentation)))

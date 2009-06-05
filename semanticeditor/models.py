@@ -16,6 +16,12 @@ class CssClass(models.Model):
                                         "it can be applied to layout rows or columns ",
                                         default="h1 h2 h3 h4 h5 h6 p blockquote ul li row column")
 
+    column_equiv = models.IntegerField("Column count equivalent", null=True, blank=True,
+                                       help_text="For classes designed to be applied to "
+                                       "columns only, this is the number of columns this "
+                                       "be considered as equivalent too.  This can be "
+                                       "useful for generating double width columns etc. "
+                                       "within a column layout.")
     def __unicode__(self):
         return self.verbose_name
 

@@ -46,28 +46,30 @@ class LayoutDetails(object):
 
     # Public interface:
     max_columns = 4
-    def row_classes(self, column_count):
+    def row_classes(self, logical_column_count, actual_column_count):
         """
         Returns a list of CSS classes to be used for a row containing
-        column_count columns
+        logical_column_count 'logical' columns, actual_column_count 'actual'
+        columns.  'actual' columns are present in the HTML structure, but some
+        might be e.g. double width, so are counted as two logical columns.
         """
         retval = [self.ROW_CLASS]
-        if column_count > 1:
-            retval.append("columns%d" % column_count)
+        if actual_column_count > 1:
+            retval.append("columns%d" % logical_column_count)
         return retval
 
-    def column_classes(self, column_num, column_count):
+    def column_classes(self, logical_column_num, actual_column_num, logical_column_count, actual_column_count):
         """
         Returns a list of CSS classes to be used for a column which is number
         column_num out of column_count.
         """
-        if column_count == 1:
+        if actual_column_count == 1:
             # No classes
             return []
         retval = [self.COLUMN_CLASS]
-        if column_num == 1:
+        if actual_column_num == 1:
             retval.append("firstcolumn")
-        if column_num == column_count:
+        if actual_column_num == actual_column_count:
             retval.append("lastcolumn")
         return retval
 
@@ -130,7 +132,7 @@ class PresentationInfo(object):
     """
     Encapsulates a piece of presentation information.
     """
-    def __init__(self, prestype=None, name=None, verbose_name="", description="", allowed_elements=None):
+    def __init__(self, prestype=None, name=None, verbose_name="", description="", allowed_elements=None, column_equiv=None):
         self.prestype = prestype
         self.name = name
         # verbose_name, description and allowed_elements are additional pieces
@@ -142,6 +144,7 @@ class PresentationInfo(object):
         if allowed_elements is None:
             allowed_elements = []
         self.allowed_elements = allowed_elements
+        self.column_equiv = column_equiv
 
     def __eq__(self, other):
         return self.prestype == other.prestype and self.name == other.name
@@ -152,13 +155,14 @@ class PresentationInfo(object):
     def __repr__(self):
         return "PresentationInfo(prestype=\"%s\", name=\"%s\")" % (self.prestype, self.name)
 
-def PresentationClass(name, verbose_name="", description="", allowed_elements=None):
+def PresentationClass(name, verbose_name="", description="", allowed_elements=None, column_equiv=None):
     """
     Shortcut for creating CSS classes
     """
     return PresentationInfo(prestype="class",  name=name,
                             verbose_name=verbose_name, description=description,
-                            allowed_elements=allowed_elements)
+                            allowed_elements=allowed_elements,
+                            column_equiv=column_equiv)
 
 def PresentationCommand(name, verbose_name="", description=""):
     """
@@ -404,12 +408,31 @@ def _sanitise_styleinfo(styleinfo, sect_ids):
 
 #### Layout related ####
 
+# Some dumb container structures
 Layout = struct("Layout", (object,), dict(rows=list))
-LayoutRow = struct("LayoutRow", (object,), dict(columns=list, styles=list))
-LayoutColumn = struct("LayoutColumn", (object,), dict(nodes=list, styles=list))
+LayoutRow = struct("LayoutRow", (object,), dict(columns=list, presinfo=list))
+LayoutColumn = struct("LayoutColumn", (object,), dict(nodes=list, presinfo=list))
 
 _NEWROW_PREFIX = 'newrow_'
 _NEWCOL_PREFIX = 'newcol_'
+
+def _layout_column_width(col):
+    """
+    Returns the logical column width of a column
+    """
+    column_equivs = [pi.column_equiv for pi in col.presinfo if pi.column_equiv is not None]
+    if len(column_equivs) > 0:
+        # assume user has not done something silly like put
+        # *2* column_equiv classes on a column
+        return column_equivs[0]
+    else:
+        return 1
+
+def _layout_column_count(row):
+    """
+    Get the number of logical columns in a LayoutRow
+    """
+    return sum(_layout_column_width(c) for c in row.columns)
 
 def _find_layout_commands(root, structure, styleinfo):
     # Layout commands are not stored against normal sections,
@@ -477,7 +500,7 @@ def _create_layout(root, styleinfo, structure):
                if row.columns:
                    layout.rows.append(row)
                # Start new row with styles
-               row = LayoutRow(styles=_get_classes_from_presinfo(row_presinfo))
+               row = LayoutRow(presinfo=row_presinfo)
                # Start new col
                col = LayoutColumn()
 
@@ -489,7 +512,7 @@ def _create_layout(root, styleinfo, structure):
                if col.nodes:
                    row.columns.append(col)
                # Start new col with styles
-               col = LayoutColumn(styles=_get_classes_from_presinfo(col_presinfo))
+               col = LayoutColumn(presinfo=col_presinfo)
 
         # Now deal with content itself
         col.nodes.append(node)
@@ -505,30 +528,43 @@ def _check_layout(layout, structure, layout_strategy):
     sect_dict = dict((si.node, si) for si in structure)
     max_cols = layout_strategy.max_columns
     for row in layout.rows:
-        if len(row.columns) > max_cols:
-            # Look at first node in first bad column
-            node = row.columns[max_cols - 1].nodes[0]
+        if _layout_column_count(row) > max_cols:
+            # Because columns can be multiple width, we can't easily work out
+            # which column needs to be moved, so just refer user to whole
+            # section.
+            node = row.columns[0].nodes[0]
             sect = sect_dict[node]
             raise TooManyColumns("The maximum number of columns is %(max)d. "
-                                 "Please move section '%(name)s' into a new "
-                                 "row." % dict(max=max_cols, name=sect.name))
+                                 "Please adjust columns in section '%(name)s'." %
+                                 dict(max=max_cols, name=sect.name))
 
 def _render_layout(layout, layout_strategy):
     root = ET.fromstring("<html></html>")
     for row in layout.rows:
-        column_count = len(row.columns)
+        # Row
+        logical_column_count = _layout_column_count(row)
+        actual_column_count = len(row.columns)
         rowdiv = ET.Element('div')
-        classes = layout_strategy.row_classes(column_count) + row.styles
+        classes = layout_strategy.row_classes(logical_column_count, actual_column_count) + _get_classes_from_presinfo(row.presinfo)
         if classes:
             rowdiv.set('class', ' '.join(classes))
+
+        # Columns
+        logical_column_num = 1
         for i, col in  enumerate(row.columns):
             coldiv = ET.Element('div')
-            classes = layout_strategy.column_classes(i + 1, column_count) + col.styles
+            classes = layout_strategy.column_classes(logical_column_num,
+                                                     i + 1,
+                                                     logical_column_count,
+                                                     actual_column_count) + \
+                    _get_classes_from_presinfo(col.presinfo)
             if classes:
                 coldiv.set('class', ' '.join(classes))
             for n in col.nodes:
                 coldiv.append(n)
             rowdiv.append(coldiv)
+
+            logical_column_num += _layout_column_width(col)
         root.append(rowdiv)
     return root
 
@@ -536,7 +572,6 @@ def preview_html(html, pres):
     root, structure = format_html(html, pres, return_tree=True)
     known_nodes = dict((si.node, si) for si in structure)
     _create_preview(root, structure, known_nodes)
-    print _html_extract(root)
     return _html_extract(root)
 
 def _create_preview(node, structure, known_nodes):
