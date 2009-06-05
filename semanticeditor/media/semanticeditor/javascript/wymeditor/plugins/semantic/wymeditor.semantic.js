@@ -54,7 +54,7 @@ PresentationControls.prototype.setup_controls = function(container) {
     container.after(
 	"<div class=\"prescontrol\">" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Structure:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
-	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\" checked=\"checked\"> Headings only</label></div></td>" +
+	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div></td>" +
 	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div></div></td></tr></table>" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>" +
 	    "<td><input type=\"submit\" value=\"Refresh structure\" id=\"" + refresh_id + "\" /></td>" +
