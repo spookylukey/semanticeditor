@@ -130,15 +130,18 @@ class PresentationInfo(object):
     """
     Encapsulates a piece of presentation information.
     """
-    def __init__(self, prestype=None, name=None, verbose_name="", description=""):
+    def __init__(self, prestype=None, name=None, verbose_name="", description="", allowed_elements=None):
         self.prestype = prestype
         self.name = name
-        # The verbose_name and description are additional pieces of
-        # information that are only needed when the client is
-        # requesting a list of styles.  In other sitations these
-        # objects may not have these attributes filled in.
+        # verbose_name, description and allowed_elements are additional pieces
+        # of information that are only needed when the client is requesting a
+        # list of styles.  In other sitations these objects may not have these
+        # attributes filled in.
         self.verbose_name = verbose_name
         self.description = description
+        if allowed_elements is None:
+            allowed_elements = []
+        self.allowed_elements = allowed_elements
 
     def __eq__(self, other):
         return self.prestype == other.prestype and self.name == other.name
@@ -149,12 +152,13 @@ class PresentationInfo(object):
     def __repr__(self):
         return "PresentationInfo(prestype=\"%s\", name=\"%s\")" % (self.prestype, self.name)
 
-def PresentationClass(name, verbose_name="", description=""):
+def PresentationClass(name, verbose_name="", description="", allowed_elements=None):
     """
     Shortcut for creating CSS classes
     """
     return PresentationInfo(prestype="class",  name=name,
-                            verbose_name=verbose_name, description=description)
+                            verbose_name=verbose_name, description=description,
+                            allowed_elements=allowed_elements)
 
 def PresentationCommand(name, verbose_name="", description=""):
     """
@@ -182,7 +186,8 @@ a 'New column' command.</p>
 need to apply a 'New row' command to that section, creating a row with
 just one column in it.</p>
 
-""")
+"""
+                             )
 
 NEWCOL = PresentationCommand('newcol',
                              verbose_name = "New column",

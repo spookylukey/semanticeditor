@@ -130,9 +130,10 @@ def dict_to_PI(d):
 @json_view
 def retrieve_styles(request):
     retval = [PresentationClass(c.name,
-                              verbose_name=c.verbose_name,
-                              description=c.description)
-            for c in CssClass.objects.all().order_by('verbose_name')]
+                                verbose_name=c.verbose_name,
+                                description=c.description,
+                                allowed_elements=c.allowed_elements.lower().split(' '))
+              for c in CssClass.objects.all().order_by('verbose_name')]
     return success(map(PI_to_dict,retval))
 
 @json_view

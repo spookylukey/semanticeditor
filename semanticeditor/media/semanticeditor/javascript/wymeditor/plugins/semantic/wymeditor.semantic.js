@@ -203,6 +203,7 @@ PresentationControls.prototype.build_optsbox = function() {
 		help = "(No help available)";
 	    }
 	    help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
+            help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
 	    // Assign an id, because orbitaltooltip
             // doesn't work without it.
 	    $(this).attr('id', 'id_optsbox_label_' + i);
@@ -246,7 +247,8 @@ PresentationControls.prototype.update_optsbox = function() {
     // Currently selected heading?
     var headingIndex = self.get_heading_index();
     if (headingIndex == null) return;
-    var sect_id = this.active_heading_list[headingIndex].sect_id;
+    var sect = this.active_heading_list[headingIndex];
+    var sect_id = sect.sect_id;
     var styles = this.presentation_info[sect_id];
     if (styles == null) {
 	styles = new Array();
@@ -256,8 +258,13 @@ PresentationControls.prototype.update_optsbox = function() {
 	function(i, input) {
 	    // Set state
 	    var val = input.value;
+            if (jQuery.inArray(sect.tag.toLowerCase(), self.available_styles[i].allowed_elements) != -1) {
+                input.disabled = false;
+            } else {
+                input.disabled = true;
+            }
 	    jQuery.each(styles,
-		function (i, style) {
+		function (j, style) {
 		    if (flattenPresStyle(style) == val) {
 			input.checked = true;
 		    }
@@ -274,7 +281,6 @@ PresentationControls.prototype.update_optsbox = function() {
 				    self.headingscontrol.get(0).focus();
 			 });
 	});
-    this.optsbox.find("input").removeAttr("disabled");
 };
 
 PresentationControls.prototype.show_preview = function() {
@@ -347,7 +353,7 @@ PresentationControls.prototype.insert_row = function() {
 PresentationControls.prototype.insert_row_command = function(arr, i, sect_id) {
     arr.splice(i, 0, {level:1,
                       name:"New row",
-                      tag:"newrow",
+                      tag:"row",
                       sect_id:"newrow_" + sect_id
                      });
 };
@@ -386,7 +392,7 @@ PresentationControls.prototype.insert_column = function() {
 PresentationControls.prototype.insert_column_command = function(arr, i, sect_id) {
     arr.splice(i, 0, {level:1,
                       name:"New column",
-                      tag:"newcol",
+                      tag:"column",
                       sect_id:"newcol_" + sect_id
                      });
 };
@@ -477,10 +483,10 @@ PresentationControls.prototype.add_layout_to_headings = function() {
     if (this.stored_headings.length > 0) {
         // If after this process we don't have newrow and newcol commands
         // at the beginning of the heading list, we add them.
-        if (this.stored_headings[0].tag != 'newrow') {
+        if (this.stored_headings[0].tag != 'row') {
             this.insert_row_command(this.stored_headings, 0, first_sect_id);
         }
-        if (this.stored_headings[1].tag != 'newcol') {
+        if (this.stored_headings[1].tag != 'column') {
             this.insert_column_command(this.stored_headings, 1, first_sect_id);
         }
     }
@@ -510,7 +516,7 @@ PresentationControls.prototype.update_headingbox = function() {
 		    var spaces = (new Array((item.level - 1)*3)).join("&nbsp;");
                     var caption = "";
                     var tag = item.tag.toLowerCase();
-                    if (tag == 'newrow' || tag == 'newcol') {
+                    if (tag == 'row' || tag == 'column') {
                         caption = "[" + escapeHtml(item.name) + "]";
                     } else {
                         caption = tag + ": " + escapeHtml(item.name);

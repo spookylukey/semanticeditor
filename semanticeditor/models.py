@@ -10,6 +10,11 @@ class CssClass(models.Model):
                                    "when the user hovers over the name in the "
                                    "list of styles.  The data will be interpreted "
                                    "as raw HTML, so it can include an example.")
+    allowed_elements = models.CharField("Allowed HTML elements", max_length=255,
+                                        help_text="A space separated list of HTML "
+                                        "element names.  Use 'row' or 'column' to indicate "
+                                        "it can be applied to layout rows or columns ",
+                                        default="h1 h2 h3 h4 h5 h6 p blockquote ul li row column")
 
     def __unicode__(self):
         return self.verbose_name
