@@ -37,6 +37,10 @@ BLOCK_LEVEL_TRIM_LENGTH = 20
 # This is designed to be user supply-able if necessary
 
 class LayoutDetails(object):
+    """
+    Strategy object used for defining the details of CSS/HTML
+    to be used when rendering a Layout.
+    """
     ROW_CLASS = "row"
     COLUMN_CLASS = "column"
 
@@ -44,8 +48,8 @@ class LayoutDetails(object):
     max_columns = 4
     def row_classes(self, column_count):
         """
-        Returns a list of CSS classes to be used for a row
-        containing column_count columns
+        Returns a list of CSS classes to be used for a row containing
+        column_count columns
         """
         retval = [self.ROW_CLASS]
         if column_count > 1:
@@ -54,8 +58,8 @@ class LayoutDetails(object):
 
     def column_classes(self, column_num, column_count):
         """
-        Returns the CSS class to be used for a column
-        which is number column_num out of column_count.
+        Returns a list of CSS classes to be used for a column which is number
+        column_num out of column_count.
         """
         if column_count == 1:
             # No classes
@@ -67,19 +71,19 @@ class LayoutDetails(object):
             retval.append("lastcolumn")
         return retval
 
-    def is_row_class(self, classes):
+    def is_row_class(self, class_):
         """
-        Returns true if the classes (list of strings) correspond
-        to the classes used for a row.
+        Returns true if the class (a string) corresponds
+        to a CSS class used for a row.
         """
-        return self.ROW_CLASS in classes
+        return class_ == self.ROW_CLASS or re.match(r'^columns\d+$', class_)
 
-    def is_column_class(self, classes):
+    def is_column_class(self, class_):
         """
-        Returns true if the classes (list of strings) correspond
-        to the classes used for a column.
+        Returns true if the class (a string) corresponds
+        to a CSS class used for a column.
         """
-        return self.COLUMN_CLASS in classes
+        return class_ == self.COLUMN_CLASS or re.match(r'^(first|last)column$', class_)
 
     def row_end_html(self):
         """
@@ -282,13 +286,15 @@ def get_structure(root, assert_structure=False):
                 name = name + "..."
                 if name in names:
                     name = _find_next_available_name(name, names)
+                names.add(name)
+
                 # Paragraphs etc within a section should be indented
                 # one further than the heading above them.
                 if len(heading_names) == 0:
                     level = 1
                 else:
                     level = cur_level + 1
-            names.add(name)
+
             # Level is adjusted so that e.g. H3 is level 1, if it is
             # the first to appear in the document.
             retval.append(StructureItem(level=level - first_heading_level + 1,
@@ -298,6 +304,10 @@ def get_structure(root, assert_structure=False):
                                         node=n))
 
     return retval
+
+def _get_classes_from_presinfo(presinfos):
+    # Extract a list of classes from a list of PresentationInfo objects
+    return [pi.name for pi in presinfos if pi.prestype == "class"]
 
 ## Main functions and sub functions
 
@@ -311,15 +321,10 @@ def extract_structure(content):
     structure = get_structure(tree, assert_structure=True)
     return structure
 
-# == Formatting HTML ==
-#
-# The user is allowed to assign presentation to different sections and block
-# elements, including use of 'new row' and 'new column' commands.
-
 def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     """
     Formats the XHTML given using a dictionary of style information.
-    The dictionary has keys which are the names of headings,
+    The dictionary has keys which are the ids of sections,
     and values which are lists of CSS classes or special commands.
     """
     layout_strategy = get_layout_details_strategy()
@@ -338,17 +343,22 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # Apply normal CSS classes.
     for si in structure:
         # Apply css styles
-        classes = [s.name for s in styleinfo[si.sect_id] if s.prestype == "class"]
+        classes = _get_classes_from_presinfo(styleinfo[si.sect_id])
         classes.sort()
         if classes:
             si.node.set("class", " ".join(classes))
 
-    # Apply row/column commands
-    _apply_commands(root, styleinfo, structure, layout_strategy=layout_strategy)
+    # Create layout from row/column commands
+    layout = _create_layout(root, styleinfo, structure)
+    _check_layout(layout, structure, layout_strategy)
+    # Create new ET tree from layout.  The individual nodes that belong to
+    # 'root' are not altered, but just added to a new tree.  This means that the
+    # information in 'structure' does not need updating.
+    rendered = _render_layout(layout, layout_strategy)
 
     # Pretty print
     if pretty_print:
-        indent(root)
+        indent(rendered)
 
     # Remove the temporary IDs we may have added when splitting the HTML
     # into content and presentation.  We don't do this before this point,
@@ -358,9 +368,9 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
             del si.node.attrib['id']
 
     if return_tree:
-        return (root, structure, section_nodes)
+        return (rendered, structure, section_nodes)
     else:
-        return _html_extract(root)
+        return _html_extract(rendered)
 
 def _html_extract(root):
     if len(root) == 0 and root.text is None and root.tail is None:
@@ -397,181 +407,126 @@ def _assert_sane_sections(root, structure):
                                "Please move the heading out of the '%(element)s'"
                                " element that contains it." % dict(name=si.name, element=parent.tag.upper()))
 
-def _apply_commands(root, styleinfo, structure, layout_strategy=None):
-    # Rules:
-    #  - No nesting of columns within columns
-    #  - Within a given row, newcolumn must be applied to
-    #    divs that are at the same level.
-    #  - No columns allowed if newrow has not been started.
+#### Layout related ####
 
-    # dict from node -> sect_id
-    known_nodes = dict((si.node, si.sect_id) for si in structure)
+Layout = struct("Layout", (object,), dict(rows=list))
+LayoutRow = struct("LayoutRow", (object,), dict(columns=list, styles=list))
+LayoutColumn = struct("LayoutColumn", (object,), dict(nodes=list, styles=list))
 
-    # Preprocess:
-    #  - insert 'newcolumn' on everything that has 'newrow'
-    for si in structure:
-        if NEWROW in styleinfo[si.sect_id]:
-            styleinfo[si.sect_id].add(NEWCOL)
+_NEWROW_PREFIX = 'newrow_'
+_NEWCOL_PREFIX = 'newcol_'
 
-    _add_rows_and_columns(root, known_nodes, styleinfo, layout_strategy=layout_strategy)
-    # Due to HTML/CSS quirks, we add an empty <div
-    # class="rowclear"> after every <div class="row">
-    for n in root.getiterator():
-        if n.tag == 'div' and layout_strategy.is_row_class(_get_classes_for_node(n)):
-            rowclear = layout_strategy.row_end_html()
-            if rowclear:
-                elem = ET.fromstring(rowclear)
-                n.append(elem)
+def _find_layout_commands(structure, styleinfo):
+    # Layout commands are not stored against normal sections,
+    # but have their own entry in the section list, using an id
+    # of 'newrow_' or 'newcol_' + id of block they preceed.
 
-def _find_child_with_column_structure(node, known_nodes, styleinfo):
-    for n in node.getiterator():
-        if n == node:
-            continue # ignore root
-        sect_id = known_nodes.get(n)
-        if sect_id is not None:
-            commands = styleinfo[sect_id]
-            if NEWROW in commands or NEWCOL in commands:
-                return (sect_id, n)
-    return None
+    sect_dict = dict((s.sect_id, s) for s in structure)
+    row_info = {} # key = sect_id, val = [PresentationInfo]
+    col_info = {} # key = sect_id, val = [PresentationInfo]
+    for sect_id, presinfo in styleinfo.items():
+        if sect_id.startswith(_NEWROW_PREFIX):
+            real_sect_id = sect_id[len(_NEWROW_PREFIX):]
+            sect = sect_dict.get(real_sect_id)
+            if sect is not None:
+                row_info[real_sect_id] = presinfo
 
-def _get_next_section_node(nodelist, known_nodes):
-    for n in nodelist:
-        sect_id = known_nodes.get(n)
-        if sect_id is not None:
-            return sect_id
-    return None
+        if sect_id.startswith(_NEWCOL_PREFIX):
+            real_sect_id = sect_id[len(_NEWCOL_PREFIX):]
+            sect = sect_dict.get(real_sect_id)
+            if sect is not None:
+                col_info[real_sect_id] = presinfo
 
-# TODO - many of assumptions made in this function are now wrong, and requirements
-# have changed, this is in major flux
+    return row_info, col_info
 
-def _add_rows_and_columns(topnode, known_nodes, styleinfo, layout_strategy=None):
-    # This is the most involved and tricky part.  See the comments
-    # above the 'format_html' function.
+def _create_layout(root, styleinfo, structure):
+    # Find the layout commands
+    row_info, col_info = _find_layout_commands(structure, styleinfo)
 
-    # NB: known_nodes, and all nodes passed around and manipulated,
-    # are the nodes of the containing divs we have added to the
-    # document structure.
+    # Build a Layout structure
 
-    cur_row_start = None
-    children = list(topnode.getchildren()) # our own copy, which we don't change
-    # Offset used to cope with the fact that we are pulling sub-nodes
-    # out of topnode as we go along.
-    idx_offset = 0
-    for idx, node in enumerate(children):
-        sect_id = known_nodes.get(node)
-        if sect_id is None:
-            # If not a section node, it cannot contain sections.
-            # or have commands
-            continue
-        commands = styleinfo[sect_id]
+    # We put everything inside a Row and Column, even if there is
+    # only one column.
+    layout = Layout()
+    row = LayoutRow()
+    col = LayoutColumn()
+    sect_dict = dict((si.node, si) for si in structure)
 
-        if NEWROW in commands:
-            if cur_row_start is not None:
-                # The previous row is finished
-                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + idx_offset, columns, layout_strategy=layout_strategy)
-                # We have removed (idx - cur_row_start_idx) elements,
-                # and added one back
-                idx_offset += -(idx - cur_row_start_idx) + 1
-            # start a new row
-            cur_row_start = node
-            cur_row_start_idx = idx
-            columns = []
+    # Build Layout
+    for node in root.getchildren():
+        si = sect_dict.get(node)
 
-        if NEWCOL in commands:
-            if cur_row_start is None:
-                # TODO - need name, not sect_id
-                raise BadStructure("'New column' command was found on section "
-                                   "'%(name)s' without an appropriate 'new row' "
-                                   "command before it. " % dict(name=sect_id))
-            else:
-                columns.append((idx + idx_offset, sect_id))
+        if si:
+           row_presinfo = row_info.get(si.sect_id)
+           if row_presinfo is not None:
+               # We can assume row_presinfo contains NEWROW command
 
-        if cur_row_start:
-            # Rows/columns can only be added within the same level of
-            # nesting of the HTML document.  This means we do not need
-            # to recurse if we have started adding rows/columns.
+               # Finish current col and row, if they have anything in them
+               if col.nodes:
+                   row.columns.append(col)
+               if row.columns:
+                   layout.rows.append(row)
+               # Start new row with styles
+               row = LayoutRow(styles=_get_classes_from_presinfo(row_presinfo))
+               # Start new col
+               col = LayoutColumn()
 
-            # However, if we are actually in a '1 column row', we
-            # allow a nested column structure, but only by imposing
-            # constraints on what follows.
-            child = _find_child_with_column_structure(node, known_nodes, styleinfo)
-            if child is not None:
-                if len(columns) > 1:
-                    # Can't do it.
-                    csect_id, cnode = child
-                    # TODO - names not sect_ids
-                    raise BadStructure("A '%(tag)s' item has a 'New row' or 'New column' command applied to "
-                                       "it, but it is a subsection of '%(ptag)s: %(pname)s' which is already in a column. "
-                                       "This would create a nested column structure, which is not allowed." %
-                                       dict(tag=cnode[0].tag.upper(), ptag=cur_row_start[0].tag.upper(), pname=sect_id))
-                else:
-                    # Allow it, but next section on this level must
-                    # not be NEWCOL (unless it is also NEWROW)
-                    nextnode_sect_id = _get_next_section_node(children[idx+1:], known_nodes)
-                    if nextnode_sect_id is not None:
-                        nextnode_commands = styleinfo[nextnode_sect_id]
-                        if NEWCOL in nextnode_commands and (NEWROW not in nextnode_commands):
-                            # TODO - need name not sect_id
-                            raise BadStructure("Item '%(ptag)s: %(pname)s' has a column structure within it "
-                                               "but section '%(name)s' has a 'New column' command applied to "
-                                               "it.  This would create a nested column structure, which is "
-                                               "not allowed." % (dict(name=nextnode_sect_id, ptag=cur_row_start[0].tag.upper(), pname=sect_id)))
-                    _add_rows_and_columns(node, known_nodes, styleinfo, layout_strategy=layout_strategy)
+           col_presinfo = col_info.get(si.sect_id)
+           if col_presinfo is not None:
+               # Assume col_presinfo contains NEWCOL command
 
-        else:
-            _add_rows_and_columns(node, known_nodes, styleinfo, layout_strategy=layout_strategy)
+               # Finish current col, if it is non-empty
+               if col.nodes:
+                   row.columns.append(col)
+               # Start new col with styles
+               col = LayoutColumn(styles=_get_classes_from_presinfo(col_presinfo))
 
-        # If we are at last node, and are still in a row, there won't
-        # be a NEWROW command, so we have to close implicitly,
-        # including the current node in the row (hence idx + 1).
-        if idx == len(children) - 1 and cur_row_start is not None \
-                and len(columns) > 0:
-                _apply_row_col_divs(topnode, cur_row_start_idx + idx_offset, idx + 1 + idx_offset, columns, layout_strategy=layout_strategy)
+        # Now deal with content itself
+        col.nodes.append(node)
 
+    # Close last col and row
+    if col.nodes:
+        row.columns.append(col)
+    layout.rows.append(row)
 
-def _apply_row_col_divs(parent, start_idx, stop_idx, columns, layout_strategy):
-    # Add the row
-    total_columns = len(columns)
-    newrow = wrap_elements_in_tag(parent, start_idx, stop_idx, 'div')
-    classes = ' '.join(layout_strategy.row_classes(total_columns))
-    if classes:
-        newrow.set('class', classes)
+    return layout
 
-    # Add the columns
+def _check_layout(layout, structure, layout_strategy):
+    sect_dict = dict((si.node, si) for si in structure)
     max_cols = layout_strategy.max_columns
-    if total_columns > max_cols:
-        # TODO need name not sect_id
-        raise TooManyColumns("The maximum number of columns is %(max)d. "
-                             "Please move section '%(name)s' into a new "
-                             "row." % dict(max=max_cols, name=columns[max_cols][1]))
+    for row in layout.rows:
+        if len(row.columns) > max_cols:
+            # Look at first node in first bad column
+            node = row.columns[max_cols - 1].nodes[0]
+            sect = sect_dict[node]
+            raise TooManyColumns("The maximum number of columns is %(max)d. "
+                                 "Please move section '%(name)s' into a new "
+                                 "row." % dict(max=max_cols, name=sect.name))
 
-    # The idx in 'columns' are all out now, due to having pulled the
-    # nodes out. Fix them up, and add a dummy entry to provide the
-    # 'stop_idx' for the last column.
-    columns = [(idx - start_idx, node) for (idx, node) in columns]
-    columns.append((stop_idx - start_idx, None))
-
-    # Go in reverse order, so that indices are not invalidated
-    columns.reverse()
-    for i, (idx, node) in enumerate(columns):
-        if node is None:
-            # last dummy entry
-            continue
-        newcol = wrap_elements_in_tag(newrow, idx, columns[i - 1][0], 'div')
-        classes = ' '.join(layout_strategy.column_classes(total_columns - i + 1, total_columns))
+def _render_layout(layout, layout_strategy):
+    root = ET.fromstring("<html></html>")
+    for row in layout.rows:
+        column_count = len(row.columns)
+        rowdiv = ET.Element('div')
+        classes = layout_strategy.row_classes(column_count) + row.styles
         if classes:
-            newcol.set('class', classes)
+            rowdiv.set('class', ' '.join(classes))
+        for i, col in  enumerate(row.columns):
+            coldiv = ET.Element('div')
+            classes = layout_strategy.column_classes(i + 1, column_count) + col.styles
+            if classes:
+                coldiv.set('class', ' '.join(classes))
+            for n in col.nodes:
+                coldiv.append(n)
+            rowdiv.append(coldiv)
+        root.append(rowdiv)
+    return root
 
 def preview_html(html, pres):
     root, structure, section_nodes = format_html(html, pres, return_tree=True)
     known_nodes = _invert_dict(section_nodes)
     _create_preview(root, structure, known_nodes)
     return _html_extract(root)
-
-def _replace_with_text(n, text):
-    n[:] = []
-    n.tail = ""
-    n.text = text
 
 def _create_preview(node, structure, known_nodes):
     for n in node.getchildren():
@@ -618,18 +573,27 @@ def extract_presentation(html):
 
         # Parent/grandparent of section - newcol/newrow
         p = get_parent(root, si.node)
-        if p is not None and p.tag == 'div':
-            # We only care if si.node is the first child of the div
-            if get_index(p, si.node) == 0:
-                classes = _get_classes_for_node(p)
-                if layout_strategy.is_column_class(classes):
-                    pres[si.sect_id].add(NEWCOL)
-                gp = get_parent(root, p)
-                if gp is not None and gp.tag == 'div':
-                    if layout_strategy.is_row_class(_get_classes_for_node(gp)) \
-                            and get_index(gp, p) == 0:
-                        pres[si.sect_id].add(NEWROW)
-                        pres[si.sect_id].discard(NEWCOL) # for tidiness, not technically necessary
+        if p is not None and p.tag == 'div' and (get_index(p, si.node) == 0):
+            # We only care if si.node is the first child of the column div
+            gp = get_parent(root, p)
+            if gp is not None and gp.tag == 'div':
+                # We can't always tell if something is a row/col, but hopefully
+                # we can identify one, which will tell us we are in a column
+                # structure.
+                r_classes = _get_classes_for_node(gp)
+                c_classes = _get_classes_for_node(p)
+                gp_is_row = any(layout_strategy.is_row_class(c) for c in r_classes)
+                p_is_col = any(layout_strategy.is_column_class(c) for c in c_classes)
+
+                if gp_is_row or p_is_col:
+                    # New column
+                    col_pres = set([NEWCOL] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
+                    pres[_NEWCOL_PREFIX + si.sect_id] = col_pres
+                    if get_index(gp, p) == 0:
+                       # first column, therefore new row
+                       row_pres = set([NEWROW] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
+                       pres[_NEWROW_PREFIX + si.sect_id] = row_pres
+
 
     _strip_presentation(root)
     out_html = _html_extract(root)
