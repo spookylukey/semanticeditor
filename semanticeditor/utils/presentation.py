@@ -35,7 +35,7 @@ BLOCK_LEVEL_TRIM_LENGTH = 20
 
 ### Layout CSS class names ###
 
-# This is designed to be user supplyable if necessary
+# This is designed to be user supply-able if necessary
 
 class LayoutDetails(object):
     ROW_CLASS = "row"
@@ -46,13 +46,19 @@ class LayoutDetails(object):
         Returns a list of CSS classes to be used for a row
         containing column_count columns
         """
-        return [self.ROW_CLASS, "columns%d" % column_count]
+        retval = [self.ROW_CLASS]
+        if column_count > 1:
+            retval.append("columns%d" % column_count)
+        return retval
 
     def column_classes(self, column_num, column_count):
         """
         Returns the CSS class to be used for a column
         which is number column_num out of column_count.
         """
+        if column_count == 1:
+            # No classes
+            return []
         retval = [self.COLUMN_CLASS]
         if column_num == 1:
             retval.append("firstcolumn")
@@ -585,7 +591,9 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns, layout_strategy):
     # Add the row
     total_columns = len(columns)
     newrow = wrap_elements_in_tag(parent, start_idx, stop_idx, 'div')
-    newrow.set('class', ' '.join(layout_strategy.row_classes(total_columns)))
+    classes = ' '.join(layout_strategy.row_classes(total_columns))
+    if classes:
+        newrow.set('class', classes)
 
     # Add the columns
     if total_columns > MAXCOLS:
@@ -606,7 +614,9 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns, layout_strategy):
             # last dummy entry
             continue
         newcol = wrap_elements_in_tag(newrow, idx, columns[i - 1][0], 'div')
-        newcol.set('class', ' '.join(layout_strategy.column_classes(total_columns - i + 1, total_columns)))
+        classes = ' '.join(layout_strategy.column_classes(total_columns - i + 1, total_columns))
+        if classes:
+            newcol.set('class', classes)
 
 def preview_html(html, pres):
     root, structure, section_nodes = format_html(html, pres, return_tree=True)

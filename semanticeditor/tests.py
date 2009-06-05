@@ -209,8 +209,8 @@ class TestFormat(TestCase):
                 "<div><h1>2</h1></div>" \
               "</div>" \
             "</div>" \
-            "<div class=\"row columns1\">" \
-              "<div class=\"column firstcolumn lastcolumn\">" \
+            "<div class=\"row\">" \
+              "<div>" \
                 "<div><h1>3</h1>" \
                   "<div class=\"row columns3\">" \
                     "<div class=\"column firstcolumn\">" \
@@ -226,8 +226,8 @@ class TestFormat(TestCase):
                 "</div>" \
               "</div>" \
             "</div>" \
-            "<div class=\"row columns1\">" \
-              "<div class=\"column firstcolumn lastcolumn\">" \
+            "<div class=\"row\">" \
+              "<div>" \
                 "<div><h1>4</h1></div>" \
               "</div>" \
             "</div>"
@@ -264,6 +264,12 @@ class TestFormat(TestCase):
         self.assertRaises(BadStructure, format_html, html, {'1':[NEWROW],
                                                             '2':[NEWCOL],
                                                             '1.1':[NEWROW]})
+
+
+    def test_columns_single_col(self):
+        html = "<h1>1</h1><p>para 1</p><h2>2</h2>"
+        outh = "<div class=\"row\"><div><div><h1>1</h1><div><p>para 1</p></div><div><h2>2</h2></div></div></div></div>"
+        self.assertEqual(outh, format_html(html, {'1':[NEWROW]}))
 
 
 class TestElementTreeUtils(TestCase):
