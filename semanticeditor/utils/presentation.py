@@ -3,7 +3,7 @@ Utilities for manipulating the content provided by the user.
 """
 
 from elementtree import ElementTree as ET
-from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_index, wrap_elements_in_tag, indent
+from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_depth, get_index, wrap_elements_in_tag, indent
 from semanticeditor.utils.datastructures import struct
 from xml.parsers import expat
 import re
@@ -252,6 +252,7 @@ def get_structure(root, assert_structure=False):
     for n in root.getiterator():
         if n.tag in blockdef:
             text = flatten(n)
+            # Section id - use existing if it is their, but don't duplicate
             sect_id = n.get('id', '')
             if sect_id == '' or not sect_id.startswith(n.tag) or sect_id in sect_ids:
                 sect_id = make_sect_id(n.tag, sect_ids)
@@ -297,7 +298,10 @@ def get_structure(root, assert_structure=False):
 
             # Level is adjusted so that e.g. H3 is level 1, if it is
             # the first to appear in the document.
-            retval.append(StructureItem(level=level - first_heading_level + 1,
+            # It is also adjusted so that nested items (e.g. p in blockquote)
+            # appear to be nested.
+            nesting_level = get_depth(root, n) - 1
+            retval.append(StructureItem(level=nesting_level + level - first_heading_level + 1,
                                         sect_id=sect_id,
                                         name=name,
                                         tag=n.tag.upper(),

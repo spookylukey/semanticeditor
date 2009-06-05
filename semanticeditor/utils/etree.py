@@ -65,6 +65,18 @@ def get_parent(topnode, elem):
             return n
     return None
 
+def get_depth(topnode, elem, _start=0):
+    """
+    Returns the depth of elem in the tree, 0 for root node
+    """
+    if elem is topnode:
+        return _start
+    for n in topnode.getchildren():
+        d = get_depth(n, elem, _start + 1)
+        if d is not None:
+            return d
+    return None
+
 def get_index(parent, elem):
     """
     Return the index of elem in parent's children
