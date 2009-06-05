@@ -28,8 +28,6 @@ AllUserErrors = (InvalidHtml, IncorrectHeadings, BadStructure, TooManyColumns)
 blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote'])
 headingdef = set(['h1','h2','h3','h4','h5','h6'])
 
-MAXCOLS = 4
-
 # The number of chars we trim block level elements to.
 BLOCK_LEVEL_TRIM_LENGTH = 20
 
@@ -41,6 +39,8 @@ class LayoutDetails(object):
     ROW_CLASS = "row"
     COLUMN_CLASS = "column"
 
+    # Public interface:
+    max_columns = 4
     def row_classes(self, column_count):
         """
         Returns a list of CSS classes to be used for a row
@@ -596,10 +596,11 @@ def _apply_row_col_divs(parent, start_idx, stop_idx, columns, layout_strategy):
         newrow.set('class', classes)
 
     # Add the columns
-    if total_columns > MAXCOLS:
+    max_cols = layout_strategy.max_columns
+    if total_columns > max_cols:
         raise TooManyColumns("The maximum number of columns is %(max)d. "
                              "Please move section '%(name)s' into a new "
-                             "row." % dict(max=MAXCOLS, name=columns[MAXCOLS][1]))
+                             "row." % dict(max=max_cols, name=columns[max_cols][1]))
 
     # The idx in 'columns' are all out now, due to having pulled the
     # nodes out. Fix them up, and add a dummy entry to provide the
