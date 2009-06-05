@@ -16,20 +16,21 @@ def textjoin(a, b):
 def cleanup(elem, filter):
     """
     Removes start and stop tags for any element for which the filter
-    function returns false.  If you want to remove the entire element,
+    function returns True.  If you want to remove the entire element,
     including all subelements, use the 'clear' method inside the
     filter callable.
 
     Note that this function modifies the tree in place.
     @param elem An element tree.
     @param filter An filter function.  This should be a callable that
-    takes an element as its single argument.
+    takes an element as its single argument, and returns True if the
+    element should be cleaned.
     """
 
     out = []
     for e in elem:
         cleanup(e, filter)
-        if not filter(e):
+        if filter(e):
             if e.text:
                 if out:
                     out[-1].tail = textjoin(out[-1].tail, e.text)
