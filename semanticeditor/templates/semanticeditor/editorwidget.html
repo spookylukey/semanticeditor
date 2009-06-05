@@ -28,8 +28,8 @@ $(document).ready(function(){
         lang: '{{ language }}',
         skin: 'semanticeditor',
         skinPath: "{{ SE_MEDIA_URL }}javascript/wymeditor/skins/semanticeditor/",
-        updateSelector: 'input[type=submit]',
-        updateEvent: 'click',
+        updateSelector: '#text_form',
+        updateEvent: 'submit',
 		logoHtml: '',
 		toolsItems: [
 			    {{ WYM_TOOLS }}
@@ -61,7 +61,7 @@ $(document).ready(function(){
 
             // Enable the 'semantic' plugin
             symanticopts = {
-                extract_headings_url: "{% url semantic.extract_headings %}",
+                extract_structure_url: "{% url semantic.extract_structure %}",
                 retrieve_styles_url: "{% url semantic.retrieve_styles %}",
                 separate_presentation_url: "{% url semantic.separate_presentation %}",
                 combine_presentation_url: "{% url semantic.combine_presentation %}",

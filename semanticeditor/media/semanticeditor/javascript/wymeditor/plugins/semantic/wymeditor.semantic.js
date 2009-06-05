@@ -11,11 +11,11 @@ function PresentationControls(wym, opts) {
     this.name = wym._element.get(0).name;
     // available_styles: an array of dictionaries corresponding to PresentationInfo objects
     this.available_styles = new Array();
-    // stored_headings: an array of 2 elements arrays, [heading level, heading name]
+    // stored_headings: array of StructureItem objects (attributes .level, .name, .sect_id, .tag)
     this.stored_headings = new Array();
     // active_heading_list - a possibly filtered version of stored_headings
     this.active_heading_list = new Array();
-    // presentation_info: a dictionary of { heading name : [PresentationInfo] }
+    // presentation_info: a dictionary of { sect_id : [PresentationInfo] }
     this.presentation_info = {};
 
     this.setup_controls(jQuery(wym._box).find(".wym_area_bottom"));
@@ -215,11 +215,11 @@ PresentationControls.prototype.update_optsbox = function() {
 	return;
     }
     var headingIndex = parseInt(selected, 10);
-    var heading = this.active_heading_list[headingIndex][1];
-    var styles = this.presentation_info[heading];
+    var sect_id = this.active_heading_list[headingIndex].sect_id;
+    var styles = this.presentation_info[sect_id];
     if (styles == null) {
 	styles = new Array();
-	this.presentation_info[heading] = styles;
+	this.presentation_info[sect_id] = styles;
     }
     this.optsbox.find("input").each(
 	function(i, input) {
@@ -236,9 +236,9 @@ PresentationControls.prototype.update_optsbox = function() {
 	    jQuery(this).change(function(event) {
 				    var style = expandPresStyle(input.value);
 				    if (input.checked) {
-					self.add_style(heading, style);
+					self.add_style(sect_id, style);
 				    } else {
-					self.remove_style(heading, style);
+					self.remove_style(sect_id, style);
 				    }
 				    self.headingscontrol.get(0).focus();
 			 });
@@ -267,19 +267,19 @@ PresentationControls.prototype.show_preview = function() {
     return false;
 };
 
-PresentationControls.prototype.add_style = function(heading, presinfo) {
-    var styles = this.presentation_info[heading];
+PresentationControls.prototype.add_style = function(sect_id, presinfo) {
+    var styles = this.presentation_info[sect_id];
     styles.push(presinfo);
-    this.presentation_info[heading] = jQuery.unique(styles);
+    this.presentation_info[sect_id] = jQuery.unique(styles);
 };
 
-PresentationControls.prototype.remove_style = function(heading, presinfo) {
-    var styles = this.presentation_info[heading];
+PresentationControls.prototype.remove_style = function(sect_id, presinfo) {
+    var styles = this.presentation_info[sect_id];
     styles = jQuery.grep(styles, function(item, i) {
 			     return !(item.prestype == presinfo.prestype
 				      && item.name == presinfo.name);
 			 });
-    this.presentation_info[heading] = styles;
+    this.presentation_info[sect_id] = styles;
 };
 
 // If data contains an error message, display to the user,
@@ -308,7 +308,7 @@ PresentationControls.prototype.show_error = function(message) {
 PresentationControls.prototype.refresh_headings = function() {
     var self = this;
     var html = this.wym.xhtml();
-    jQuery.post(this.opts.extract_headings_url, { 'html':html },
+    jQuery.post(this.opts.extract_structure_url, { 'html':html },
 	function(data) {
 	    self.with_good_data(data, function(value) {
 		self.stored_headings = value;
@@ -324,7 +324,7 @@ PresentationControls.prototype.update_active_heading_list = function() {
     if (this.headingsfilter.get(0).checked) {
 	items = jQuery.grep(self.stored_headings,
                             function(item, idx) {
-				return (item[2].toUpperCase()).match(/H\d/);
+				return (item.tag.toUpperCase()).match(/H\d/);
 			    });
     } else {
 	items = self.stored_headings;
@@ -337,10 +337,8 @@ PresentationControls.prototype.update_headingbox = function() {
     this.unbind_optsbox();
     this.headingscontrol.empty();
     jQuery.each(this.active_heading_list, function(i, item) {
-		    // item[0] is the heading level,
-		    // item[1] is the heading name
-		    var spaces = (new Array((item[0]-1)*3)).join("&nbsp;");
-		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + spaces + item[2].toLowerCase() + ": " + escapeHtml(item[1]) + "</option>");
+		    var spaces = (new Array((item.level - 1)*3)).join("&nbsp;");
+		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + spaces + item.tag.toLowerCase() + ": " + escapeHtml(item.name) + "</option>");
     });
 };
 
