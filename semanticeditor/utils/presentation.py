@@ -371,7 +371,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
             del si.node.attrib['id']
 
     if return_tree:
-        return (rendered, structure, section_nodes)
+        return (rendered, structure)
     else:
         return _html_extract(rendered)
 
@@ -528,9 +528,10 @@ def _render_layout(layout, layout_strategy):
     return root
 
 def preview_html(html, pres):
-    root, structure, section_nodes = format_html(html, pres, return_tree=True)
-    known_nodes = _invert_dict(section_nodes)
+    root, structure = format_html(html, pres, return_tree=True)
+    known_nodes = dict((si.node, si) for si in structure)
     _create_preview(root, structure, known_nodes)
+    print _html_extract(root)
     return _html_extract(root)
 
 def _create_preview(node, structure, known_nodes):
@@ -538,14 +539,12 @@ def _create_preview(node, structure, known_nodes):
         if n.tag == 'div':
             _create_preview(n, structure, known_nodes)
         else:
-            parent = node
-            # TODO - need to get the name, known_nodes uses sect_id as value
-            name = known_nodes.get(parent)
-            if name is not None and (n.tag in blockdef):
+            sect = known_nodes.get(n)
+            if sect is not None and (n.tag in blockdef):
                 n.set('class', 'structural ' + "tag" + n.tag.lower() )
                 n.tag = "div"
                 n[:] = []
-                n.text = name
+                n.text = sect.name
             else:
                 node.remove(n)
 
