@@ -105,9 +105,18 @@ class TestFormat(TestCase):
         self.assertEqual(outh, format_html(html, {'h1_1':[PC('myclass')],
                                                   'h2_1':[PC('c1'), PC('c2')]}))
 
-    def test_sanity_check_sections(self):
-        html = "<h1>Hello</h1><blockquote><h2>Hi</h2></blockquote>"
-        self.assertRaises(BadStructure, format_html, html, {})
+    def test_sanity_check_columns(self):
+        """
+        Check that user is not allowed to add column structure
+        to blocks that aren't 'top level' in document structure
+        """
+        html = "<blockquote><p>How are you</p></blockquote>"
+        pres = {'newrow_p_1': [NEWROW]}
+        self.assertRaises(BadStructure, format_html, html, pres)
+
+        html2 = "<blockquote><p>How are you</p></blockquote>"
+        pres2 = {'newcol_p_1': [NEWROW]}
+        self.assertRaises(BadStructure, format_html, html2, pres2)
 
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"

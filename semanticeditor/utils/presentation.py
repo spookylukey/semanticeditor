@@ -338,7 +338,6 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # raise BadStructure later, but divs have no semantics so can just
     # be removed.
     _strip_presentation(root)
-    _assert_sane_sections(root, structure)
 
     # Apply normal CSS classes.
     for si in structure:
@@ -394,19 +393,6 @@ def _sanitise_styleinfo(styleinfo, sect_ids):
 
     return out
 
-def _assert_sane_sections(root, structure):
-    # First, all h1, h2 etc tags will be children of the root.
-    # remove_tag should have ensured that, otherwise we will be unable
-    # to cut the HTML into sections.
-    for si in structure:
-        parent = get_parent(root, si.node)
-        if si.tag.lower() in headingdef and parent is not root:
-            raise BadStructure("Section heading \"%(name)s\" is not at the top level of "
-                               "the document. This interferes with the ability to "
-                               "format the sections and apply columns. "
-                               "Please move the heading out of the '%(element)s'"
-                               " element that contains it." % dict(name=si.name, element=parent.tag.upper()))
-
 #### Layout related ####
 
 Layout = struct("Layout", (object,), dict(rows=list))
@@ -416,7 +402,7 @@ LayoutColumn = struct("LayoutColumn", (object,), dict(nodes=list, styles=list))
 _NEWROW_PREFIX = 'newrow_'
 _NEWCOL_PREFIX = 'newcol_'
 
-def _find_layout_commands(structure, styleinfo):
+def _find_layout_commands(root, structure, styleinfo):
     # Layout commands are not stored against normal sections,
     # but have their own entry in the section list, using an id
     # of 'newrow_' or 'newcol_' + id of block they preceed.
@@ -429,19 +415,34 @@ def _find_layout_commands(structure, styleinfo):
             real_sect_id = sect_id[len(_NEWROW_PREFIX):]
             sect = sect_dict.get(real_sect_id)
             if sect is not None:
+                parent = get_parent(root, sect.node)
+                if parent is not root:
+                    raise BadStructure("Section \"%(name)s\" is not at the top level of "
+                                       "the document, and therefore cannot have a column "
+                                       "structure applied to it.  Please move the 'New row' "
+                                       "command to a top level element." %
+                                       dict(name=sect.name))
+
                 row_info[real_sect_id] = presinfo
 
         if sect_id.startswith(_NEWCOL_PREFIX):
             real_sect_id = sect_id[len(_NEWCOL_PREFIX):]
             sect = sect_dict.get(real_sect_id)
             if sect is not None:
+                parent = get_parent(root, sect.node)
+                if parent is not root:
+                    raise BadStructure("Section \"%(name)s\" is not at the top level of "
+                                       "the document, and therefore cannot have a column "
+                                       "structure applied to it.  Please move the 'New column' "
+                                       "command to a top level element." %
+                                       dict(name=sect.name))
                 col_info[real_sect_id] = presinfo
 
     return row_info, col_info
 
 def _create_layout(root, styleinfo, structure):
     # Find the layout commands
-    row_info, col_info = _find_layout_commands(structure, styleinfo)
+    row_info, col_info = _find_layout_commands(root, structure, styleinfo)
 
     # Build a Layout structure
 

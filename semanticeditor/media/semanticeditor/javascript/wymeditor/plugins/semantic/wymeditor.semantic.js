@@ -474,15 +474,15 @@ PresentationControls.prototype.add_layout_to_headings = function() {
         }
     }
 
-    // If after this process we don't have newrow and newcol commands
-    // at the beginning of the heading list, we add them.
-    if (this.stored_headings[0].tag != 'newrow') {
-        // FIXME - what if first_sect_id is '' ?
-        this.insert_row_command(this.stored_headings, 0, first_sect_id);
-    }
-    if (this.stored_headings[1].tag != 'newcol') {
-        // FIXME - what if first_sect_id is '' ?
-        this.insert_column_command(this.stored_headings, 1, first_sect_id);
+    if (this.stored_headings.length > 0) {
+        // If after this process we don't have newrow and newcol commands
+        // at the beginning of the heading list, we add them.
+        if (this.stored_headings[0].tag != 'newrow') {
+            this.insert_row_command(this.stored_headings, 0, first_sect_id);
+        }
+        if (this.stored_headings[1].tag != 'newcol') {
+            this.insert_column_command(this.stored_headings, 1, first_sect_id);
+        }
     }
 
 };
