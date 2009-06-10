@@ -45,13 +45,14 @@ class LayoutDetails(object):
     COLUMN_CLASS = "column"
 
     # Public interface:
-    max_columns = 4
+    max_columns = 4 # max number of columns to allow
+    use_inner_column_div = True # True to wrap all column content in a inner div
     def row_classes(self, logical_column_count, actual_column_count):
         """
         Returns a list of CSS classes to be used for a row containing
         logical_column_count 'logical' columns, actual_column_count 'actual'
         columns.  'actual' columns are present in the HTML structure, but some
-        might be e.g. double width, so are counted as two logical columns.
+        might be, for example, double width, so are counted as two logical columns.
         """
         retval = [self.ROW_CLASS]
         if actual_column_count > 1:
@@ -62,6 +63,7 @@ class LayoutDetails(object):
         """
         Returns a list of CSS classes to be used for a column which is number
         column_num out of column_count.
+        (see above regarding logical/actual)
         """
         if actual_column_count == 1:
             # No classes
@@ -93,6 +95,21 @@ class LayoutDetails(object):
         (e.g. for clearing floats) if necessary.
         """
         return ""
+
+    def outer_column_classes(self, presinfo):
+        """
+        Given a list a PresentationInfo objects, return the ones that should be applied to
+        the outer column div.
+        """
+        return [pi for pi in presinfo if pi.column_equiv is not None]
+
+    def inner_column_classes(self, presinfo):
+        """
+        Given a list a PresentationInfo objects, return the ones that should be applied to
+        the inner column div.
+        (Never called if use_inner_column_div = False)
+        """
+        return [pi for pi in presinfo if pi.column_equiv is None]
 
 ### Parsing ###
 import htmlentitydefs
@@ -237,6 +254,8 @@ def get_layout_details_strategy():
     # TODO - make configurable
     return LayoutDetails()
 
+
+### Structure related ###
 
 class StructureItem(object):
     __metaclass__ = struct
@@ -557,11 +576,19 @@ def _render_layout(layout, layout_strategy):
                                                      i + 1,
                                                      logical_column_count,
                                                      actual_column_count) + \
-                    _get_classes_from_presinfo(col.presinfo)
+                    _get_classes_from_presinfo(layout_strategy.outer_column_classes(col.presinfo))
             if classes:
                 coldiv.set('class', ' '.join(classes))
+            if layout_strategy.use_inner_column_div:
+                contentdiv = ET.Element('div')
+                coldiv.append(contentdiv)
+                inner_classes = _get_classes_from_presinfo(layout_strategy.inner_column_classes(col.presinfo))
+                if inner_classes:
+                    contentdiv.set('class', ' '.join(inner_classes))
+            else:
+                contentdiv = coldiv
             for n in col.nodes:
-                coldiv.append(n)
+                contentdiv.append(n)
             rowdiv.append(coldiv)
 
             logical_column_num += _layout_column_width(col)
@@ -587,6 +614,62 @@ def _create_preview(node, structure, known_nodes):
                 n.text = sect.name
             else:
                 node.remove(n)
+
+def _find_row_col_divs(root, node, layout_strategy):
+    """
+    Finds the row and column divs that a node belongs to.
+    Returns a 3 tuple (row_div, col_div, inner_col_div)
+
+    col_div is None if the node is not the first content
+    node within that column.
+
+    row_div is None if the node is not the first content node
+    within that row.
+
+    inner_col_div is None if there is no inner column div,
+    or if col_div is None
+    """
+    # Keep going up until we find a 'row' div or 'column' div
+    # that are parent/child.
+
+    p = get_parent(root, node)
+    gp = None
+
+    p_is_col, gp_is_row = False, False
+    row_div, col_div, inner_col_div = None, None, None
+
+    if p is not None and p.tag == 'div' and get_index(p, node) == 0:
+        # We only care if node is the first child of the column div
+        c_classes = _get_classes_for_node(p)
+        p_is_col = any(layout_strategy.is_column_class(c) for c in c_classes)
+
+        gp = get_parent(root, p)
+        if gp is not None and gp.tag == 'div' and get_index(gp, p) == 0:
+            # We only locate row divs if col is first col within row
+            r_classes = _get_classes_for_node(gp)
+            gp_is_row = any(layout_strategy.is_row_class(c) for c in r_classes)
+
+            # We can't always tell if something is a col (especially for single
+            # column structure), but by identfying the row we can tell we are in
+            # a column structure.
+            if gp_is_row:
+                p_is_col = True
+
+    if gp_is_row:
+        row_div = gp
+    if p_is_col:
+        col_div = p
+
+    if not p_is_col:
+        if p is not None and p.tag == 'div' and get_index(p, node) == 0:
+            # Try to go up one
+            row_div, col_div, inner_col_div = _find_row_col_divs(root, p, layout_strategy)
+            if inner_col_div is None and col_div is not None:
+                # We now know that current parent 'p' is inner_col_div
+                inner_col_div = p
+            return (row_div, col_div, inner_col_div)
+
+    return (row_div, col_div, inner_col_div)
 
 def extract_presentation(html):
     """
@@ -615,29 +698,23 @@ def extract_presentation(html):
         # and will be removed again at end of format_html
         si.node.set('id', si.sect_id)
 
-        # Parent/grandparent of section - newcol/newrow
-        p = get_parent(root, si.node)
-        if p is not None and p.tag == 'div' and (get_index(p, si.node) == 0):
-            # We only care if si.node is the first child of the column div
-            gp = get_parent(root, p)
-            if gp is not None and gp.tag == 'div':
-                # We can't always tell if something is a row/col, but hopefully
-                # we can identify one, which will tell us we are in a column
-                # structure.
-                r_classes = _get_classes_for_node(gp)
-                c_classes = _get_classes_for_node(p)
-                gp_is_row = any(layout_strategy.is_row_class(c) for c in r_classes)
-                p_is_col = any(layout_strategy.is_column_class(c) for c in c_classes)
+        # Try to find 'row' and 'column' divs that this node belongs to.
+        # Columns can have inner divs for styling purposes.  Some CSS classes
+        # will be applied to the outer column div, some to the inner column div.
 
-                if gp_is_row or p_is_col:
-                    # New column
-                    col_pres = set([NEWCOL] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
-                    pres[_NEWCOL_PREFIX + si.sect_id] = col_pres
-                    if get_index(gp, p) == 0:
-                       # first column, therefore new row
-                       row_pres = set([NEWROW] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
-                       pres[_NEWROW_PREFIX + si.sect_id] = row_pres
+        row_node, col_node, inner_col_node = _find_row_col_divs(root, si.node, layout_strategy)
 
+        if row_node is not None:
+            r_classes = _get_classes_for_node(row_node)
+            row_pres = set([NEWROW] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
+            pres[_NEWROW_PREFIX + si.sect_id] = row_pres
+
+        if col_node is not None:
+            c_classes = _get_classes_for_node(col_node)
+            if inner_col_node is not None:
+                c_classes.extend(_get_classes_for_node(inner_col_node))
+            col_pres = set([NEWCOL] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
+            pres[_NEWCOL_PREFIX + si.sect_id] = col_pres
 
     _strip_presentation(root)
     out_html = _html_extract(root)

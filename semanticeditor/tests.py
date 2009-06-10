@@ -82,7 +82,7 @@ class TestFormat(TestCase):
 
     def test_no_headings(self):
         html = '<p>Test</p>'
-        outh = '<div class="row"><div><p>Test</p></div></div>'
+        outh = '<div class="row"><div><div><p>Test</p></div></div></div>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_unknown_block_elements(self):
@@ -91,17 +91,17 @@ class TestFormat(TestCase):
         know about
         """
         html = '<foo>Test</foo>'
-        outh = '<div class="row"><div><foo>Test</foo></div></div>'
+        outh = '<div class="row"><div><div><foo>Test</foo></div></div></div>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_existing_divs(self):
         html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
-        outh = '<div class="row"><div><foo><bar><fribble>Some text <p>para</p> some more more <span> of </span> this stuff </fribble></bar></foo></div></div>'
+        outh = '<div class="row"><div><div><foo><bar><fribble>Some text <p>para</p> some more more <span> of </span> this stuff </fribble></bar></foo></div></div></div>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_add_css_classes(self):
         html = "<h1>Hello <em>you</em></h1><h2>Hi</h2>"
-        outh = '<div class="row"><div><h1 class=\"myclass\">Hello <em>you</em></h1><h2 class=\"c1 c2\">Hi</h2></div></div>'
+        outh = '<div class="row"><div><div><h1 class=\"myclass\">Hello <em>you</em></h1><h2 class=\"c1 c2\">Hi</h2></div></div></div>'
         self.assertEqual(outh, format_html(html, {'h1_1':[PC('myclass')],
                                                   'h2_1':[PC('c1'), PC('c2')]}))
 
@@ -120,20 +120,20 @@ class TestFormat(TestCase):
 
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
-        outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><h1>1</h1><p>para 1</p></div><div class=\"column lastcolumn\"><h1>2</h1><h1>3</h1></div></div>"
+        outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn\"><div><h1>2</h1><h1>3</h1></div></div></div>"
         self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
                                                   'newcol_h1_2':[NEWCOL]}))
 
     def test_columns_with_double_width(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1>"
-        outh = "<div class=\"row columns3\"><div class=\"column firstcolumn doublewidth\"><h1>1</h1><p>para 1</p></div><div class=\"column lastcolumn\"><h1>2</h1></div></div>"
+        outh = "<div class=\"row columns3\"><div class=\"column firstcolumn doublewidth\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn\"><div><h1>2</h1></div></div></div>"
         self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
                                                   'newcol_h1_1':[NEWCOL, PC('doublewidth', column_equiv=2)],
                                                   'newcol_h1_2':[NEWCOL]}))
 
     def test_columns_with_double_width_2(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1>"
-        outh = "<div class=\"row columns3\"><div class=\"column firstcolumn\"><h1>1</h1><p>para 1</p></div><div class=\"column lastcolumn doublewidth\"><h1>2</h1></div></div>"
+        outh = "<div class=\"row columns3\"><div class=\"column firstcolumn\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn doublewidth\"><div><h1>2</h1></div></div></div>"
         self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
                                                   'newcol_h1_1':[NEWCOL],
                                                   'newcol_h1_2':[NEWCOL, PC('doublewidth', column_equiv=2)]}))
@@ -176,32 +176,46 @@ class TestFormat(TestCase):
         outh = \
             "<div class=\"row\">" \
             "<div>" \
+            "<div>" \
             "<h1>1</h1>" \
             "<h1>2</h1>" \
             "</div>" \
             "</div>" \
+            "</div>" \
             "<div class=\"row columns2\">" \
             "<div class=\"column firstcolumn\">" \
+            "<div>" \
             "<h2>2.1</h2>" \
             "</div>" \
+            "</div>" \
             "<div class=\"column lastcolumn\">" \
+            "<div>" \
             "<h2>2.2</h2>" \
             "</div>" \
             "</div>" \
+            "</div>" \
             "<div class=\"row columns2\">" \
             "<div class=\"column firstcolumn\">" \
+            "<div>" \
             "<h2>2.3</h2>" \
             "</div>" \
+            "</div>" \
             "<div class=\"column lastcolumn\">" \
+            "<div>" \
             "<h2>2.4</h2>" \
             "</div>" \
             "</div>" \
+            "</div>" \
             "<div class=\"row columns2\">" \
             "<div class=\"column firstcolumn\">" \
+            "<div>" \
             "<h1>3</h1>" \
             "</div>" \
+            "</div>" \
             "<div class=\"column lastcolumn\">" \
+            "<div>" \
             "<h1>4</h1>" \
+            "</div>" \
             "</div>" \
             "</div>"
         self.assertEqual(outh, format_html(html, {'newrow_h2_1':[NEWROW],
@@ -214,13 +228,13 @@ class TestFormat(TestCase):
 
     def test_layout_with_styling(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
-        outh = "<div class=\"row columns2 fancyrow\"><div class=\"column firstcolumn\"><h1>1</h1><p>para 1</p></div><div class=\"column lastcolumn fancycol\"><h1>2</h1><h1>3</h1></div></div>"
+        outh = "<div class=\"row columns2 fancyrow\"><div class=\"column firstcolumn\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn\"><div class=\"fancycol\"><h1>2</h1><h1>3</h1></div></div></div>"
         self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW, PC('fancyrow')],
                                                   'newcol_h1_2':[NEWCOL, PC('fancycol')]}))
 
     def test_columns_single_col(self):
         html = "<h1>1</h1><p>para 1</p><h2>2</h2>"
-        outh = "<div class=\"row\"><div><h1>1</h1><p>para 1</p><h2>2</h2></div></div>"
+        outh = "<div class=\"row\"><div><div><h1>1</h1><p>para 1</p><h2>2</h2></div></div></div>"
         self.assertEqual(outh, format_html(html, {'h1_1':[NEWROW]}))
 
 class TestElementTreeUtils(TestCase):
@@ -291,13 +305,14 @@ class TestExtractPresentation(TestCase):
         self.assertEqual(presentation, pres2)
 
     def test_extract_2(self):
+        # Full featured, proper test
         html = """
-<div class="row columns3"><div class="column firstcolumn"><h1>Hello Jane</h1><p>Some fancy content, entered using WYMeditor</p><p>Another paragraph</p><p>Hello</p></div><div class="column"><h1>Another &lt;heading&gt;</h1><h2>this is a test</h2><h2>hello1</h2><h3>hello2</h3><h3>hello3</h3><h3>hello4</h3></div><div class="column lastcolumn"><h1>hello5</h1><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div>
+<div class="row columns3"><div class="column firstcolumn"><div class="myclass"><h1>Hello Jane</h1><p>Some fancy content, entered using WYMeditor</p><p>Another paragraph</p><p>Hello</p></div></div><div class="column doublewidth"><div><h1>Another &lt;heading&gt;</h1><h2>this is a test</h2><h2>hello1</h2><h3>hello2</h3><h3>hello3</h3><h3>hello4</h3></div></div><div class="column lastcolumn"><div><h1>hello5</h1><h2>hello6</h2><p>asdasd</p><p>asdxx</p></div></div></div>
 """
         pres = {'newrow_h1_1':set([NEWROW]),
-                'newcol_h1_1':set([NEWCOL]),
+                'newcol_h1_1':set([NEWCOL, PC('myclass')]),
                 'h1_1':set(),
-                'newcol_h1_2':set([NEWCOL]),
+                'newcol_h1_2':set([NEWCOL, PC('doublewidth', column_equiv=2)]),
                 'h1_2':set(),
                 'p_1': set(),
                 'p_2': set(),
@@ -320,6 +335,24 @@ class TestExtractPresentation(TestCase):
     def test_extract_3(self):
         # Tests some other boundary conditions e.g. 1 column row,
         html = """
+<div class="row"><div><div><h1>1</h1><h2>1.1</h2><h2>1.2</h2></div></div></div>
+"""
+        pres = {'h1_1': set(),
+                'newrow_h1_1':set([NEWROW]),
+                'newcol_h1_1':set([NEWCOL]),
+                'h2_1': set(),
+                'h2_2': set(),
+                }
+        pres2, html2 = extract_presentation(html)
+        self.assertEqual(pres, pres2)
+
+    def test_extract_no_inner_col_div_1(self):
+        # Tests that we can extract column structure if we don't have 
+        # an inner column div.
+        # This is important for the case where LayoutDetails.use_inner_column_div = False
+        
+        # Single col structure
+        html = """
 <div class="row"><div><h1>1</h1><h2>1.1</h2><h2>1.2</h2></div></div>
 """
         pres = {'h1_1': set(),
@@ -330,3 +363,22 @@ class TestExtractPresentation(TestCase):
                 }
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
+        
+    def test_extract_no_inner_col_div_2(self):
+        # Tests that we can extract column structure if we don't have 
+        # an inner column div.
+        # This is important for the case where LayoutDetails.use_inner_column_div = False
+        
+        # Double col structure
+        html = """
+<div class="row"><div class="column firstcolumn"><h1>1</h1></div><div class="column lastcolumn"><h2>1.1</h2></div></div>
+"""
+        pres = {'h1_1': set(),
+                'newrow_h1_1':set([NEWROW]),
+                'newcol_h1_1':set([NEWCOL]),
+                'h2_1': set(),
+                'newcol_h2_1':set([NEWCOL])
+                }
+        pres2, html2 = extract_presentation(html)
+        self.assertEqual(pres, pres2)
+  
