@@ -347,10 +347,10 @@ class TestExtractPresentation(TestCase):
         self.assertEqual(pres, pres2)
 
     def test_extract_no_inner_col_div_1(self):
-        # Tests that we can extract column structure if we don't have 
+        # Tests that we can extract column structure if we don't have
         # an inner column div.
         # This is important for the case where LayoutDetails.use_inner_column_div = False
-        
+
         # Single col structure
         html = """
 <div class="row"><div><h1>1</h1><h2>1.1</h2><h2>1.2</h2></div></div>
@@ -363,12 +363,12 @@ class TestExtractPresentation(TestCase):
                 }
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
-        
+
     def test_extract_no_inner_col_div_2(self):
         # Tests that we can extract column structure if we don't have 
         # an inner column div.
         # This is important for the case where LayoutDetails.use_inner_column_div = False
-        
+
         # Double col structure
         html = """
 <div class="row"><div class="column firstcolumn"><h1>1</h1></div><div class="column lastcolumn"><h2>1.1</h2></div></div>
@@ -381,4 +381,3 @@ class TestExtractPresentation(TestCase):
                 }
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
-  
