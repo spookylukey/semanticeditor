@@ -277,12 +277,25 @@ def get_structure(root, assert_structure=False):
     cur_level = 1
     last_heading_num = 0
     first_heading_level = 1
+
+    # Pre-pass to get existing ids.
+    for n in root.getiterator():
+        if n.tag in blockdef:
+            sect_id = n.get('id')
+            if sect_id is not None:
+                if not sect_id.startswith(n.tag) or sect_id in sect_ids:
+                    # don't use invalid or duplicate ids.
+                    # remove
+                    del n.attrib['id']
+                else:
+                    # reserve
+                    sect_ids.add(sect_id)
+
     for n in root.getiterator():
         if n.tag in blockdef:
             text = flatten(n)
-            # Section id - use existing if it is their, but don't duplicate
-            sect_id = n.get('id', '')
-            if sect_id == '' or not sect_id.startswith(n.tag) or sect_id in sect_ids:
+            sect_id = n.get('id')
+            if sect_id is None:
                 sect_id = make_sect_id(n.tag, sect_ids)
             sect_ids.add(sect_id)
             if n.tag in headingdef:

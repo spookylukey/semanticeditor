@@ -67,6 +67,12 @@ class TestExtractStructure(TestCase):
         self.assertEqual(structure[0].sect_id, "h1_10")
         self.assertEqual(structure[1].sect_id, "h1_1")
 
+    def test_regression_1(self):
+        # A bug in using existing section ids
+        html = '<h1 id="h1_1">heading 1</h1><h1>A new heading</h1><h1 id="h1_2">heading 2</h1><h1 id="h1_3">heading 3</h1>'
+        structure = get_structure(parse(html))
+        self.assertEqual(["h1_1", "h1_4", "h1_2", "h1_3"], [s.sect_id for s in structure])
+
 class TestPresentationInfo(TestCase):
     def test_equality(self):
         p1 = PresentationInfo(prestype="command", name="foo", verbose_name="blah")
