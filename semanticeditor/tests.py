@@ -2,7 +2,7 @@
 
 from django.test import TestCase
 from semanticeditor.utils import extract_structure, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure
-from semanticeditor.utils.presentation import PresentationInfo, PresentationClass, StructureItem
+from semanticeditor.utils.presentation import PresentationInfo, PresentationClass, StructureItem, LayoutDetails
 
 PC = PresentationClass
 
@@ -83,6 +83,18 @@ class TestPresentationInfo(TestCase):
         self.assertEqual(set([p1]), set([p2]))
 
 class TestFormat(TestCase):
+    def setUp(self):
+        # monkey patch to ensure some assumptions we make about LayoutDetails.
+        # We may have to go the whole hog and do dependency injection at some
+        # point.
+        self._old_max_columns = LayoutDetails.max_columns
+        LayoutDetails.max_columns = 4
+        super(TestCase, self).setUp()
+
+    def tearDown(self):
+        LayoutDetails.max_columns = self._old_max_columns
+        super(TestCase, self).tearDown()
+
     def test_empty(self):
         self.assertEqual('<div class="row" />', format_html('', {}));
 

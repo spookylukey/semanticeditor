@@ -45,7 +45,7 @@ class LayoutDetails(object):
     COLUMN_CLASS = "column"
 
     # Public interface:
-    max_columns = 4 # max number of columns to allow
+    max_columns = 6 # max number of columns to allow
     use_inner_column_div = True # True to wrap all column content in a inner div
     def row_classes(self, logical_column_count, actual_column_count):
         """
