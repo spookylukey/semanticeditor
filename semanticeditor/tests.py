@@ -255,6 +255,18 @@ class TestFormat(TestCase):
         outh = "<div class=\"row\"><div><div><h1>1</h1><p>para 1</p><h2>2</h2></div></div></div>"
         self.assertEqual(outh, format_html(html, {'h1_1':[NEWROW]}))
 
+class TestHacks(TestCase):
+    def test_div_format_hack(self):
+        html = '<p class="div">Test</p>'
+        outh = '<div class=\"row\"><div><div><div class="div">Test</div></div></div></div>'
+        self.assertEqual(outh, format_html(html, {}))
+
+    def test_div_extract_hack(self):
+        html = '<div class="div">Test</div>'
+        pres, html2 = extract_presentation(html)
+        self.assertEqual({'p_1':set([PC('div')])}, pres)
+        self.assertEqual('<p id="p_1">Test</p>', html2);
+
 class TestElementTreeUtils(TestCase):
     def test_get_parent(self):
         """

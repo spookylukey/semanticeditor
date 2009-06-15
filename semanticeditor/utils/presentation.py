@@ -39,35 +39,146 @@ BLOCK_LEVEL_TRIM_LENGTH = 20
 
 # This is designed to be user supply-able if necessary
 
-class LayoutDetails(object):
+class LayoutDetailsBase(object):
     """
-    Strategy object used for defining the details of CSS/HTML
-    to be used when rendering a Layout.
+    Base class for strategy object used to define the details of
+    CSS/HTML to be used when rendering a layout
     """
-    ROW_CLASS = "row"
-    COLUMN_CLASS = "column"
+    # Inherit from this class if creating your own custom class.  LayoutDetails
+    # provides a concrete implementation.
 
-    # Public interface:
-    max_columns = 6 # max number of columns to allow
-    use_inner_column_div = True # True to wrap all column content in a inner div
+    def _raise_not_implemented(self):
+        raise NotImplementedError()
+
+    max_columns = property(_raise_not_implemented, doc="""Maximum number of columns to allow""")
+
+    use_inner_column_div = property(_raise_not_implemented, doc="""True to wrap all column content in a inner div""")
+
     def row_classes(self, logical_column_count, actual_column_count):
         """
         Returns a list of CSS classes to be used for a row containing
         logical_column_count 'logical' columns, actual_column_count 'actual'
         columns.  'actual' columns are present in the HTML structure, but some
-        might be, for example, double width, so are counted as two logical columns.
+        might be, for example, double width, so are counted as two logical
+        columns.
         """
+        raise NotImplementedError()
+
+    def column_classes(self, logical_column_num, actual_column_num, logical_column_count, actual_column_count):
+        """
+        Returns a list of CSS classes to be used for a column which is number
+        column_num out of column_count.  (see above regarding logical/actual)
+        """
+        raise NotImplementedError()
+
+    def is_row_class(self, class_):
+        """
+        Returns true if the class (a string) corresponds to a CSS class used for
+        a row.
+        """
+        raise NotImplementedError
+
+    def is_column_class(self, class_):
+        """
+        Returns true if the class (a string) corresponds to a CSS class used for
+        a column.
+        """
+        raise NotImplementedError()
+
+    def row_end_html(self):
+        """
+        Returns some raw HTML to be added at the end of a row (e.g. for clearing
+        floats) if necessary.
+        """
+        return ""
+
+    def outer_column_classes(self, presinfo):
+        """
+        Given a list a PresentationInfo objects, return the ones that should be
+        applied to the outer column div.
+        """
+        if self.use_inner_column_div:
+            return presinfo
+        else:
+            raise NotImplementedError()
+
+    def inner_column_classes(self, presinfo):
+        """
+        Given a list a PresentationInfo objects, return the ones that should be
+        applied to the inner column div.  (Never called if use_inner_column_div
+        = False)
+        """
+        raise NotImplementedError()
+
+    # Hacks, optional
+    def format_pre_parse_hacks(self, html, styleinfo):
+        """
+        For formatting, applies hacks to unformatted HTML before parsing,
+        returns HTML to be used.
+        """
+        return html
+
+    def format_post_parse_hacks(self, tree, styleinfo):
+        """
+        For formatting, applies hacks to tree after parsing, returns new tree to
+        be used.
+        """
+        return tree
+
+    def format_structure_hacks(self, structure, styleinfo):
+        """
+        For formatting, given a list of StructureItems and a list of
+        PresentationInfos, applies hacks and returns new structure to be used.
+        """
+        return structure
+
+    def format_post_layout_hacks(self, tree, structure, styleinfo):
+        """
+        For formatting, given the tree after layout, the structure and style
+        info, apply hacks and return a new tree.
+        """
+        return tree
+
+    def extract_pre_parse_hacks(self, html):
+        """
+        For extracting presentation info, applies hacks to formatted HTML before
+        parsing, and returns HTML to be used.
+        """
+        return html
+
+    def extract_post_parse_hacks(self, tree):
+        """
+        For extracting presentation info, applies hacks to parse tree before
+        after parsing, and returns tree.
+        """
+        return tree
+
+    def extract_structure_hacks(self, structure):
+        """
+        For extracting presentation info, given a list of StructureItems,
+        applies hacks and returns new structure to be used.
+        """
+        return structure
+
+class LayoutDetails(LayoutDetailsBase):
+    """
+    Strategy object used for defining the details of CSS/HTML to be used when
+    rendering a Layout.  This is a concrete implementation.
+    """
+    ROW_CLASS = "row"
+    COLUMN_CLASS = "column"
+
+    max_columns = 6
+
+    use_inner_column_div = True
+
+    def row_classes(self, logical_column_count, actual_column_count):
         retval = [self.ROW_CLASS]
         if actual_column_count > 1:
             retval.append("columns%d" % logical_column_count)
         return retval
 
     def column_classes(self, logical_column_num, actual_column_num, logical_column_count, actual_column_count):
-        """
-        Returns a list of CSS classes to be used for a column which is number
-        column_num out of column_count.
-        (see above regarding logical/actual)
-        """
         if actual_column_count == 1:
             # No classes
             return []
@@ -79,40 +190,34 @@ class LayoutDetails(object):
         return retval
 
     def is_row_class(self, class_):
-        """
-        Returns true if the class (a string) corresponds
-        to a CSS class used for a row.
-        """
         return class_ == self.ROW_CLASS or re.match(r'^columns\d+$', class_)
 
     def is_column_class(self, class_):
-        """
-        Returns true if the class (a string) corresponds
-        to a CSS class used for a column.
-        """
         return class_ == self.COLUMN_CLASS or re.match(r'^(first|last)column$', class_)
 
     def row_end_html(self):
-        """
-        Returns some raw HTML to be added at the end of a row
-        (e.g. for clearing floats) if necessary.
-        """
         return ""
 
     def outer_column_classes(self, presinfo):
-        """
-        Given a list a PresentationInfo objects, return the ones that should be applied to
-        the outer column div.
-        """
         return [pi for pi in presinfo if pi.column_equiv is not None]
 
     def inner_column_classes(self, presinfo):
-        """
-        Given a list a PresentationInfo objects, return the ones that should be applied to
-        the inner column div.
-        (Never called if use_inner_column_div = False)
-        """
         return [pi for pi in presinfo if pi.column_equiv is None]
+
+    # Hacks
+    def format_post_layout_hacks(self, tree, structure, styleinfo):
+        # WYMEditor cannot insert divs. This is a workaround
+        for n in tree.getiterator():
+            if n.tag == 'p' and ('div' in _get_classes_for_node(n)):
+                n.tag = 'div'
+        return tree
+
+    def extract_post_parse_hacks(self, tree):
+        # inverse part of above workaround
+        for n in tree.getiterator():
+            if n.tag == 'div' and ('div' in _get_classes_for_node(n)):
+                n.tag = 'p'
+        return tree
 
 ### Parsing ###
 import htmlentitydefs
@@ -376,8 +481,11 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     and values which are lists of CSS classes or special commands.
     """
     layout_strategy = get_layout_details_strategy()
+    html = layout_strategy.format_pre_parse_hacks(html, styleinfo)
     root = parse(html)
+    root = layout_strategy.format_post_parse_hacks(root, styleinfo)
     structure = get_structure(root, assert_structure=True)
+    structure = layout_strategy.format_structure_hacks(structure, styleinfo)
     sect_ids = [s.sect_id for s in structure]
     styleinfo = _sanitise_styleinfo(styleinfo, sect_ids)
 
@@ -402,6 +510,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # 'root' are not altered, but just added to a new tree.  This means that the
     # information in 'structure' does not need updating.
     rendered = _render_layout(layout, layout_strategy)
+    rendered = layout_strategy.format_post_layout_hacks(rendered, structure, styleinfo)
 
     # Pretty print
     if pretty_print:
@@ -699,8 +808,11 @@ def extract_presentation(html):
     # formatting?  This does not affect functionality, but it does
     # affect tests.
     layout_strategy = get_layout_details_strategy()
+    html = layout_strategy.extract_pre_parse_hacks(html)
     root = parse(html)
+    root = layout_strategy.extract_post_parse_hacks(root)
     structure = get_structure(root)
+    structure = layout_strategy.extract_structure_hacks(structure)
     pres = {}
     for si in structure:
         pres[si.sect_id] = set()
