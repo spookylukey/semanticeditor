@@ -26,8 +26,11 @@ AllUserErrors = (InvalidHtml, IncorrectHeadings, BadStructure, TooManyColumns)
 
 ### Definitions ###
 
-blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote'])
+technical_blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote']) # according to HTML4
+additional_blockdef = set(['li']) # li really act like block elements
+blockdef = technical_blockdef | additional_blockdef
 headingdef = set(['h1','h2','h3','h4','h5','h6'])
+preview_blockdef = technical_blockdef
 
 # The number of chars we trim block level elements to.
 BLOCK_LEVEL_TRIM_LENGTH = 20
@@ -610,8 +613,9 @@ def _render_layout(layout, layout_strategy):
 
 def preview_html(html, pres):
     root, structure = format_html(html, pres, return_tree=True)
-    known_nodes = dict((si.node, si) for si in structure)
-    _create_preview(root, structure, known_nodes)
+    structure2 = [si for si in structure if si.tag in preview_blockdef]
+    known_nodes = dict((si.node, si) for si in structure2)
+    _create_preview(root, structure2, known_nodes)
     return _html_extract(root)
 
 def _create_preview(node, structure, known_nodes):
