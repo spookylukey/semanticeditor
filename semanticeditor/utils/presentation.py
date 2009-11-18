@@ -748,7 +748,10 @@ def preview_html(html, pres):
     return _html_extract(root)
 
 def _create_preview(node, structure, known_nodes):
-    for n in node.getchildren():
+    children = node.getchildren()
+    if children and children[0].tag == 'body':
+        children = children[0].getchildren()
+    for n in children:
         if n.tag == 'div':
             _create_preview(n, structure, known_nodes)
         else:
