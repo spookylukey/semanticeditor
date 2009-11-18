@@ -51,11 +51,13 @@ PresentationControls.prototype.setup_controls = function(container) {
     var newrowbutton_id = id_prefix + 'newrowbutton';
     var newcolbutton_id = id_prefix + 'newcolbutton';
     var removebutton_id = id_prefix + 'removebutton';
+    var cleanhtmlbutton_id = id_prefix + 'cleanhtmlbutton';
     var self = this;
 
     // Create elements
     container.after(
 	"<div class=\"prescontrol\">" +
+        "<div><input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanhtmlbutton_id  +  "\" /></div>" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Structure:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
 	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div></td>" +
 	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div>" +
@@ -81,6 +83,7 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.newrowbutton = jQuery('#' + newrowbutton_id);
     this.newcolbutton = jQuery('#' + newcolbutton_id);
     this.removebutton = jQuery('#' + removebutton_id);
+    this.cleanhtmlbutton = jQuery('#' + cleanhtmlbutton_id);
     this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
 
     // Initial set up
@@ -120,6 +123,10 @@ PresentationControls.prototype.setup_controls = function(container) {
                                 self.remove_layout_command();
 				return false;
                             });
+    this.cleanhtmlbutton.click(function(event) {
+                                   self.clean_html();
+                                   return false;
+                               });
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
     jQuery(this.wym._options.updateSelector)
 	.bind(this.wym._options.updateEvent, function(event) {
@@ -418,10 +425,21 @@ PresentationControls.prototype.remove_layout_command = function() {
     }
 };
 
+PresentationControls.prototype.clean_html = function() {
+    var self = this;
+    var html = this.wym.xhtml();
+    jQuery.post(this.opts.clean_html_url, {'html':html},
+                function(data) {
+                    self.with_good_data(data, function(value) {
+                                            self.set_html(value.html);
+                                        });
+                }, "json");
+};
+
 // If data contains an error message, display to the user,
 // otherwise clear the displayed error and perform the callback
 // with the value in the data.
- PresentationControls.prototype.with_good_data = function(data, callback) {
+PresentationControls.prototype.with_good_data = function(data, callback) {
     if (data.result == 'ok') {
 	this.clear_error();
 	callback(data.value);

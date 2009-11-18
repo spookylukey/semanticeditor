@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_structure, extract_presentation, format_html, preview_html, AllUserErrors, NEWROW, NEWCOL, PresentationInfo, PresentationClass
+from semanticeditor.utils import extract_structure, extract_presentation, format_html, preview_html, AllUserErrors, NEWROW, NEWCOL, PresentationInfo, PresentationClass, clean_html
 from semanticeditor.models import CssClass
 import sys
 try:
@@ -207,3 +207,9 @@ def preview(request):
     presentation = _convert_pres(presentation)
 
     return graceful_errors(AllUserErrors, lambda: dict(html=preview_html(html, presentation)))
+
+@json_view
+def clean_html_view(request):
+    html = request.POST.get('html', '')
+    print clean_html(html)
+    return graceful_errors(AllUserErrors, lambda: dict(html=clean_html(html)))
