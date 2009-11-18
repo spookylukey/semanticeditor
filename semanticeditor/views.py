@@ -109,7 +109,7 @@ def SI_to_dict(si):
 
 @json_view
 def extract_structure_view(request):
-    data = request.POST.get('html','').encode("utf-8")
+    data = request.POST.get('html','')
     def _handled():
         return map(SI_to_dict, extract_structure(data))
     return graceful_errors(AllUserErrors, _handled)
@@ -156,7 +156,7 @@ def separate_presentation(request):
        html: <input html stripped of presentation>
      }
     """
-    data = request.POST.get('html','').encode("utf-8")
+    data = request.POST.get('html','')
 
     def _handled():
         pres, html = extract_presentation(data)
@@ -192,7 +192,7 @@ def combine_presentation(request):
     Combines submitted 'html' and 'presentation' data,
     returning a dictionary containg { html: <combined html> }
     """
-    html = request.POST.get('html', '').encode("utf-8")
+    html = request.POST.get('html', '')
     presentation = request.POST.get('presentation', '{}')
     presentation = simplejson.loads(presentation)
     presentation = _convert_pres(presentation)
@@ -201,7 +201,7 @@ def combine_presentation(request):
 
 @json_view
 def preview(request):
-    html = request.POST.get('html', '').encode("utf-8")
+    html = request.POST.get('html', '')
     presentation = request.POST.get('presentation', '{}')
     presentation = simplejson.loads(presentation)
     presentation = _convert_pres(presentation)
