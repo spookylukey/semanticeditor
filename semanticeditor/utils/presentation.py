@@ -459,7 +459,7 @@ def get_structure(root, assert_structure=False):
             # the first to appear in the document.
             # It is also adjusted so that nested items (e.g. p in blockquote)
             # appear to be nested.
-            nesting_level = get_depth(root, n) - 1
+            nesting_level = get_depth(root, n) - 2
             retval.append(StructureItem(level=nesting_level + level - first_heading_level + 1,
                                         sect_id=sect_id,
                                         name=name,
@@ -480,7 +480,7 @@ def extract_structure(content):
     returns a list of tuples containing (level, name, tag)
     """
     # Parse
-    tree = parse(content)
+    tree = parse(content, clean=True)
     structure = get_structure(tree, assert_structure=True)
     return structure
 
@@ -588,6 +588,9 @@ def _layout_column_count(row):
     """
     return sum(_layout_column_width(c) for c in row.columns)
 
+def is_root(node):
+    return node.tag == 'html' or node.tag == 'body'
+
 def _find_layout_commands(root, structure, styleinfo):
     # Layout commands are not stored against normal sections,
     # but have their own entry in the section list, using an id
@@ -602,7 +605,7 @@ def _find_layout_commands(root, structure, styleinfo):
             sect = sect_dict.get(real_sect_id)
             if sect is not None:
                 parent = get_parent(root, sect.node)
-                if parent is not root:
+                if not is_root(parent):
                     raise BadStructure("Section \"%(name)s\" is not at the top level of "
                                        "the document, and therefore cannot have a column "
                                        "structure applied to it.  Please move the 'New row' "
@@ -616,7 +619,7 @@ def _find_layout_commands(root, structure, styleinfo):
             sect = sect_dict.get(real_sect_id)
             if sect is not None:
                 parent = get_parent(root, sect.node)
-                if parent is not root:
+                if not is_root(parent):
                     raise BadStructure("Section \"%(name)s\" is not at the top level of "
                                        "the document, and therefore cannot have a column "
                                        "structure applied to it.  Please move the 'New column' "

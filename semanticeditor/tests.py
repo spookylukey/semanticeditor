@@ -8,7 +8,7 @@ PC = PresentationClass
 
 class TestExtractStructure(TestCase):
     def test_extract_structure(self):
-        self.assertEqual([(s.level, s.sect_id, s.name, s.tag) for s in extract_structure("""
+        self.assertEqual([(s.level, s.sect_id, s.name, s.tag) for s in extract_structure(u"""
 <h1>Heading <b>with </b><i>embedded <em>stuff</em> in</i> it</h1> Hmm
 <p>A long paragraph with some actual content</p>
 <h2>A sub heading</h2>
@@ -37,10 +37,7 @@ class TestExtractStructure(TestCase):
          ])
 
     def test_extract_structure_missing(self):
-        self.assertEqual(extract_structure("Hello"), [])
-
-    def test_rejects_bad_html(self):
-        self.assertRaises(InvalidHtml, extract_structure, "<h1>Foo")
+        self.assertEqual(extract_structure(""), [])
 
     def test_rejects_higher_headings_later(self):
         """
