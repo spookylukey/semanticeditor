@@ -1,7 +1,7 @@
 /*
  * Plugin for WYMEditor that provides an interface to allow separation
  * of presentation and content by allowing the user to select presentation
- * elements for each section.  Depends on a server-side backed to do
+ * elements for each section.  Depends on a server-side backend to do
  * parsing and provide list of allowed CSS classes.
  */
 

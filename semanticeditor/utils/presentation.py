@@ -370,7 +370,7 @@ class StructureItem(object):
     level = 0     #    level is the 'outline level' in the document i.e. an integer
     sect_id = ''  #    sect_id is a unique ID used for storing presentation information against
     name = ''     #    name is a user presentable name for the section
-    tag = ''      #    tag is the HTML element e.g. H1
+    tag = ''      #    tag is the HTML element e.g. h1
     node = None   #    node is the ElementTree node
 
 
@@ -453,7 +453,7 @@ def get_structure(root, assert_structure=False):
             retval.append(StructureItem(level=nesting_level + level - first_heading_level + 1,
                                         sect_id=sect_id,
                                         name=name,
-                                        tag=n.tag.upper(),
+                                        tag=n.tag.lower(),
                                         node=n))
 
     return retval
