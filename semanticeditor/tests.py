@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_structure, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure
+from semanticeditor.utils import extract_structure, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure, clean_html
 from semanticeditor.utils.presentation import PresentationInfo, PresentationClass, StructureItem, LayoutDetails
 
 PC = PresentationClass
@@ -411,3 +411,12 @@ class TestExtractPresentation(TestCase):
                 }
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
+
+class TestHtmlCleanup(TestCase):
+    safari_example_1 = """
+<p style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.8em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; font-size: 0.9em; line-height: 1.4em; "><strong style="font-weight: bold; ">Formerly: Community Health Sciences Research (CHSR) IRG</strong></p><p style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.8em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; font-size: 0.9em; line-height: 1.4em; ">The Clinical Epidemiology IRG aims to undertake research that makes an important difference to patient care. Our work is divided into two broad research areas:</p><h4 style="color: rgb(153, 0, 51); margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; font-size: 1.1em; line-height: 1.3em; "><strong style="font-weight: bold; ">Clinical and environmental epidemiology -</strong>&#160;including</h4><ul style="margin-top: 0px; margin-right: 0px; margin-bottom: 1.5em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; line-height: 1.4em; font-size: 0.9em; "><li style="margin-top: 0px; margin-right: 0px;margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px;padding-left: 0px; ">mental health</li><li style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; ">child protection</li><li style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px;">cancer</li><li style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; ">environmental, economic and social risk factors</li></ul></span>
+"""
+    safari_output_1 = """
+<p><strong>Formerly: Community Health Sciences Research (CHSR) IRG</strong></p><p>The Clinical Epidemiology IRG aims to undertake research that makes an important difference to patient care. Our work is divided into two broad research areas:</p><h4><strong>Clinical and environmental epidemiology -</strong>&#160;including</h4><ul><li>mental health</li><li>child protection</li><li>cancer</li><li>environmental, economic and social risk factors</li></ul>"""
+    def test_cleanup_safari_1(self):
+        self.assertEqual(self.safari_output_1, clean_html(self.safari_example_1))

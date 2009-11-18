@@ -3,7 +3,9 @@ Utilities for manipulating the content provided by the user.
 """
 
 from lxml import etree as ET
-from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_depth, get_index, wrap_elements_in_tag, indent
+from lxml.html import HTMLParser
+from pyquery import PyQuery as pq
+from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_depth, get_index, indent
 from semanticeditor.utils.datastructures import struct
 import re
 
@@ -530,7 +532,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
 def _html_extract(root):
     if len(root) == 0 and root.text is None and root.tail is None:
         return ''
-    return ET.tostring(root).replace('<html>','').replace('</html>','')
+    return ET.tostring(root).replace('<html>','').replace('</html>','').replace('<body>','').replace('</body>', '')
 
 def _strip_presentation(tree):
     cleanup(tree, lambda t: t.tag == 'div')
@@ -848,3 +850,22 @@ def extract_presentation(html):
     out_html = _html_extract(root)
 
     return (pres, out_html)
+
+def _clean_elem(d):
+    try:
+        d.removeAttr('style')
+    except KeyError:
+        pass
+
+def clean_tree(root):
+    """
+    Cleans dirty HTML from an ElementTree
+    """
+    doc = pq(root)
+    doc('*').each(_clean_elem)
+    return doc('html')
+
+def clean_html(html):
+    tree = ET.fromstring('<html><body>' + html + '</body></html>', parser=HTMLParser())
+    clean_tree(tree)
+    return _html_extract(tree)
