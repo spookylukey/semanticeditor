@@ -57,7 +57,6 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Create elements
     container.after(
 	"<div class=\"prescontrol\">" +
-        "<div><input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanhtmlbutton_id  +  "\" /></div>" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Structure:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
 	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div></td>" +
 	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div>" +
@@ -66,6 +65,7 @@ PresentationControls.prototype.setup_controls = function(container) {
         "<input type=\"submit\" value=\"Remove\" id=\"" + removebutton_id  +"\" />" +
         "</div></td></tr></table>" +
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>" +
+            "<td><input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanhtmlbutton_id  +  "\" /></td>" +
 	    "<td><input type=\"submit\" value=\"Refresh structure\" id=\"" + refresh_id + "\" /></td>" +
 	    "<td><input type=\"submit\" value=\"Preview\" id=\"" + previewbutton_id + "\" /></td>" +
             "<td width=\"100%\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
