@@ -237,11 +237,20 @@ def fixentities(htmltext):
             return entity
     return re.sub("&(\w+);?", repl, htmltext)
 
-def parse(content):
-    try:
-        tree = ET.fromstring("<html>" + fixentities(content) + "</html>")
-    except ET.XMLSyntaxError, e:
-        raise InvalidHtml("HTML content is not well formed.")
+def parse(content, clean=False):
+    """
+    Parses the HTML provided into an ElementTree.
+    If 'clean' is True, lax parsing is done, the tree is cleaned
+    of dirty user provided HTML
+    """
+    if clean:
+        tree = ET.fromstring('<html>' + fixentities(content) + '</html>', parser=HTMLParser())
+        clean_tree(tree)
+    else:
+        try:
+            tree = ET.fromstring("<html>" + fixentities(content) + "</html>")
+        except ET.XMLSyntaxError, e:
+            raise InvalidHtml("HTML content is not well formed.")
     return tree
 
 # NB: ElementTree is bizarre - after parsing some UTF-8 bytestrings,
@@ -532,7 +541,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
 def _html_extract(root):
     if len(root) == 0 and root.text is None and root.tail is None:
         return ''
-    return ET.tostring(root).replace('<html>','').replace('</html>','').replace('<body>','').replace('</body>', '')
+    return ET.tostring(root).replace('<html>','').replace('</html>','').replace('<body>','').replace('</body>', '').replace("<head/>","")
 
 def _strip_presentation(tree):
     cleanup(tree, lambda t: t.tag == 'div')
@@ -852,10 +861,11 @@ def extract_presentation(html):
     return (pres, out_html)
 
 def _clean_elem(d):
-    try:
-        d.removeAttr('style')
-    except KeyError:
-        pass
+    for x in ['style', 'class']:
+        try:
+            d.removeAttr(x)
+        except KeyError:
+            pass
 
 def clean_tree(root):
     """
@@ -863,9 +873,8 @@ def clean_tree(root):
     """
     doc = pq(root)
     doc('*').each(_clean_elem)
-    return doc('html')
+    doc('style').remove()
 
 def clean_html(html):
-    tree = ET.fromstring('<html><body>' + html + '</body></html>', parser=HTMLParser())
-    clean_tree(tree)
+    tree = parse(html, clean=True)
     return _html_extract(tree)
