@@ -432,9 +432,9 @@ people to call Jesus “Lord, Lord”?</p></col>
 """
     firefox_oowriter_output_1 = u"""
 <p>Global Caf&#233; Bible
-study: <strong>Luke 6:46-49</strong></p><h2>Words and phrases</h2><table width="459" cellpadding="4"><col width="110"/><col width="334"/><tbody><tr><td><p>torrent</p></td><td><p>a violently fast stream of water</p></td></tr></tbody><p/><h2>Questions</h2><p/><p>What does it mean for
+study: <strong>Luke 6:46-49</strong></p><h2>Words and phrases</h2><p>torrent</p><p>a violently fast stream of water</p><p/><h2>Questions</h2><p/><p>What does it mean for
 people to call Jesus &#8220;Lord, Lord&#8221;?</p>
-</table>"""
+"""
 
     def test_cleanup_safari_1(self):
         self.assertEqual(self.safari_output_1, clean_html(self.safari_example_1))
@@ -444,3 +444,7 @@ people to call Jesus &#8220;Lord, Lord&#8221;?</p>
         # Check that output is well formed.
         parse(output, clean=False)
         self.assertEqual(self.firefox_oowriter_output_1, output)
+
+    def test_cleanup_tables(self):
+        self.assertEqual("<p>Hello</p><p>P2</p>", clean_html("<table><tbody><tr><td><p>Hello</p></td></tr></tbody><p>P2</p></table>"));
+

@@ -877,6 +877,9 @@ def _clean_elem(d):
         except KeyError:
             pass
 
+def _replace_with_children(e):
+    e.replaceWith(e.find('*'))
+
 def clean_tree(root):
     """
     Cleans dirty HTML from an ElementTree
@@ -884,6 +887,9 @@ def clean_tree(root):
     doc = pq(root)
     doc('*').each(_clean_elem)
     doc('style').remove()
+    doc('col').remove()
+    for x in ['table', 'tbody', 'thead', 'tr', 'td']:
+        doc(x).each(_replace_with_children)
 
 def clean_html(html):
     tree = parse(html, clean=True)
