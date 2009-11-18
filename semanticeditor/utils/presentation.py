@@ -2,7 +2,7 @@
 Utilities for manipulating the content provided by the user.
 """
 
-from elementtree import ElementTree as ET
+from lxml import etree as ET
 from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_depth, get_index, wrap_elements_in_tag, indent
 from semanticeditor.utils.datastructures import struct
 from xml.parsers import expat
@@ -239,7 +239,7 @@ def fixentities(htmltext):
 def parse(content):
     try:
         tree = ET.fromstring("<html>" + fixentities(content) + "</html>")
-    except expat.ExpatError, e:
+    except ET.XMLSyntaxError, e:
         raise InvalidHtml("HTML content is not well formed.")
     return tree
 

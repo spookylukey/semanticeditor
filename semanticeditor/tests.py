@@ -96,7 +96,7 @@ class TestFormat(TestCase):
         super(TestCase, self).tearDown()
 
     def test_empty(self):
-        self.assertEqual('<div class="row" />', format_html('', {}));
+        self.assertEqual('<div class="row"/>', format_html('', {}));
 
     def test_no_headings(self):
         html = '<p>Test</p>'
