@@ -1,8 +1,7 @@
-from cms.plugins.text import settings as wym_settings
-from cms.plugins.text.widgets import WYMEditor
-from cms.settings import CMS_MEDIA_URL
+from cms.plugins.text import settings as text_settings
+from cms.plugins.text.widgets.wymeditor_widget  import WYMEditor
 from django import forms
-from django.conf import settings as global_settings
+from django.conf import settings
 from django.template.loader import render_to_string
 from django.utils.safestring import mark_safe
 from django.utils.translation.trans_real import get_language
@@ -12,7 +11,7 @@ join = os.path.join
 
 class SemanticEditor(WYMEditor):
     class Media:
-        js = [join(global_settings.SE_MEDIA_URL, path) for path in
+        js = [join(settings.SEMANTICEDITOR_MEDIA_URL, path) for path in
               ('javascript/wymeditor/plugins/semantic/wymeditor.semantic.js',
                'javascript/json2.js',
                'javascript/orbitaltooltip.js',
@@ -23,11 +22,11 @@ class SemanticEditor(WYMEditor):
         context = {
             'name': name,
             'language': language,
-            'SE_MEDIA_URL': global_settings.SE_MEDIA_URL,
-            'CMS_MEDIA_URL': CMS_MEDIA_URL,
-            'WYM_TOOLS': mark_safe(wym_settings.WYM_TOOLS),
-            'WYM_CONTAINERS': mark_safe(wym_settings.WYM_CONTAINERS),
-            'WYM_CLASSES': mark_safe(wym_settings.WYM_CLASSES),
+            'SEMANTICEDITOR_MEDIA_URL': settings.SEMANTICEDITOR_MEDIA_URL,
+            'CMS_MEDIA_URL': settings.CMS_MEDIA_URL,
+            'WYM_TOOLS': mark_safe(text_settings.WYM_TOOLS),
+            'WYM_CONTAINERS': mark_safe(text_settings.WYM_CONTAINERS),
+            'WYM_CLASSES': mark_safe(text_settings.WYM_CLASSES),
             'installed_plugins': self.installed_plugins,
         }
 

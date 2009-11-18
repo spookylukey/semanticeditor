@@ -18,7 +18,7 @@ Settings
  * Normal Django settings
  * Normal django-cms2 settings
  * INSTALLED_APPS - add "semanticeditor"
- * SE_MEDIA_URL = os.path.join(MEDIA_URL, "semanticeditor/")
+ * SEMANTICEDITOR_MEDIA_URL = os.path.join(MEDIA_URL, "semanticeditor/")
 
 Templates
 =========
