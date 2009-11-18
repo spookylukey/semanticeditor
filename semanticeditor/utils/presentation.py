@@ -244,11 +244,11 @@ def parse(content, clean=False):
     of dirty user provided HTML
     """
     if clean:
-        tree = ET.fromstring('<html>' + fixentities(content) + '</html>', parser=HTMLParser())
+        tree = ET.fromstring('<html><body>' + fixentities(content) + '</body></html>', parser=HTMLParser())
         clean_tree(tree)
     else:
         try:
-            tree = ET.fromstring("<html>" + fixentities(content) + "</html>")
+            tree = ET.fromstring("<html><body>" + fixentities(content) + "</body></html>")
         except ET.XMLSyntaxError, e:
             raise InvalidHtml("HTML content is not well formed.")
     return tree
@@ -490,9 +490,11 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     The dictionary has keys which are the ids of sections,
     and values which are lists of CSS classes or special commands.
     """
+    #import pdb
+    #pdb.set_trace()
     layout_strategy = get_layout_details_strategy()
     html = layout_strategy.format_pre_parse_hacks(html, styleinfo)
-    root = parse(html)
+    root = parse(html, clean=True)
     root = layout_strategy.format_post_parse_hacks(root, styleinfo)
     structure = get_structure(root, assert_structure=True)
     structure = layout_strategy.format_structure_hacks(structure, styleinfo)
@@ -643,7 +645,11 @@ def _create_layout(root, styleinfo, structure):
     sect_dict = dict((si.node, si) for si in structure)
 
     # Build Layout
-    for node in root.getchildren():
+    children = root.getchildren()
+    if children and children[0].tag == 'body':
+        children = children[0].getchildren()
+
+    for node in children:
         si = sect_dict.get(node)
 
         if si:
@@ -696,7 +702,8 @@ def _check_layout(layout, structure, layout_strategy):
                                  dict(max=max_cols, name=sect.name))
 
 def _render_layout(layout, layout_strategy):
-    root = ET.fromstring("<html></html>")
+    docroot = ET.fromstring("<html><body></body></html>")
+    root = docroot.getchildren()[0] # body
     for row in layout.rows:
         # Row
         logical_column_count = _layout_column_count(row)
@@ -731,7 +738,7 @@ def _render_layout(layout, layout_strategy):
 
             logical_column_num += _layout_column_width(col)
         root.append(rowdiv)
-    return root
+    return docroot
 
 def preview_html(html, pres):
     root, structure = format_html(html, pres, return_tree=True)

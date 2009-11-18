@@ -254,9 +254,9 @@ class TestFormat(TestCase):
 
 class TestHacks(TestCase):
     def test_div_format_hack(self):
-        html = '<p class="div">Test</p>'
+        html = '<p>Test</p>'
         outh = '<div class=\"row\"><div><div><div class="div">Test</div></div></div></div>'
-        self.assertEqual(outh, format_html(html, {}))
+        self.assertEqual(outh, format_html(html, {'p_1':[PC('div')]}))
 
     def test_div_extract_hack(self):
         html = '<div class="div">Test</div>'
@@ -413,7 +413,8 @@ class TestHtmlCleanup(TestCase):
     safari_example_1 = """
 <p style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.8em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; font-size: 0.9em; line-height: 1.4em; "><strong style="font-weight: bold; ">Formerly: Community Health Sciences Research (CHSR) IRG</strong></p><p style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.8em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; font-size: 0.9em; line-height: 1.4em; ">The Clinical Epidemiology IRG aims to undertake research that makes an important difference to patient care. Our work is divided into two broad research areas:</p><h4 style="color: rgb(153, 0, 51); margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; font-size: 1.1em; line-height: 1.3em; "><strong style="font-weight: bold; ">Clinical and environmental epidemiology -</strong>&#160;including</h4><ul style="margin-top: 0px; margin-right: 0px; margin-bottom: 1.5em; margin-left: 0px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; line-height: 1.4em; font-size: 0.9em; "><li style="margin-top: 0px; margin-right: 0px;margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px;padding-left: 0px; ">mental health</li><li style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; ">child protection</li><li style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px;">cancer</li><li style="margin-top: 0px; margin-right: 0px; margin-bottom: 0.25em; margin-left: 20px; padding-top: 0px; padding-right: 0px; padding-bottom: 0px; padding-left: 0px; ">environmental, economic and social risk factors</li></ul></span>
 """
-    safari_output_1 = """<p><strong>Formerly: Community Health Sciences Research (CHSR) IRG</strong></p><p>The Clinical Epidemiology IRG aims to undertake research that makes an important difference to patient care. Our work is divided into two broad research areas:</p><h4><strong>Clinical and environmental epidemiology -</strong>&#160;including</h4><ul><li>mental health</li><li>child protection</li><li>cancer</li><li>environmental, economic and social risk factors</li></ul>"""
+    safari_output_1 = """
+<p><strong>Formerly: Community Health Sciences Research (CHSR) IRG</strong></p><p>The Clinical Epidemiology IRG aims to undertake research that makes an important difference to patient care. Our work is divided into two broad research areas:</p><h4><strong>Clinical and environmental epidemiology -</strong>&#160;including</h4><ul><li>mental health</li><li>child protection</li><li>cancer</li><li>environmental, economic and social risk factors</li></ul>"""
 
     firefox_oowriter_example_1 = u"""
 <style type="text/css">
@@ -429,7 +430,8 @@ class TestHtmlCleanup(TestCase):
 study: <strong>Luke 6:46-49</strong></p><h2 class="western">Words and phrases</h2><table width="459" cellpadding="4"><col width="110"><col width="334"><tbody><tr><td><p class="western">torrent</p></td><td><p class="western">a violently fast stream of water</p></td></tr></tbody><p class="western"></p><h2 class="western">Questions</h2><p class="western"></p><p class="western">What does it mean for
 people to call Jesus “Lord, Lord”?</p></col>
 """
-    firefox_oowriter_output_1 = u"""<p>Global Caf&#233; Bible
+    firefox_oowriter_output_1 = u"""
+<p>Global Caf&#233; Bible
 study: <strong>Luke 6:46-49</strong></p><h2>Words and phrases</h2><table width="459" cellpadding="4"><col width="110"/><col width="334"/><tbody><tr><td><p>torrent</p></td><td><p>a violently fast stream of water</p></td></tr></tbody><p/><h2>Questions</h2><p/><p>What does it mean for
 people to call Jesus &#8220;Lord, Lord&#8221;?</p>
 </table>"""
