@@ -1,9 +1,6 @@
 """
-ElementTree utils
+etree/ElementTree utils
 """
-
-from elementtree import ElementTree as ET
-from xml.parsers import expat
 
 # ElementTree utilities.  Lots of these are pinched
 # from proposed 'ElementLib' module on effbot.
@@ -82,17 +79,6 @@ def get_index(parent, elem):
     Return the index of elem in parent's children
     """
     return list(parent.getchildren()).index(elem)
-
-def wrap_elements_in_tag(parent, start_idx, stop_idx, tag):
-    """
-    Wrap elements in parent at indices [start_idx:stop_idx] with
-    a new element
-    """
-    newelem = ET.Element(tag)
-    group = parent[start_idx:stop_idx]
-    newelem[:] = group
-    parent[start_idx:stop_idx] = [newelem]
-    return newelem
 
 def indent(elem, level=0):
     i = "\n" + level*"  "
