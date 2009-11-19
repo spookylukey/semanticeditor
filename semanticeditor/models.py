@@ -19,7 +19,7 @@ class CssClass(models.Model):
     column_equiv = models.IntegerField("Column count equivalent", null=True, blank=True,
                                        help_text="For classes designed to be applied to "
                                        "columns only, this is the number of columns this "
-                                       "be considered as equivalent too.  This can be "
+                                       "should be considered as equivalent to. This can be "
                                        "useful for generating double width columns etc. "
                                        "within a column layout.")
     def __unicode__(self):
