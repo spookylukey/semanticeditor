@@ -946,9 +946,8 @@ def clean_tree(root):
         for n in doc(x):
             pull_up(n)
 
-    doc('br + br').remove()
-    doc('p + br').remove()
-    doc('p:empty').remove()
+    for x in ['br + br', 'p + br', 'p:empty']:
+        doc(x).remove()
 
     # Removed elements can give problems which need to be fixed again.  We keep
     # iterating through this until we get the same answer!
