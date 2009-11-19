@@ -22,15 +22,15 @@ class TestExtractStructure(TestCase):
 <h1>Heading two</h1>
 """)],
         [(1, "h1_1", u"Heading with embedded stuff in it", u"h1"),
-         (2, "p_1", u"A long paragraph wit...", u"p"),
+         (2, "p_1", u"A long paragraph with some actual content...", u"p"),
          (2, "h2_1", u"A sub heading", u"h2"),
          (3, "p_2", u"Another para...", u"p"),
          (3, "h3_1", u"level 3", u"h3"),
-         (4, "p_3", u"A long paragraph wit...2", u"p"),
+         (4, "p_3", u"A long paragraph with some actual content...2", u"p"),
          (4, "h4_1", u"level 4", u"h4"),
          (5, "p_4", u"Another para...2", u"p"),
          (5, "h5_1", u"level 5", u"h5"),
-         (6, "p_5", u"nasty  ééééééééééééé...", u"p"),
+         (6, "p_5", u"nasty  éééééééééééééééééééééééééé...", u"p"),
          (6, "h6_1", u"level 6", u"h6"),
          (1, "h1_2", u"Heading two", u"h1"),
          ])
