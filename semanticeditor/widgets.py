@@ -20,7 +20,7 @@ class SemanticEditor(WYMEditor):
 
     def __init__(self, attrs=None, installed_plugins=None, page=None):
         self.page = page
-        super(SemanticEditor, self).__init__(attrs)
+        super(SemanticEditor, self).__init__(attrs=attrs, installed_plugins=installed_plugins)
 
     def render_additions(self, name, value, attrs=None):
         language = get_language()
