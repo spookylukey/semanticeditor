@@ -508,3 +508,10 @@ class TestHtmlCleanup(TestCase):
     def test_remove_span(self):
         self.assertEqualClean("<p>Some <span>text</span> with a silly span</p>",
                               "<p>Some text with a silly span</p>")
+
+    def test_inline_wrapping_block(self):
+        self.assertEqualClean("<strong><p>A test</p></strong>",
+                              "<p>A test</p>")
+        self.assertEqualClean("<em><ul><li>A test</li></ul></strong>",
+                              "<ul><li>A test</li></ul>")
+
