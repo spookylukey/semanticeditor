@@ -11,7 +11,7 @@ from django.forms.fields import CharField
 
 class SemanticTextPlugin(TextPlugin):
 
-    name = _("Text with presentation")
+    name = _("Text/layout")
 
     def get_editor_widget(self, request, plugins):
         return SemanticEditor(installed_plugins=plugins)

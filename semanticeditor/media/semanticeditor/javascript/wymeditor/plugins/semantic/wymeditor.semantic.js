@@ -56,13 +56,14 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Create elements
     container.after(
 	"<div class=\"prescontrol\">" +
-	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr><td width=\"50%\"><div class=\"prescontrolheadings\">Structure:<br/><select size=\"7\" id=\"" + headingsbox_id + "\"></select>" +
-	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div></td>" +
-	"<td width=\"50%\"><div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div>" +
+	"<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div>" +
         "<input type=\"submit\" value=\"New row\" id=\"" + newrowbutton_id  +"\" />" +
         "<input type=\"submit\" value=\"New column\" id=\"" + newcolbutton_id  +"\" />" +
         "<input type=\"submit\" value=\"Remove\" id=\"" + removebutton_id  +"\" />" +
-        "</div></td></tr></table>" +
+        "</div>" +
+    "<div class=\"prescontrolheadings\" style=\"margin-right: 260px;\">Document structure:<br/><select size=\"15\" id=\"" + headingsbox_id + "\"></select>" +
+	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div>" +
+
 	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>" +
 	    "<td><input type=\"submit\" value=\"Refresh structure\" id=\"" + refresh_id + "\" /></td>" +
 	    "<td><input type=\"submit\" value=\"Preview\" id=\"" + previewbutton_id + "\" /></td>" +
@@ -517,11 +518,11 @@ PresentationControls.prototype.update_headingbox = function() {
                     var caption = "";
                     var tag = item.tag.toLowerCase();
                     if (tag == 'row' || tag == 'column') {
-                        caption = "[" + escapeHtml(item.name) + "]";
+                        caption = escapeHtml(item.name);
                     } else {
                         caption = tag + ": " + escapeHtml(item.name);
                     }
-		    self.headingscontrol.append("<option value='" + i.toString() + "'>" + spaces + caption + "</option>");
+		    self.headingscontrol.append("<option class ='" + tag + "' value='" + i.toString() + "'>" + spaces + caption + "</span>" + "</option>");
     });
 };
 

@@ -1,5 +1,5 @@
 from cms.plugins.text import settings as wym_settings
-from cms.plugins.text.widgets import WYMEditor
+from cms.plugins.text.widgets.wymeditor_widget import WYMEditor
 from cms.settings import CMS_MEDIA_URL
 from django import forms
 from django.conf import settings as global_settings
