@@ -884,9 +884,6 @@ def _clean_elem(d):
         except KeyError:
             pass
 
-def _replace_with_children(e):
-    e.replaceWith(e.find('*'))
-
 def _empty_text(x):
     return x is None or x.strip() == ""
 
@@ -940,16 +937,14 @@ def clean_tree(root):
     doc('style').remove()
     doc('col').remove()
 
-    for x in ['table', 'tbody', 'thead', 'tr', 'td']:
-        doc(x).each(_replace_with_children)
-
     def pull_up(n):
         p = get_parent(body, n)
         i = get_index(p, n)
         eliminate_tag(p, i)
 
-    for n in doc('li p:only-child'):
-        pull_up(n)
+    for x in ['table', 'tbody', 'thead', 'tr', 'td', 'span', 'li p:only-child']:
+        for n in doc(x):
+            pull_up(n)
 
     doc('br + br').remove()
     doc('p + br').remove()

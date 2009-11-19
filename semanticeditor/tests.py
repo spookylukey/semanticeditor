@@ -110,7 +110,7 @@ class TestFormat(TestCase):
 
     def test_existing_divs(self):
         html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
-        outh = '<div class="row"><div><div><p><foo><bar><fribble><p>Some text para some more more <span> of </span> this stuff </p></fribble></bar></foo></p></div></div></div>'
+        outh = '<div class="row"><div><div><p><foo><bar><fribble><p>Some text para some more more  of  this stuff </p></fribble></bar></foo></p></div></div></div>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_add_css_classes(self):
@@ -504,3 +504,7 @@ class TestHtmlCleanup(TestCase):
     def test_p_in_li(self):
         self.assertEqualClean("<ul><li><p>An item</p></li></ul>",
                               "<ul><li>An item</li></ul>")
+
+    def test_remove_span(self):
+        self.assertEqualClean("<p>Some <span>text</span> with a silly span</p>",
+                              "<p>Some text with a silly span</p>")
