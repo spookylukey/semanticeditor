@@ -540,7 +540,7 @@ PresentationControls.prototype.update_headingbox = function() {
                     } else {
                         caption = tag + ": " + escapeHtml(item.name);
                     }
-		    self.headingscontrol.append("<option class ='" + tag + "' value='" + i.toString() + "'>" + spaces + caption + "</span>" + "</option>");
+		    self.headingscontrol.append("<option class ='" + tag + "' value='" + i.toString() + "'>" + spaces + caption + "</option>");
     });
 };
 
