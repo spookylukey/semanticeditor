@@ -60,13 +60,23 @@ $(document).ready(function(){
             .append(html);
 
             // Enable the 'semantic' plugin
+            // 'template' attribute can be overridden by a '?template' query
+            // string parameter on parent frame
+            var qs = jQuery.query.load(window.parent.location.search);
+            var template = qs.get('template');
+            if (template == "") {
+                template = "{{ page.template }}";
+            }
+
             symanticopts = {
                 extract_structure_url: "{% url semantic.extract_structure %}",
                 retrieve_styles_url: "{% url semantic.retrieve_styles %}",
                 separate_presentation_url: "{% url semantic.separate_presentation %}",
                 combine_presentation_url: "{% url semantic.combine_presentation %}",
                 clean_html_url: "{% url semantic.clean_html %}",
-                preview_url: "{% url semantic.preview %}"
+                preview_url: "{% url semantic.preview %}",
+                template: template,
+                page_id: "{{ page.id }}"
             };
             wym.semantic(symanticopts);
 
