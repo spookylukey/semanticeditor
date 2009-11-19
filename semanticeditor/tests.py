@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import extract_structure, InvalidHtml, IncorrectHeadings, format_html, parse, get_parent, get_index, BadStructure, TooManyColumns, NEWROW, NEWCOL, extract_presentation, get_structure, clean_html
-from semanticeditor.utils.presentation import PresentationInfo, PresentationClass, StructureItem, LayoutDetails
+from semanticeditor.utils import *
 
 PC = PresentationClass
 
@@ -111,7 +110,7 @@ class TestFormat(TestCase):
 
     def test_existing_divs(self):
         html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
-        outh = '<div class="row"><div><div><foo><bar><fribble>Some text <p>para</p> some more more <span> of </span> this stuff </fribble></bar></foo></div></div></div>'
+        outh = '<div class="row"><div><div><p><foo><bar><fribble><p>Some text para some more more <span> of </span> this stuff </p></fribble></bar></foo></p></div></div></div>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_add_css_classes(self):
@@ -283,6 +282,32 @@ class TestElementTreeUtils(TestCase):
         p = get_parent(t, n)
         self.assertEqual(1, get_index(p,n))
 
+    def test_eliminate_tag_1(self):
+        t = ET.fromstring("<a>Hello<b>Goodbye</b>End</a>")
+        eliminate_tag(t, 0)
+        self.assertEqual("<a>HelloGoodbyeEnd</a>", ET.tostring(t))
+
+    def test_eliminate_tag_2(self):
+        t = ET.fromstring("<a>Hello<b>Goodbye</b>Some<b>More</b>End</a>")
+        eliminate_tag(t, 0)
+        self.assertEqual("<a>HelloGoodbyeSome<b>More</b>End</a>", ET.tostring(t))
+
+    def test_eliminate_tag_3(self):
+        t = ET.fromstring("<a>Hello<b>Goodbye</b>Some<b>More</b>End</a>")
+        eliminate_tag(t, 1)
+        self.assertEqual("<a>Hello<b>Goodbye</b>SomeMoreEnd</a>", ET.tostring(t))
+
+    def test_eliminate_tag_4(self):
+        t = ET.fromstring("<a>Hello<b>Good<x>b</x><y>y</y>e</b>End</a>")
+        eliminate_tag(t, 0)
+        self.assertEqual("<a>HelloGood<x>b</x><y>y</y>eEnd</a>", ET.tostring(t))
+
+    def test_eliminate_tag_5(self):
+        t = ET.fromstring("<a>Hello<b>First <c>node</c></b>tail<b>Good<x>b</x><y>y</y>e</b>And<b>Stuff</b></a>")
+        eliminate_tag(t, 1)
+        self.assertEqual("<a>Hello<b>First <c>node</c></b>tailGood<x>b</x><y>y</y>eAnd<b>Stuff</b></a>", ET.tostring(t))
+
+
 
 class TestExtractPresentation(TestCase):
     def test_extract_presentation(self):
@@ -426,25 +451,56 @@ class TestHtmlCleanup(TestCase):
 		H2.cjk { font-family: "DejaVu Sans"; font-size: 14pt; font-style: italic }
 		H2.ctl { font-family: "DejaVu Sans"; font-size: 14pt; font-style: italic }
 	--&gt;
-	</style><p class="western">Global Café Bible
-study: <strong>Luke 6:46-49</strong></p><h2 class="western">Words and phrases</h2><table width="459" cellpadding="4"><col width="110"><col width="334"><tbody><tr><td><p class="western">torrent</p></td><td><p class="western">a violently fast stream of water</p></td></tr></tbody><p class="western"></p><h2 class="western">Questions</h2><p class="western"></p><p class="western">What does it mean for
-people to call Jesus “Lord, Lord”?</p></col>
+	</style><p class="western"><strong>My Café</strong></p><h2 class="western">Heading</h2><table width="459" cellpadding="4"><col width="110"><col width="334"><tbody><tr><td><p class="western">cell1</p></td><td><p class="western">cell2</p></td></tr></tbody><p class="western"></p><h2 class="western">Heading 2</h2><p class="western"></p><p class="western">Some “text”</p></col>
 """
     firefox_oowriter_output_1 = u"""
-<p>Global Caf&#233; Bible
-study: <strong>Luke 6:46-49</strong></p><h2>Words and phrases</h2><p>torrent</p><p>a violently fast stream of water</p><p/><h2>Questions</h2><p/><p>What does it mean for
-people to call Jesus &#8220;Lord, Lord&#8221;?</p>
+<p><strong>My Caf&#233;</strong></p><h2>Heading</h2><p>cell1</p><p>cell2</p><h2>Heading 2</h2><p>Some “text”</p>
 """
 
+    def assertEqualClean(self, input, output):
+        """
+        Assert that expected output is the same as the input cleaned
+        """
+        # Do a pretty_print to make error messages nicer
+        actual_output = clean_html(input)
+        s1 = pretty_print(output).strip()
+        s2 = pretty_print(actual_output).strip()
+        try:
+            self.assertEqual(s1, s2)
+        except:
+            print
+            print s1
+            print
+            print s2
+            raise
+
     def test_cleanup_safari_1(self):
-        self.assertEqual(self.safari_output_1, clean_html(self.safari_example_1))
+        self.assertEqualClean(self.safari_example_1,
+                              self.safari_output_1)
 
     def test_cleanup_firefox_oowriter_1(self):
-        output = clean_html(self.firefox_oowriter_example_1)
-        # Check that output is well formed.
-        parse(output, clean=False)
-        self.assertEqual(self.firefox_oowriter_output_1, output)
+        self.assertEqualClean(self.firefox_oowriter_example_1,
+                              self.firefox_oowriter_output_1)
 
     def test_cleanup_tables(self):
-        self.assertEqual("<p>Hello</p><p>P2</p>", clean_html("<table><tbody><tr><td><p>Hello</p></td></tr></tbody><p>P2</p></table>"));
+        self.assertEqualClean("<table><tbody><tr><td><p>Hello</p></td></tr></tbody><p>P2</p>text</table>",
+                              "<p>Hello</p><p>P2</p><p>text</p>");
 
+    def test_toplevel_text(self):
+        # Make sure that text at the top level is inside some tag
+        self.assertEqualClean("test", "<p>test</p>")
+
+    def test_div_to_p(self):
+        self.assertEqualClean("<div>Foo</div>", "<p>Foo</p>")
+
+    def test_nested_p(self):
+        self.assertEqualClean("<p>Hello <p>How are <p>you</p></p> today</p>",
+                              "<p>Hello </p><p>How are </p><p>you</p><p> today</p>")
+
+    def test_br_to_p(self):
+        self.assertEqualClean("This is<br /><br />a test",
+                              "<p>This is</p><p>a test</p>")
+
+    def test_p_in_li(self):
+        self.assertEqualClean("<ul><li><p>An item</p></li></ul>",
+                              "<ul><li>An item</li></ul>")

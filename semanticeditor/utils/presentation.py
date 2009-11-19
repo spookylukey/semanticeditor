@@ -5,7 +5,7 @@ Utilities for manipulating the content provided by the user.
 from lxml import etree as ET
 from lxml.html import HTMLParser
 from pyquery import PyQuery as pq
-from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_depth, get_index, indent
+from semanticeditor.utils.etree import cleanup, flatten, get_parent, get_depth, get_index, indent, eliminate_tag
 from semanticeditor.utils.datastructures import struct
 import re
 
@@ -244,20 +244,24 @@ def parse(content, clean=False):
     of dirty user provided HTML
     """
     if clean:
-        tree = ET.fromstring('<html><body>' + fixentities(content) + '</body></html>', parser=HTMLParser())
+        tree = ET.fromstring(u'<html><body>' + fixentities(content) + u'</body></html>', parser=HTMLParser())
         clean_tree(tree)
     else:
         try:
-            tree = ET.fromstring("<html><body>" + fixentities(content) + "</body></html>")
+            tree = ET.fromstring(u"<html><body>" + fixentities(content) + u"</body></html>")
         except ET.XMLSyntaxError, e:
             raise InvalidHtml("HTML content is not well formed.")
     return tree
 
-# NB: ElementTree is bizarre - after parsing some UTF-8 bytestrings,
-# it will then return nodes that are 'str's if the text is all ASCII,
-# otherwise 'unicode's (having correctly interpreted the UTF-8).  When
-# serialising to JSON, this works out OK actually, so we leave it as
-# is for the moment.
+# NB: ElementTree is bizarre - after parsing some UTF-8 bytestrings, it will
+# then return nodes that are 'str's if the text is all ASCII, otherwise
+# 'unicode's (having correctly interpreted the UTF-8).  When serialising to
+# JSON, this works out OK actually, so we leave it as is for the moment.
+
+def pretty_print(content):
+    t = parse(content)
+    indent(t)
+    return _html_extract(t)
 
 ### Semantic editor functionality ###
 
@@ -832,7 +836,7 @@ def extract_presentation(html):
     # affect tests.
     layout_strategy = get_layout_details_strategy()
     html = layout_strategy.extract_pre_parse_hacks(html)
-    root = parse(html)
+    root = parse(html, clean=False) # it's important we don't clean.
     root = layout_strategy.extract_post_parse_hacks(root)
     structure = get_structure(root)
     structure = layout_strategy.extract_structure_hacks(structure)
@@ -883,16 +887,81 @@ def _clean_elem(d):
 def _replace_with_children(e):
     e.replaceWith(e.find('*'))
 
+def _empty_text(x):
+    return x is None or x.strip() == ""
+
+def _promote_child_text(elem, tag):
+    """
+    Ensure any leading or trailing text directly as a child of elem is wrapped
+    in a tag.
+    """
+    if not _empty_text(elem.text):
+        newtag = ET.Element(tag)
+        newtag.text = elem.text
+        elem.insert(0, newtag)
+        elem.text = None
+
+    if len(elem) > 0 and not _empty_text(elem[-1].tail):
+        newtag = ET.Element(tag)
+        newtag.text = elem[-1].tail
+        elem[-1].tail = None
+        elem.append(newtag)
+
+def _clean_nested(elem):
+    for idx, child in reversed(list(enumerate(elem.getchildren()))):
+        # (do it reversed so that indexes never change as we mutate children)
+        _clean_nested(child)
+        if child.tag == 'p' and elem.tag == 'p':
+            eliminate_tag(elem, idx)
+
+def _replace_block_elements(elem):
+    for child in elem.getchildren():
+        if child.tag == 'div':
+            child.tag = 'p'
+        _replace_block_elements(child)
+
 def clean_tree(root):
     """
     Cleans dirty HTML from an ElementTree
     """
+    initial_html = _html_extract(root)
+    body = root[0] # <html><body>
+    # If there is text directly in body, it needs wrapping in a block element.
+    _promote_child_text(body, 'p')
+
+    # First replace divs
+    _replace_block_elements(body)
+
+    # Deal with nested 'p's and other elements.
+    _clean_nested(body)
+
     doc = pq(root)
     doc('*').each(_clean_elem)
     doc('style').remove()
     doc('col').remove()
+
     for x in ['table', 'tbody', 'thead', 'tr', 'td']:
         doc(x).each(_replace_with_children)
+
+    def pull_up(n):
+        p = get_parent(body, n)
+        i = get_index(p, n)
+        eliminate_tag(p, i)
+
+    for n in doc('li p:only-child'):
+        pull_up(n)
+
+    doc('br + br').remove()
+    doc('p + br').remove()
+    doc('p:empty').remove()
+
+    # Removed elements can give problems which need to be fixed again.  We keep
+    # iterating through this until we get the same answer!
+    output_html = _html_extract(root)
+    if initial_html == output_html:
+        return
+    else:
+        clean_tree(root)
 
 def clean_html(html):
     tree = parse(html, clean=True)

@@ -96,3 +96,42 @@ def indent(elem, level=0):
     else:
         if level and (not elem.tail or not elem.tail.strip()):
             elem.tail = i
+
+def eliminate_tag(parent, index):
+    """
+    Eliminates the tag from node at index 'index' from the parent.  The contents
+    are pulled up into parent.
+    """
+    elem = parent[index]
+
+    first = index == 0
+    last = index == len(parent) - 1
+
+    # 'text'
+    if first:
+        # 'text' merges with parents.
+        parent.text = textjoin(parent.text, elem.text)
+    else:
+        # 'text' merges with tail of previous sibling
+        prev = parent[index-1]
+        prev.tail = textjoin(prev.tail, elem.text)
+    # 'tail'
+    if len(elem.getchildren()) > 0:
+        # tail always goes on last child's tail
+        elem[-1].tail = textjoin(elem[-1].tail, elem.tail)
+    else:
+        if first:
+            # tail goes on parents text
+            parent.text = textjoin(parent.text, elem.tail)
+        elif last: # (and not first)
+            prev = parent[index-1]
+            prev.tail = textjoin(prev.tail, elem.tail)
+        else:
+            next = parent[index+1]
+            next.text = textjoin(elem.tail, next.text)
+
+    # Replace element with its children
+    parent.remove(elem)
+    for c in reversed(elem.getchildren()):
+        parent.insert(index, c)
+
