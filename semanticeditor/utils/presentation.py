@@ -34,7 +34,7 @@ headingdef = set(['h1','h2','h3','h4','h5','h6'])
 preview_blockdef = technical_blockdef
 
 # The number of chars we trim block level elements to.
-BLOCK_LEVEL_TRIM_LENGTH = 20
+BLOCK_LEVEL_TRIM_LENGTH = 200
 
 ### Layout CSS class names ###
 
