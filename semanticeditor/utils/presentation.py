@@ -30,6 +30,7 @@ AllUserErrors = (InvalidHtml, IncorrectHeadings, BadStructure, TooManyColumns)
 technical_blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote']) # according to HTML4
 additional_blockdef = set(['li']) # li really act like block elements
 blockdef = technical_blockdef | additional_blockdef
+blockdef_selector = ",".join(blockdef)
 headingdef = set(['h1','h2','h3','h4','h5','h6'])
 preview_blockdef = technical_blockdef
 
@@ -945,6 +946,13 @@ def clean_tree(root):
     for x in ['table', 'tbody', 'thead', 'tr', 'td', 'span', 'li p:only-child']:
         for n in doc(x):
             pull_up(n)
+    # "li p:only-child" appears to be buggy.  It works like
+    # "li p:only-descendent" or something.
+
+    for x in ['strong','em','b','i']:
+        for n in doc(x):
+            if pq(n).is_(blockdef_selector):
+                pull_up(n)
 
     for x in ['br + br', 'p + br', 'p:empty']:
         doc(x).remove()

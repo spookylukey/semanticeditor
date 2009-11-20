@@ -15,7 +15,12 @@ class SemanticEditor(WYMEditor):
               ('javascript/wymeditor/plugins/semantic/wymeditor.semantic.js',
                'javascript/json2.js',
                'javascript/orbitaltooltip.js',
+               'javascript/jquery.query-2.1.7.js',
                )]
+
+    def __init__(self, attrs=None, installed_plugins=None, page=None):
+        self.page = page
+        super(SemanticEditor, self).__init__(attrs=attrs, installed_plugins=installed_plugins)
 
     def render_additions(self, name, value, attrs=None):
         language = get_language()
@@ -28,6 +33,7 @@ class SemanticEditor(WYMEditor):
             'WYM_CONTAINERS': mark_safe(text_settings.WYM_CONTAINERS),
             'WYM_CLASSES': mark_safe(text_settings.WYM_CLASSES),
             'installed_plugins': self.installed_plugins,
+            'page': self.page,
         }
 
         return mark_safe(render_to_string(

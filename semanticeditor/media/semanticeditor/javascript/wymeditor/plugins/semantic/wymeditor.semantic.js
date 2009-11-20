@@ -547,7 +547,9 @@ PresentationControls.prototype.update_headingbox = function() {
 PresentationControls.prototype.retrieve_styles = function() {
     // Retrieve via AJAX
     var self = this;
-    jQuery.getJSON(this.opts.retrieve_styles_url, {},
+    jQuery.getJSON(this.opts.retrieve_styles_url, {'template':this.opts.template,
+                                                   'page_id':this.opts.page_id
+                                                  },
 		   function (data) {
 		       self.with_good_data(data, function(value) {
 			   self.available_styles = data.value;
