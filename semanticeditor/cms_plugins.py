@@ -37,7 +37,7 @@ class SemanticTextPlugin(TextPlugin):
         page = None
         if obj:
             page = obj.page
-        plugins = plugin_pool.get_text_enabled_plugins(self.placeholder, page)
+        plugins = plugin_pool.get_text_enabled_plugins(self.placeholder)
         form = self.get_form_class(request, plugins, page)
         kwargs['form'] = form # override standard form
         return super(TextPlugin, self).get_form(request, obj, **kwargs)
