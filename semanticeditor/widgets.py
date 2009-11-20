@@ -24,13 +24,16 @@ class SemanticEditor(WYMEditor):
 
     def render_additions(self, name, value, attrs=None):
         language = get_language()
+        containers = getattr(settings, 'WYM_CONTAINERS', None)
+        if containers is None:
+            containers = text_settings.WYM_CONTAINERS
         context = {
             'name': name,
             'language': language,
             'SEMANTICEDITOR_MEDIA_URL': settings.SEMANTICEDITOR_MEDIA_URL,
             'CMS_MEDIA_URL': settings.CMS_MEDIA_URL,
             'WYM_TOOLS': mark_safe(text_settings.WYM_TOOLS),
-            'WYM_CONTAINERS': mark_safe(text_settings.WYM_CONTAINERS),
+            'WYM_CONTAINERS': mark_safe(containers),
             'WYM_CLASSES': mark_safe(text_settings.WYM_CLASSES),
             'installed_plugins': self.installed_plugins,
             'page': self.page,
