@@ -91,6 +91,9 @@ class TestFormat(TestCase):
         LayoutDetails.max_columns = self._old_max_columns
         super(TestCase, self).tearDown()
 
+    def test_remove_command_divs(self):
+        self.assertEqual('<div class="row"><div><div><p>Test</p></div></div></div>', format_html('<div class="newrow">* </div><p>Test</p>', {}))
+
     def test_empty(self):
         self.assertEqual('<div class="row"/>', format_html('', {}));
 

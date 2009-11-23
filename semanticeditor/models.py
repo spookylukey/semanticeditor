@@ -19,9 +19,9 @@ class CssClass(models.Model):
 
     allowed_elements = models.CharField("Allowed HTML elements", max_length=255,
                                         help_text="A space separated list of HTML "
-                                        "element names.  Use 'row' or 'column' to indicate "
+                                        "element names.  Use 'newrow' or 'newcol' to indicate "
                                         "it can be applied to layout rows or columns ",
-                                        default="h1 h2 h3 h4 h5 h6 p blockquote ul li row column")
+                                        default="h1 h2 h3 h4 h5 h6 p blockquote ul li newrow newcol")
 
     column_equiv = models.IntegerField("Column count equivalent", null=True, blank=True,
                                        help_text="For classes designed to be applied to "

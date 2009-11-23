@@ -72,6 +72,9 @@
             background: #cde8cd ;
         }
         .wym_skin_semanticeditor .wym_section a:hover    { background-color: #903; color: #cde8cd;}
+
+        .wym_skin_semanticeditor .wym_section a.disabled { color: #888; cursor: default; background-color: #dde8dd; }
+        .wym_skin_semanticeditor .wym_section a.disabled:hover    { color: #888; background-color: #dde8dd; }
       /*hide section titles by default*/
         .wym_skin_semanticeditor .wym_section h2         { display: none; }
       /*disable any margin-collapse*/
@@ -115,6 +118,11 @@
         .wym_skin_semanticeditor .wym_buttons li.wym_tools_html a          { background-position: 0 -193px;}
         .wym_skin_semanticeditor .wym_buttons li.wym_tools_preview a       { background-position: 0 -408px;}
 
+/*CLASSES*/
+        .wym_skin_semanticeditor .wym_classes ul             { overflow-y: auto;
+                                                               overflow-x: visible; }
+
+
 /*DECORATION*/
         .wym_skin_semanticeditor .wym_section h2             { background: #fff;}
         .wym_skin_semanticeditor .wym_section h2 span        { color: gray;}
@@ -135,7 +143,7 @@
             * html .wym_dialog div.row       { height: 1%; }
             .wym_dialog div.row              { display: block; }
             /* End hide from IE-mac */                
-            
+
 /*WYMEDITOR_LINK*/
         a.wym_wymeditor_link        { text-indent: -9999px; float: right; display: block; width: 50px; height: 15px; background: url(../wymeditor_icon.png);  overflow: hidden; text-decoration: none;  }
 
@@ -145,11 +153,11 @@
 	.prescontrol td             { padding: 0; }
 	.prescontrolheadings        { margin-right: 260px; }
 	.prescontrolheadings select { background: inherit; border: none; width: 100%;}
-	.prescontroloptsboxcont div { clear:left; }
-	.prescontroloptsbox         { overflow-y: scroll; border: none; }
+	.prescontrolclasslistcont div { clear:left; }
+	.prescontrolclasslist         { overflow-y: scroll; border: none; }
 	.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
-	.prescontroloptsboxcont {width: 220px; float: right;}
-	.prescontrol .prescontroloptsbox label {
+	.prescontrolclasslistcont {width: 220px; float: right;}
+	.prescontrol .prescontrolclasslist label {
 	    /* Override some stuff set by Django admin CSS*/
 	    display: inline;
 	    width: auto;
