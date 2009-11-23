@@ -104,7 +104,6 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.newcolbutton = jQuery('#' + newcolbutton_id);
     this.removebutton = jQuery('#' + removebutton_id);
     this.cleanhtmlbutton = jQuery('#' + cleanhtmlbutton_id);
-    // TODO - height of classlist box?
 
     this.setup_css_storage();
 
@@ -256,6 +255,15 @@ PresentationControls.prototype.build_classlist = function() {
     jQuery(".orbitaltooltip-simplebox").click(function(event) {
                                                   jQuery(this).hide();
                                               });
+
+    // Fix height of classlist.
+    var h = jQuery(" .wym_area_main").height() -
+        jQuery(this.wym._options.containersSelector).height() -
+        jQuery(this.wym._options.layoutCommandsSelector).height() -
+        jQuery(this.wym._options.classesSelector + " h2").height() -
+        20; // 20 is a fudge value, probably equal to some marings/paddings
+    this.classlist.css("height", h.toString() + "px");
+
 };
 
 PresentationControls.prototype.unbind_classlist = function() {
