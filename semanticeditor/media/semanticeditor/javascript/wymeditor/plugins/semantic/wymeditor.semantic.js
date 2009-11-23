@@ -115,7 +115,7 @@ PresentationControls.prototype.setup_controls = function(container) {
 
     // Event handlers
     this.headingscontrol.change(function(event) {
-                                    self.update_classlist();
+
     });
     this.refreshbutton.click(function(event) {
                                  self.refresh_headings();
@@ -155,7 +155,6 @@ PresentationControls.prototype.setup_controls = function(container) {
                   self.form_submit(event);
               });
 
-    // Other event handlers added in update_classlist
 };
 
 PresentationControls.prototype.set_html = function(html) {
@@ -220,11 +219,14 @@ PresentationControls.prototype.build_classlist = function() {
 
     var self = this;
     jQuery.each(this.available_styles, function(i, item) {
-        var val = flattenPresStyle(item);
         var btn = jQuery("<li><a href='#'>" + escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.classlist).find("a");
-        // event handler
+        // event handlers
+        var style = self.available_styles[i];
         btn.click(function(event) {
-                      self.toggle_style(self.available_styles[i]);
+                      self.toggle_style(style);
+                  });
+        btn.hover(function(event) {
+                     self.update_classlist_item(btn, style);
                   });
 
         // Attach tooltip to label we just added:
@@ -351,29 +353,15 @@ PresentationControls.prototype.toggle_style = function(style) {
     this.update_style_display(sect_id);
 };
 
-PresentationControls.prototype.update_classlist = function() {
+PresentationControls.prototype.update_classlist_item = function(btn, style) {
     var self = this;
-    this.unbind_classlist();
-    // Currently selected heading?
-    var headingIndex = self.get_heading_index();
-    if (headingIndex == null) return;
-    var sect = this.active_heading_list[headingIndex];
-    var sect_id = sect.sect_id;
-    var section_styles = this.presentation_info[sect_id];
-    if (section_styles == null) {
-        section_styles = new Array();
-        this.presentation_info[sect_id] = section_styles;
+    var sect_id = this.get_current_section(style);
+    if (sect_id == undefined) {
+        // Can't use it.
+        btn.addClass("disabled");
+    } else {
+        btn.removeClass("disabled");
     }
-    this.classlist.find("a").each(
-        function(i, item) {
-            var item_style = self.available_styles[i];
-            // Set state
-            if (jQuery.inArray(sect.tag.toLowerCase(), item_style.allowed_elements) != -1) {
-                item.removeClass("disabled");
-            } else {
-                item.addClass("disabled");
-            }
-        });
 };
 
 PresentationControls.prototype.show_preview = function() {
