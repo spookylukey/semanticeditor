@@ -23,9 +23,9 @@ function PresentationControls(wym, opts) {
 
 function escapeHtml(html) {
     return html.replace(/&/g,"&amp;")
-	.replace(/\"/g,"&quot;")
-	.replace(/</g,"&lt;")
-	.replace(/>/g,"&gt;");
+        .replace(/\"/g,"&quot;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;");
 }
 
 function flattenPresStyle(pres) {
@@ -37,13 +37,33 @@ function expandPresStyle(presstr) {
     // Convert a string to PresentationInfo object
     var comps = presstr.match(/^([^:]+):(.*)$/);
     return { prestype: comps[1],
-	     name: comps[2] };
+             name: comps[2] };
 }
+
+
+PresentationControls.prototype.setup_css_storage = function() {
+    // We need a place to store custom CSS rules. (Existing jQuery plugins don't
+    // allow for our need of changing style sheet of document in an iframe, and
+    // rolling our own is easier than fixing them).
+
+    // code partly copied from jquery.cssRule.js
+    var cssStorageNode = jQuery('<style rel="stylesheet" type="text/css">').appendTo(jQuery(this.wym._doc).find("head"))[0];
+    this.stylesheet = this.wym._doc.styleSheets[0];
+};
+
+PresentationControls.prototype.add_css_rule = function(selector, rule) {
+    var ss = this.stylesheet;
+    var rules = ss.rules ? 'rules' : 'cssRules';
+    // should work with IE and Firefox, don't know about Safari
+    if (ss.addRule)
+        ss.addRule(selector, rule||'x:y' );//IE won't allow empty rules
+    else if (ss.insertRule)
+        ss.insertRule(selector + '{'+ rule +'}', ss[rules].length);
+};
 
 PresentationControls.prototype.setup_controls = function(container) {
     var id_prefix = "id_prescontrol_" + this.name + "_";
     var headingsbox_id = id_prefix + 'headings';
-    var classlist_id = id_prefix + 'classlist';
     var headingsfilter_id = id_prefix + 'headingsfilter';
     var previewbutton_id = id_prefix + 'previewbutton';
     var previewbox_id = id_prefix + 'previewbox';
@@ -56,25 +76,24 @@ PresentationControls.prototype.setup_controls = function(container) {
 
     // Create elements
     container.after(
-	"<div class=\"prescontrol\">" +
-	"<div class=\"prescontrolclasslistcont\">Presentation choices:<div class=\"prescontrolclasslist\" id=\"" + classlist_id + "\"></div>" +
+        "<div class=\"prescontrol\">" +
         "<input type=\"submit\" value=\"New row\" id=\"" + newrowbutton_id  +"\" />" +
         "<input type=\"submit\" value=\"New column\" id=\"" + newcolbutton_id  +"\" />" +
         "<input type=\"submit\" value=\"Remove\" id=\"" + removebutton_id  +"\" />" +
         "</div>" +
-    "<div class=\"prescontrolheadings\" style=\"margin-right: 260px;\">Document structure:<br/><select size=\"15\" id=\"" + headingsbox_id + "\"></select>" +
-	"<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div>" +
+        "<div class=\"prescontrolheadings\" style=\"margin-right: 260px;\">Document structure:<br/><select size=\"15\" id=\"" + headingsbox_id + "\"></select>" +
+        "<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div>" +
 
-	"<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>" +
+        "<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>" +
             "<td><input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanhtmlbutton_id  +  "\" /></td>" +
-	    "<td><input type=\"submit\" value=\"Refresh structure\" id=\"" + refresh_id + "\" /></td>" +
-	    "<td><input type=\"submit\" value=\"Preview\" id=\"" + previewbutton_id + "\" /></td>" +
+            "<td><input type=\"submit\" value=\"Refresh structure\" id=\"" + refresh_id + "\" /></td>" +
+            "<td><input type=\"submit\" value=\"Preview\" id=\"" + previewbutton_id + "\" /></td>" +
             "<td width=\"100%\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
         "</div>");
 
     jQuery("body").append("<div style=\"position: absolute; display: none\" class=\"previewbox\" id=\"" + previewbox_id + "\">");
 
-    this.classlist = jQuery('#' + classlist_id);
+    this.classlist = jQuery(this.wym._options.classesSelector).find("ul");
     this.headingscontrol = jQuery('#' + headingsbox_id);
     this.headingsfilter = jQuery('#' + headingsfilter_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
@@ -85,44 +104,46 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.newcolbutton = jQuery('#' + newcolbutton_id);
     this.removebutton = jQuery('#' + removebutton_id);
     this.cleanhtmlbutton = jQuery('#' + cleanhtmlbutton_id);
-    this.classlist.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
+    // TODO - height of classlist box?
 
-    // Initial set up
+    this.setup_css_storage();
+
+     // Initial set up
     this.retrieve_styles();
     // refresh_headings must come after separate_presentation
     this.separate_presentation(function() { self.refresh_headings(); });
 
     // Event handlers
     this.headingscontrol.change(function(event) {
-				    self.update_classlist();
+                                    self.update_classlist();
     });
     this.refreshbutton.click(function(event) {
-				 self.refresh_headings();
-				 self.headingscontrol.get(0).focus();
-				 return false;
-			     });
+                                 self.refresh_headings();
+                                 self.headingscontrol.get(0).focus();
+                                 return false;
+                             });
     this.previewbutton.toggle(function(event) {
-				 self.show_preview();
-				 return false;
-			      },
-			      function(event) {
-				  self.previewbox.hide();
-			      });
+                                 self.show_preview();
+                                 return false;
+                              },
+                              function(event) {
+                                  self.previewbox.hide();
+                              });
     this.headingsfilter.change(function(event) {
-				   self.update_active_heading_list();
-				   self.update_headingbox();
-			       });
+                                   self.update_active_heading_list();
+                                   self.update_headingbox();
+                               });
     this.newrowbutton.click(function(event) {
                                 self.insert_row();
-				return false;
+                                return false;
                             });
     this.newcolbutton.click(function(event) {
                                 self.insert_column();
-				return false;
+                                return false;
                             });
     this.removebutton.click(function(event) {
                                 self.remove_layout_command();
-				return false;
+                                return false;
                             });
     this.cleanhtmlbutton.click(function(event) {
                                    self.clean_html();
@@ -130,9 +151,9 @@ PresentationControls.prototype.setup_controls = function(container) {
                                });
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
     jQuery(this.wym._options.updateSelector)
-	.bind(this.wym._options.updateEvent, function(event) {
-		  self.form_submit(event);
-	      });
+        .bind(this.wym._options.updateEvent, function(event) {
+                  self.form_submit(event);
+              });
 
     // Other event handlers added in update_classlist
 };
@@ -151,43 +172,43 @@ PresentationControls.prototype.separate_presentation = function(andthen) {
     // hack to get things to work.
     var self = this;
     jQuery.post(this.opts.separate_presentation_url, { html: self.wym.xhtml() } ,
-		function(data) {
-		    self.with_good_data(data,
-			function(value) {
-			    // Store the presentation
-			    self.presentation_info = value.presentation;
-			    // Update the HTML
+                function(data) {
+                    self.with_good_data(data,
+                        function(value) {
+                            // Store the presentation
+                            self.presentation_info = value.presentation;
+                            // Update the HTML
                             self.set_html(value.html);
                             if (andthen != null) {
                                 andthen();
                             }
-			});
-		}, "json");
+                        });
+                }, "json");
 };
 
 PresentationControls.prototype.form_submit = function(event) {
     // Since we are in the middle of submitting the page, an asynchronous
     // request will be too late! So we block instead.
     var res = jQuery.ajax({
-		  type: "POST",
-		  data: {
-		      html: this.wym.xhtml(),
-		      presentation: JSON.stringify(this.presentation_info)
-		  },
-		  url: this.opts.combine_presentation_url,
-		  dataType: "json",
-		  async: false
+                  type: "POST",
+                  data: {
+                      html: this.wym.xhtml(),
+                      presentation: JSON.stringify(this.presentation_info)
+                  },
+                  url: this.opts.combine_presentation_url,
+                  dataType: "json",
+                  async: false
     }).responseText;
     var data = JSON.parse(res);
     if (data.result == 'ok') {
-	// Replace existing HTML with combined.
+        // Replace existing HTML with combined.
         this.set_html(data.value.html);
-	// In case the normal WYMeditor update got called *before* this
-	// event handler, we do another update.
-	this.wym.update();
+        // In case the normal WYMeditor update got called *before* this
+        // event handler, we do another update.
+        this.wym.update();
     } else {
-	event.preventDefault();
-	this.show_error(data.message);
+        event.preventDefault();
+        this.show_error(data.message);
         alert("Data in " + this.name + " can't be saved - see error message.");
     }
 };
@@ -199,54 +220,135 @@ PresentationControls.prototype.build_classlist = function() {
 
     var self = this;
     jQuery.each(this.available_styles, function(i, item) {
-	var val = flattenPresStyle(item);
-	self.classlist.append("<div><label><input type=\"checkbox\" value=\"" +
-			    escapeHtml(val) + "\" /> " +
-			    escapeHtml(item.verbose_name) +
-			    "</label></div>");
-	// Attach tooltip to label we just added:
-	self.classlist.find("input[value='" + val + "']").parent().each(function() {
-	    var help = item.description;
-	    if (help == "") {
-		help = "(No help available)";
-	    }
-	    help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
-            help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
-	    // Assign an id, because orbitaltooltip
-            // doesn't work without it.
-	    $(this).attr('id', 'id_classlist_label_' + i);
-            var inputitem = this;
-            setTimeout(function() {
-	        $(inputitem).orbitaltooltip({
-	            orbitalPosition: 270,
-		    // Small spacing means we can move onto the tooltip
-                    // in order to scroll it if the help text has
-		    // produced scroll bars.
-		    spacing:         8,
-		    tooltipClass: 	 'orbitaltooltip-simplebox',
-		    html:            help
-	        });
-            }, 1000); // Delay, otherwise tooltips can end up in wrong position.
-	});
+        var val = flattenPresStyle(item);
+        var btn = jQuery("<li><a href='#'>" + escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.classlist).find("a");
+        // event handler
+        btn.click(function(event) {
+                      self.toggle_style(self.available_styles[i]);
+                  });
+
+        // Attach tooltip to label we just added:
+        var help = item.description;
+        if (help == "") {
+            help = "(No help available)";
+        }
+        help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
+        help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
+        // Assign an id, because orbitaltooltip
+        // doesn't work without it.
+        btn.attr('id', 'id_classlist_' + i);
+        setTimeout(function() {
+                       btn.orbitaltooltip({
+                           orbitalPosition: 270,
+                           // Small spacing means we can move onto the tooltip
+                           // in order to scroll it if the help text has
+                           // produced scroll bars.
+                           spacing:         8,
+                           tooltipClass:         'orbitaltooltip-simplebox',
+                           html:            help
+                       });
+        }, 1000); // Delay, otherwise tooltips can end up in wrong position.
     });
     // Stop the tooltips from getting in the way
     // - dismiss with a click.
     jQuery(".orbitaltooltip-simplebox").click(function(event) {
-						  jQuery(this).hide();
-					      });
+                                                  jQuery(this).hide();
+                                              });
 };
 
 PresentationControls.prototype.unbind_classlist = function() {
     // Remove existing event handlers, reset state
-    this.classlist.find("input").unbind().removeAttr("checked").attr("disabled", true);
+    this.classlist.find("a").unbind().addClass("disabled");
 };
 
 PresentationControls.prototype.get_heading_index = function() {
     var selected = this.headingscontrol.get(0).value;
     if (!selected) {
-	return null;
+        return null;
     }
     return parseInt(selected, 10);
+};
+
+PresentationControls.prototype.has_style = function(sect_id, style) {
+    var styles = this.presentation_info[sect_id];
+    for (var i = 0; i < styles.length; i++) {
+        if (flattenPresStyle(styles[i]) == flattenPresStyle(style)) {
+            return true;
+        };
+    }
+    return false;
+};
+
+PresentationControls.prototype.assign_id = function(node) {
+    // All sections that can receive styles need a section ID.
+    // For the initial HTML, this is assigned server-side when the
+    // HTML is split into 'semantic HTML' and 'presentation info'.
+    // For newly added HTML, however, we need to add it ourself
+
+    var tagName = node.tagName.toLowerCase();
+    var i = 1;
+    var id = "";
+    while (true) {
+        id = tagName + "_" + i.toString();
+        if (jQuery(this.wym._doc).find('#' + id).is(tagName)) {
+            i++;
+        } else {
+            return id;
+        }
+    }
+};
+
+PresentationControls.prototype.register_section = function(sect_id, tag) {
+    // This is a temporary fix to make sure variables are in consistent
+    // state. We have to do a server side call to get proper values,
+    // but we delay that until needed.
+
+    var structureItem = {
+        sect_id: sect_id,
+        tag: tag,
+        level: undefined, // Difficult to calculate client side
+        name: undefined // Difficult to calculate client side
+    };
+    this.stored_headings.push(structureItem);
+    this.presentation_info[sect_id] = Array();
+};
+
+PresentationControls.prototype.get_current_section = function(style) {
+    var wym = this.wym;
+    // TODO - images for new row/column
+    // var container = (wym._selected_image ? wym._selected_image 
+    //                 : jQuery(wym.selected()));
+    // TODO - limit selection to allowed elements for style - fix for 'row', 'col'
+
+    var expr = style.allowed_elements.join(",");
+    var container = jQuery(wym.selected()).parentsOrSelf(expr);
+    if (container.is(expr)) {
+        var first = container.get(0);
+        var id = first.id;
+        if (id == undefined || id == "") {
+            id = this.assign_id(first);
+            this.register_section(id, first.tagName.toLowerCase());
+            first.id = id;
+        }
+        return id;
+    }
+    return undefined;
+};
+
+PresentationControls.prototype.toggle_style = function(style) {
+    // What section are we on?
+    var sect_id = this.get_current_section(style);
+    if (sect_id == undefined) {
+        // No allowed to use it there
+        alert("Cannot use this style on current element.");
+    }
+
+    if (this.has_style(sect_id, style)) {
+        this.remove_style(sect_id, style);
+    } else {
+        this.add_style(sect_id, style);
+    }
+    this.update_style_display(sect_id);
 };
 
 PresentationControls.prototype.update_classlist = function() {
@@ -257,58 +359,41 @@ PresentationControls.prototype.update_classlist = function() {
     if (headingIndex == null) return;
     var sect = this.active_heading_list[headingIndex];
     var sect_id = sect.sect_id;
-    var styles = this.presentation_info[sect_id];
-    if (styles == null) {
-	styles = new Array();
-	this.presentation_info[sect_id] = styles;
+    var section_styles = this.presentation_info[sect_id];
+    if (section_styles == null) {
+        section_styles = new Array();
+        this.presentation_info[sect_id] = section_styles;
     }
-    this.classlist.find("input").each(
-	function(i, input) {
-	    // Set state
-	    var val = input.value;
-            if (jQuery.inArray(sect.tag.toLowerCase(), self.available_styles[i].allowed_elements) != -1) {
-                input.disabled = false;
+    this.classlist.find("a").each(
+        function(i, item) {
+            var item_style = self.available_styles[i];
+            // Set state
+            if (jQuery.inArray(sect.tag.toLowerCase(), item_style.allowed_elements) != -1) {
+                item.removeClass("disabled");
             } else {
-                input.disabled = true;
+                item.addClass("disabled");
             }
-	    jQuery.each(styles,
-		function (j, style) {
-		    if (flattenPresStyle(style) == val) {
-			input.checked = true;
-		    }
-		});
-	    // Add event handlers
-	    // Change
-	    jQuery(this).change(function(event) {
-				    var style = expandPresStyle(input.value);
-				    if (input.checked) {
-					self.add_style(sect_id, style);
-				    } else {
-					self.remove_style(sect_id, style);
-				    }
-				    self.headingscontrol.get(0).focus();
-			 });
-	});
+        });
 };
 
 PresentationControls.prototype.show_preview = function() {
     var self = this;
     jQuery.post(this.opts.preview_url, { 'html': self.wym.xhtml(),
-					 'presentation': JSON.stringify(this.presentation_info)
-					},
-		function(data) {
-		    self.with_good_data(data,
-			function(value) {
-			    var btn = self.previewbutton;
-			    var box = self.previewbox;
-			    var pos = btn.offset();
-			    box.html(value.html);
-			    var height = box.height() + parseInt(box.css('padding-top')) + parseInt(box.css('padding-bottom')) +
-				parseInt(box.css('border-top-width')) + parseInt(box.css('border-bottom-width'));
-			    box.css("top", pos.top - height).css("left", pos.left);
-			    box.show();
-			});
-		}, "json");
+                                         'presentation': JSON.stringify(this.presentation_info)
+                                        },
+                function(data) {
+                    self.with_good_data(data,
+                        function(value) {
+                            var btn = self.previewbutton;
+                            var box = self.previewbox;
+                            var pos = btn.offset();
+                            box.html(value.html);
+                            var height = box.height() + parseInt(box.css('padding-top')) + parseInt(box.css('padding-bottom')) +
+                                parseInt(box.css('border-top-width')) + parseInt(box.css('border-bottom-width'));
+                            box.css("top", pos.top - height).css("left", pos.left);
+                            box.show();
+                        });
+                }, "json");
     return false;
 };
 
@@ -321,10 +406,49 @@ PresentationControls.prototype.add_style = function(sect_id, presinfo) {
 PresentationControls.prototype.remove_style = function(sect_id, presinfo) {
     var styles = this.presentation_info[sect_id];
     styles = jQuery.grep(styles, function(item, i) {
-			     return !(item.prestype == presinfo.prestype
-				      && item.name == presinfo.name);
-			 });
+                             return !(item.prestype == presinfo.prestype
+                                      && item.name == presinfo.name);
+                         });
     this.presentation_info[sect_id] = styles;
+};
+
+PresentationControls.prototype.update_style_display = function(sect_id) {
+    var styles = this.presentation_info[sect_id];
+    var self = this;
+    var style_list = jQuery.map(styles, function(s, i) {
+                                    return self.get_verbose_style_name(s.name);
+                                }).join(", ");
+    if (sect_id.match(/^nerow_/)) {
+        // TODO
+    } else if (sect_id.match(/^newcol_/)) {
+        // TODO
+    } else {
+        this.add_css_rule("#" + sect_id + ":before", 'content: "' + style_list + '"');
+    }
+};
+
+PresentationControls.prototype.update_all_style_display = function() {
+    for (var i=0; i < this.stored_headings.length; i++) {
+        this.update_style_display(this.stored_headings[i].sect_id);
+    }
+};
+
+PresentationControls.prototype.get_verbose_style_name = function(stylename) {
+    // Full style information is not stored against individual headings, only
+    // the type and name. So sometimes we need to go from one to the other.
+
+    var styles = this.available_styles;
+    for (var i = 0; i < styles.length; i++) {
+        if (styles[i].name == stylename) {
+            return styles[i].verbose_name;
+        }
+    }
+    if (stylename == "newrow") {
+        return "New row";
+    } else if (stylename == "new column") {
+        return "New column";
+    }
+    return undefined; // shouldn't get here
 };
 
 PresentationControls.prototype.insert_row = function() {
@@ -442,12 +566,12 @@ PresentationControls.prototype.clean_html = function() {
 // with the value in the data.
 PresentationControls.prototype.with_good_data = function(data, callback) {
     if (data.result == 'ok') {
-	this.clear_error();
-	callback(data.value);
+        this.clear_error();
+        callback(data.value);
     } else {
-	// TODO - perhaps distinguish between a server error
-	// and a user error
-	this.show_error(data.message);
+        // TODO - perhaps distinguish between a server error
+        // and a user error
+        this.show_error(data.message);
     }
 };
 
@@ -464,14 +588,15 @@ PresentationControls.prototype.refresh_headings = function() {
     var self = this;
     var html = this.wym.xhtml();
     jQuery.post(this.opts.extract_structure_url, { 'html':html },
-	function(data) {
-	    self.with_good_data(data, function(value) {
-		self.stored_headings = value;
+        function(data) {
+            self.with_good_data(data, function(value) {
+                self.stored_headings = value;
                 self.add_layout_to_headings();
-		self.update_active_heading_list();
-		self.update_headingbox();
-	    });
-	}, "json");
+                self.update_active_heading_list();
+                self.update_headingbox();
+                self.update_all_style_display();
+            });
+        }, "json");
 };
 
 PresentationControls.prototype.add_layout_to_headings = function() {
@@ -517,22 +642,21 @@ PresentationControls.prototype.update_active_heading_list = function() {
     var self = this;
     var items;
     if (this.headingsfilter.get(0).checked) {
-	items = jQuery.grep(self.stored_headings,
+        items = jQuery.grep(self.stored_headings,
                             function(item, idx) {
-				return (item.tag.toUpperCase()).match(/H\d/);
-			    });
+                                return (item.tag.toUpperCase()).match(/H\d/);
+                            });
     } else {
-	items = self.stored_headings;
+        items = self.stored_headings;
     }
     self.active_heading_list = items;
 };
 
 PresentationControls.prototype.update_headingbox = function() {
     var self = this;
-    this.unbind_classlist();
     this.headingscontrol.empty();
     jQuery.each(this.active_heading_list, function(i, item) {
-		    var spaces = (new Array((item.level - 1)*3)).join("&nbsp;");
+                    var spaces = (new Array((item.level - 1)*3)).join("&nbsp;");
                     var caption = "";
                     var tag = item.tag.toLowerCase();
                     if (tag == 'row' || tag == 'column') {
@@ -540,7 +664,7 @@ PresentationControls.prototype.update_headingbox = function() {
                     } else {
                         caption = tag + ": " + escapeHtml(item.name);
                     }
-		    self.headingscontrol.append("<option class ='" + tag + "' value='" + i.toString() + "'>" + spaces + caption + "</option>");
+                    self.headingscontrol.append("<option class ='" + tag + "' value='" + i.toString() + "'>" + spaces + caption + "</option>");
     });
 };
 
@@ -550,12 +674,12 @@ PresentationControls.prototype.retrieve_styles = function() {
     jQuery.getJSON(this.opts.retrieve_styles_url, {'template':this.opts.template,
                                                    'page_id':this.opts.page_id
                                                   },
-		   function (data) {
-		       self.with_good_data(data, function(value) {
-			   self.available_styles = data.value;
-			   self.build_classlist();
-		       });
-		   });
+                   function (data) {
+                       self.with_good_data(data, function(value) {
+                           self.available_styles = data.value;
+                           self.build_classlist();
+                       });
+                   });
 };
 
 

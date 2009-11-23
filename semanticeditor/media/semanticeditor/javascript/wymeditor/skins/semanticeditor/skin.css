@@ -72,6 +72,9 @@
             background: #cde8cd ;
         }
         .wym_skin_semanticeditor .wym_section a:hover    { background-color: #903; color: #cde8cd;}
+
+        .wym_skin_semanticeditor .wym_section a.disabled { color: #888; cursor: default; }
+        .wym_skin_semanticeditor .wym_section a.disabled:hover    { color: #888; background-color: #cde8cd; }
       /*hide section titles by default*/
         .wym_skin_semanticeditor .wym_section h2         { display: none; }
       /*disable any margin-collapse*/
