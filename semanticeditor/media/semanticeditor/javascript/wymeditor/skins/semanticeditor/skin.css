@@ -145,11 +145,11 @@
 	.prescontrol td             { padding: 0; }
 	.prescontrolheadings        { margin-right: 260px; }
 	.prescontrolheadings select { background: inherit; border: none; width: 100%;}
-	.prescontroloptsboxcont div { clear:left; }
-	.prescontroloptsbox         { overflow-y: scroll; border: none; }
+	.prescontrolclasslistcont div { clear:left; }
+	.prescontrolclasslist         { overflow-y: scroll; border: none; }
 	.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
-	.prescontroloptsboxcont {width: 220px; float: right;}
-	.prescontrol .prescontroloptsbox label {
+	.prescontrolclasslistcont {width: 220px; float: right;}
+	.prescontrol .prescontrolclasslist label {
 	    /* Override some stuff set by Django admin CSS*/
 	    display: inline;
 	    width: auto;

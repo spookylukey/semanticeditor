@@ -43,7 +43,7 @@ function expandPresStyle(presstr) {
 PresentationControls.prototype.setup_controls = function(container) {
     var id_prefix = "id_prescontrol_" + this.name + "_";
     var headingsbox_id = id_prefix + 'headings';
-    var optsbox_id = id_prefix + 'optsbox';
+    var classlist_id = id_prefix + 'classlist';
     var headingsfilter_id = id_prefix + 'headingsfilter';
     var previewbutton_id = id_prefix + 'previewbutton';
     var previewbox_id = id_prefix + 'previewbox';
@@ -57,7 +57,7 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Create elements
     container.after(
 	"<div class=\"prescontrol\">" +
-	"<div class=\"prescontroloptsboxcont\">Presentation choices:<div class=\"prescontroloptsbox\" id=\"" + optsbox_id + "\"></div>" +
+	"<div class=\"prescontrolclasslistcont\">Presentation choices:<div class=\"prescontrolclasslist\" id=\"" + classlist_id + "\"></div>" +
         "<input type=\"submit\" value=\"New row\" id=\"" + newrowbutton_id  +"\" />" +
         "<input type=\"submit\" value=\"New column\" id=\"" + newcolbutton_id  +"\" />" +
         "<input type=\"submit\" value=\"Remove\" id=\"" + removebutton_id  +"\" />" +
@@ -74,7 +74,7 @@ PresentationControls.prototype.setup_controls = function(container) {
 
     jQuery("body").append("<div style=\"position: absolute; display: none\" class=\"previewbox\" id=\"" + previewbox_id + "\">");
 
-    this.optsbox = jQuery('#' + optsbox_id);
+    this.classlist = jQuery('#' + classlist_id);
     this.headingscontrol = jQuery('#' + headingsbox_id);
     this.headingsfilter = jQuery('#' + headingsfilter_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
@@ -85,7 +85,7 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.newcolbutton = jQuery('#' + newcolbutton_id);
     this.removebutton = jQuery('#' + removebutton_id);
     this.cleanhtmlbutton = jQuery('#' + cleanhtmlbutton_id);
-    this.optsbox.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
+    this.classlist.css('height', this.headingscontrol.get(0).clientHeight.toString() + "px");
 
     // Initial set up
     this.retrieve_styles();
@@ -94,7 +94,7 @@ PresentationControls.prototype.setup_controls = function(container) {
 
     // Event handlers
     this.headingscontrol.change(function(event) {
-				    self.update_optsbox();
+				    self.update_classlist();
     });
     this.refreshbutton.click(function(event) {
 				 self.refresh_headings();
@@ -134,7 +134,7 @@ PresentationControls.prototype.setup_controls = function(container) {
 		  self.form_submit(event);
 	      });
 
-    // Other event handlers added in update_optsbox
+    // Other event handlers added in update_classlist
 };
 
 PresentationControls.prototype.set_html = function(html) {
@@ -192,20 +192,20 @@ PresentationControls.prototype.form_submit = function(event) {
     }
 };
 
-PresentationControls.prototype.build_optsbox = function() {
-    this.optsbox.empty();
+PresentationControls.prototype.build_classlist = function() {
+    this.classlist.empty();
     // Remove any tooltips
     jQuery(".orbitaltooltip-simplebox").unbind().remove();
 
     var self = this;
     jQuery.each(this.available_styles, function(i, item) {
 	var val = flattenPresStyle(item);
-	self.optsbox.append("<div><label><input type=\"checkbox\" value=\"" +
+	self.classlist.append("<div><label><input type=\"checkbox\" value=\"" +
 			    escapeHtml(val) + "\" /> " +
 			    escapeHtml(item.verbose_name) +
 			    "</label></div>");
 	// Attach tooltip to label we just added:
-	self.optsbox.find("input[value='" + val + "']").parent().each(function() {
+	self.classlist.find("input[value='" + val + "']").parent().each(function() {
 	    var help = item.description;
 	    if (help == "") {
 		help = "(No help available)";
@@ -214,7 +214,7 @@ PresentationControls.prototype.build_optsbox = function() {
             help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
 	    // Assign an id, because orbitaltooltip
             // doesn't work without it.
-	    $(this).attr('id', 'id_optsbox_label_' + i);
+	    $(this).attr('id', 'id_classlist_label_' + i);
             var inputitem = this;
             setTimeout(function() {
 	        $(inputitem).orbitaltooltip({
@@ -236,9 +236,9 @@ PresentationControls.prototype.build_optsbox = function() {
 					      });
 };
 
-PresentationControls.prototype.unbind_optsbox = function() {
+PresentationControls.prototype.unbind_classlist = function() {
     // Remove existing event handlers, reset state
-    this.optsbox.find("input").unbind().removeAttr("checked").attr("disabled", true);
+    this.classlist.find("input").unbind().removeAttr("checked").attr("disabled", true);
 };
 
 PresentationControls.prototype.get_heading_index = function() {
@@ -249,9 +249,9 @@ PresentationControls.prototype.get_heading_index = function() {
     return parseInt(selected, 10);
 };
 
-PresentationControls.prototype.update_optsbox = function() {
+PresentationControls.prototype.update_classlist = function() {
     var self = this;
-    this.unbind_optsbox();
+    this.unbind_classlist();
     // Currently selected heading?
     var headingIndex = self.get_heading_index();
     if (headingIndex == null) return;
@@ -262,7 +262,7 @@ PresentationControls.prototype.update_optsbox = function() {
 	styles = new Array();
 	this.presentation_info[sect_id] = styles;
     }
-    this.optsbox.find("input").each(
+    this.classlist.find("input").each(
 	function(i, input) {
 	    // Set state
 	    var val = input.value;
@@ -529,7 +529,7 @@ PresentationControls.prototype.update_active_heading_list = function() {
 
 PresentationControls.prototype.update_headingbox = function() {
     var self = this;
-    this.unbind_optsbox();
+    this.unbind_classlist();
     this.headingscontrol.empty();
     jQuery.each(this.active_heading_list, function(i, item) {
 		    var spaces = (new Array((item.level - 1)*3)).join("&nbsp;");
@@ -553,7 +553,7 @@ PresentationControls.prototype.retrieve_styles = function() {
 		   function (data) {
 		       self.with_good_data(data, function(value) {
 			   self.available_styles = data.value;
-			   self.build_optsbox();
+			   self.build_classlist();
 		       });
 		   });
 };
