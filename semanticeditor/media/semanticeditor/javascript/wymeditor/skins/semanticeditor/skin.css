@@ -119,7 +119,8 @@
         .wym_skin_semanticeditor .wym_buttons li.wym_tools_preview a       { background-position: 0 -408px;}
 
 /*CLASSES*/
-        .wym_skin_semanticeditor .wym_classes ul             { overflow-y: auto; }
+        .wym_skin_semanticeditor .wym_classes ul             { overflow-y: auto;
+                                                               overflow-x: visible; }
 
 
 /*DECORATION*/

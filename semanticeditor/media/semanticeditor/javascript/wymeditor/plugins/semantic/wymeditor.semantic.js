@@ -18,7 +18,13 @@ function PresentationControls(wym, opts) {
     // presentation_info: a dictionary of { sect_id : [PresentationInfo] }
     this.presentation_info = {};
 
-    this.setup_controls(jQuery(wym._box).find(".wym_area_bottom"));
+    // an array of dictionaries corresponding to PresentationInfo objects for commands.
+    this.commands = new Array();
+    // a dictionary mapping command name to PresentationInfo object.
+    this.command_dict = {};
+
+
+    this.setup_controls(jQuery(wym._bvox).find(".wym_area_bottom"));
 }
 
 function escapeHtml(html) {
@@ -77,9 +83,6 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Create elements
     container.after(
         "<div class=\"prescontrol\">" +
-        "<input type=\"submit\" value=\"New row\" id=\"" + newrowbutton_id  +"\" />" +
-        "<input type=\"submit\" value=\"New column\" id=\"" + newcolbutton_id  +"\" />" +
-        "<input type=\"submit\" value=\"Remove\" id=\"" + removebutton_id  +"\" />" +
         "</div>" +
         "<div class=\"prescontrolheadings\" style=\"margin-right: 260px;\">Document structure:<br/><select size=\"15\" id=\"" + headingsbox_id + "\"></select>" +
         "<br/><label><input type=\"checkbox\" id=\"" + headingsfilter_id + "\"> Headings only</label></div>" +
@@ -94,23 +97,31 @@ PresentationControls.prototype.setup_controls = function(container) {
     jQuery("body").append("<div style=\"position: absolute; display: none\" class=\"previewbox\" id=\"" + previewbox_id + "\">");
 
     this.classlist = jQuery(this.wym._options.classesSelector).find("ul");
+    this.commandlist = jQuery(this.wym._options.layoutCommandsSelector).find("ul");
     this.headingscontrol = jQuery('#' + headingsbox_id);
     this.headingsfilter = jQuery('#' + headingsfilter_id);
     this.errorbox = jQuery('#' + id_prefix + "errorbox");
     this.previewbutton = jQuery('#' + previewbutton_id);
     this.previewbox = jQuery('#' + previewbox_id);
     this.refreshbutton = jQuery('#' + refresh_id);
-    this.newrowbutton = jQuery('#' + newrowbutton_id);
-    this.newcolbutton = jQuery('#' + newcolbutton_id);
-    this.removebutton = jQuery('#' + removebutton_id);
+    //this.newrowbutton = jQuery('#' + newrowbutton_id);
+    //this.newcolbutton = jQuery('#' + newcolbutton_id);
+    //this.removebutton = jQuery('#' + removebutton_id);
     this.cleanhtmlbutton = jQuery('#' + cleanhtmlbutton_id);
 
     this.setup_css_storage();
 
      // Initial set up
+    // Remove any tooltips
+    jQuery(".orbitaltooltip-simplebox").unbind().remove();
+
+    this.retrieve_commands();
     this.retrieve_styles();
-    // refresh_headings must come after separate_presentation
-    this.separate_presentation(function() { self.refresh_headings(); });
+    this.separate_presentation(function() {
+                                   // these must come after separate_presentation
+                                   self.insert_command_divs();
+                                   self.update_all_style_display();
+                               });
 
     // Event handlers
     this.headingscontrol.change(function(event) {
@@ -132,7 +143,7 @@ PresentationControls.prototype.setup_controls = function(container) {
                                    self.update_active_heading_list();
                                    self.update_headingbox();
                                });
-    this.newrowbutton.click(function(event) {
+/*    this.newrowbutton.click(function(event) {
                                 self.insert_row();
                                 return false;
                             });
@@ -143,7 +154,7 @@ PresentationControls.prototype.setup_controls = function(container) {
     this.removebutton.click(function(event) {
                                 self.remove_layout_command();
                                 return false;
-                            });
+                            });*/
     this.cleanhtmlbutton.click(function(event) {
                                    self.clean_html();
                                    return false;
@@ -153,6 +164,24 @@ PresentationControls.prototype.setup_controls = function(container) {
         .bind(this.wym._options.updateEvent, function(event) {
                   self.form_submit(event);
               });
+
+    // Fix height of classlist (in timeout to give command list time to load)
+    setTimeout(function() {
+                   var h = jQuery(" .wym_area_main").height() -
+                       jQuery(self.wym._options.containersSelector).height() -
+                       jQuery(self.wym._options.layoutCommandsSelector).height() -
+                       jQuery(self.wym._options.classesSelector + " h2").height() -
+                       20; // 20 is a fudge value, probably equal to some marings/paddings
+                   self.classlist.css("height", h.toString() + "px");
+               }, 1000);
+
+    // Stop the tooltips from getting in the way - dismiss with a click.
+    // (in timeout to give them time to be created)
+    setTimeout(function() {
+                   jQuery(".orbitaltooltip-simplebox").click(function(event) {
+                                                                 jQuery(this).hide();
+                                                             });
+               }, 1000);
 
 };
 
@@ -184,9 +213,30 @@ PresentationControls.prototype.separate_presentation = function(andthen) {
                 }, "json");
 };
 
+PresentationControls.prototype.ensure_all_ids = function() {
+    // First there might be some divs that need fixing up.  We check all block
+    // level elements (or all elements that can have commands applied to them)
+    var self = this;
+    var elems = [];
+    for (var i = 0; i < this.commands.length; i++) {
+        elems = jQuery.merge(elems, this.commands[i].allowed_elements);
+    }
+    elems = jQuery.unique(elems);
+    jQuery(this.wym._doc).find(elems.join(",")).each(function(i) {
+                                                         self.ensure_id(this);
+                                                     });
+};
+
 PresentationControls.prototype.form_submit = function(event) {
+    // We need to ensure all elements have ids, *and* that div elements have
+    // correct ids (which is a side effect of the below).
+    this.ensure_all_ids();
+
     // Since we are in the middle of submitting the page, an asynchronous
     // request will be too late! So we block instead.
+
+    // TODO - exception handling.  If this fails, the default
+    // handler will post the form, causing all formatting to be lost.
     var res = jQuery.ajax({
                   type: "POST",
                   data: {
@@ -213,8 +263,6 @@ PresentationControls.prototype.form_submit = function(event) {
 
 PresentationControls.prototype.build_classlist = function() {
     this.classlist.empty();
-    // Remove any tooltips
-    jQuery(".orbitaltooltip-simplebox").unbind().remove();
 
     var self = this;
     jQuery.each(this.available_styles, function(i, item) {
@@ -228,15 +276,14 @@ PresentationControls.prototype.build_classlist = function() {
                      self.update_classlist_item(btn, style);
                   });
 
-        // Attach tooltip to label we just added:
+        // Attach tooltip to button we just added:
         var help = item.description;
         if (help == "") {
             help = "(No help available)";
         }
         help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
         help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
-        // Assign an id, because orbitaltooltip
-        // doesn't work without it.
+        // Assign an id, because orbitaltooltip doesn't work without it.
         btn.attr('id', 'id_classlist_' + i);
         setTimeout(function() {
                        btn.orbitaltooltip({
@@ -250,25 +297,50 @@ PresentationControls.prototype.build_classlist = function() {
                        });
         }, 1000); // Delay, otherwise tooltips can end up in wrong position.
     });
-    // Stop the tooltips from getting in the way
-    // - dismiss with a click.
-    jQuery(".orbitaltooltip-simplebox").click(function(event) {
-                                                  jQuery(this).hide();
-                                              });
 
-    // Fix height of classlist.
-    var h = jQuery(" .wym_area_main").height() -
-        jQuery(this.wym._options.containersSelector).height() -
-        jQuery(this.wym._options.layoutCommandsSelector).height() -
-        jQuery(this.wym._options.classesSelector + " h2").height() -
-        20; // 20 is a fudge value, probably equal to some marings/paddings
-    this.classlist.css("height", h.toString() + "px");
 
 };
 
-PresentationControls.prototype.unbind_classlist = function() {
-    // Remove existing event handlers, reset state
-    this.classlist.find("a").unbind().addClass("disabled");
+PresentationControls.prototype.build_commandlist = function() {
+    this.commandlist.empty();
+
+    var self = this;
+    jQuery.each(this.commands, function(i, item) {
+        var btn = jQuery("<li><a href='#'>" + escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.commandlist).find("a");
+        // event handlers
+        var command = self.commands[i];
+
+        btn.click(function(event) {
+                      self.do_command(command);
+                  });
+        btn.hover(function(event) {
+                      // update_classlist_item works for
+                      // commands as well as classes.
+                     self.update_classlist_item(btn, command);
+                  });
+
+        // Attach tooltip to label we just added:
+        var help = item.description;
+        if (help == "") {
+            help = "(No help available)";
+        }
+        help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
+        help = help + '<br/><hr/><p>Can be inserted on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
+        // Assign an id, because orbitaltooltip doesn't work without it.
+        btn.attr('id', 'id_commandlist_' + i);
+        setTimeout(function() {
+                       btn.orbitaltooltip({
+                           orbitalPosition: 270,
+                           // Small spacing means we can move onto the tooltip
+                           // in order to scroll it if the help text has
+                           // produced scroll bars.
+                           spacing:         8,
+                           tooltipClass:         'orbitaltooltip-simplebox',
+                           html:            help
+                       });
+        }, 1000); // Delay, otherwise tooltips can end up in wrong position.
+    });
+
 };
 
 PresentationControls.prototype.get_heading_index = function() {
@@ -289,13 +361,12 @@ PresentationControls.prototype.has_style = function(sect_id, style) {
     return false;
 };
 
-PresentationControls.prototype.assign_id = function(node) {
+PresentationControls.prototype.next_id = function(tagName) {
     // All sections that can receive styles need a section ID.
     // For the initial HTML, this is assigned server-side when the
     // HTML is split into 'semantic HTML' and 'presentation info'.
     // For newly added HTML, however, we need to add it ourself
 
-    var tagName = node.tagName.toLowerCase();
     var i = 1;
     var id = "";
     while (true) {
@@ -308,38 +379,79 @@ PresentationControls.prototype.assign_id = function(node) {
     }
 };
 
-PresentationControls.prototype.register_section = function(sect_id, tag) {
-    // This is a temporary fix to make sure variables are in consistent
-    // state. We have to do a server side call to get proper values,
-    // but we delay that until needed.
-
-    var structureItem = {
-        sect_id: sect_id,
-        tag: tag,
-        level: undefined, // Difficult to calculate client side
-        name: undefined // Difficult to calculate client side
+PresentationControls.prototype.update_command_divs = function(node, id, max) {
+    if (max == 0) {
+        return;
     };
-    this.stored_headings.push(structureItem);
-    this.presentation_info[sect_id] = Array();
+    var prev = node.previousSibling;
+    if (prev && prev.tagName.toLowerCase() == 'div') {
+        // command divs are like <div id="newrow_p_1" class="newrow">
+        // check we've got a command div.
+        var className = prev.className;
+        var prev_id = prev.id;
+        if (prev_id && prev_id.match(eval("/^" + className + "/"))) {
+            prev.id = className + "_" + id;
+            // need to update presentation_info as well
+            this.presentation_info[prev.id] = this.presentation_info[prev_id];
+            delete this.presentation_info[prev_id];
+            // and then the visible indicators
+            this.update_style_display(prev.id);
+            // do the next one.
+            this.update_command_divs(prev, id, max - 1);
+        }
+    }
+};
+
+PresentationControls.prototype.assign_id = function(node, id) {
+
+    // Assign an ID to an element.  This can be tricky, because if the section
+    // has a command div before it, we need to make sure that the id of those
+    // divs are changed, since the 'position' of the command divs are only stored
+    // by giving them the right id.
+    node.id = id;
+    // Need to change (up to) the two previous siblings.
+    this.update_command_divs(node, id, 2);
+};
+
+PresentationControls.prototype.register_section = function(sect_id) {
+    // Make sure we have somewhere to store styles for a section.
+    this.presentation_info[sect_id] = new Array();
+};
+
+PresentationControls.prototype.tagname_to_selector = function(name) {
+    // Convert a tag name into a selector used to match
+    // elements that represent that tag.  This function accounts
+    // for the use of div elemennts to represent commands.
+    var c = this.command_dict[name];
+    if (c == null) {
+        // not a command
+        return name;
+    } else {
+        return "div." + c.name;
+    }
+};
+
+PresentationControls.prototype.ensure_id = function(node) {
+    var id = node.id;
+
+    if (id == undefined || id == "") {
+        id = this.next_id(node.tagName.toLowerCase());
+        this.assign_id(node, id);
+        this.register_section(id);
+    }
+    return id;
 };
 
 PresentationControls.prototype.get_current_section = function(style) {
     var wym = this.wym;
-    // TODO - images for new row/column
-    // var container = (wym._selected_image ? wym._selected_image 
-    //                 : jQuery(wym.selected()));
-    // TODO - limit selection to allowed elements for style - fix for 'row', 'col'
-
-    var expr = style.allowed_elements.join(",");
+    var self = this;
+    var expr = jQuery.map(style.allowed_elements,
+                          function(t,i) { return self.tagname_to_selector(t); }
+                         ).join(",");
     var container = jQuery(wym.selected()).parentsOrSelf(expr);
     if (container.is(expr)) {
         var first = container.get(0);
-        var id = first.id;
-        if (id == undefined || id == "") {
-            id = this.assign_id(first);
-            this.register_section(id, first.tagName.toLowerCase());
-            first.id = id;
-        }
+        var id = this.ensure_id(first);
         return id;
     }
     return undefined;
@@ -351,6 +463,7 @@ PresentationControls.prototype.toggle_style = function(style) {
     if (sect_id == undefined) {
         // No allowed to use it there
         alert("Cannot use this style on current element.");
+        return;
     }
 
     if (this.has_style(sect_id, style)) {
@@ -359,6 +472,51 @@ PresentationControls.prototype.toggle_style = function(style) {
         this.add_style(sect_id, style);
     }
     this.update_style_display(sect_id);
+};
+
+PresentationControls.prototype.insert_command_div = function(sect_id, command) {
+    var newelem = jQuery("<div class=\"" + command.name + "\">*</div>");
+    var elem = jQuery(this.wym._doc).find("#" + sect_id);
+    // New row should appear before new col
+    if (elem.prev().is("div.newcol") && command.name == 'newrow') {
+        elem = elem.prev();
+    }
+    elem.before(newelem);
+    var new_id = command.name + "_" + sect_id; // duplication with do_command
+    newelem.attr('id', new_id);
+    this.update_style_display(new_id);
+    return new_id;
+};
+
+PresentationControls.prototype.do_command = function(command) {
+    // What section are we on?
+    var sect_id = this.get_current_section(command);
+    if (sect_id == undefined) {
+        // No allowed to use it there
+        alert("Cannot use this command on current element.");
+        return;
+    }
+    var new_id = command.name + "_" + sect_id; // duplication with insert_command_div
+    this.register_section(new_id);
+    this.presentation_info[new_id].push(command);
+    // newrow and newcol are the only commands at the moment.
+    // We handle both using inserted divs and images.
+    this.insert_command_div(sect_id, command);
+};
+
+PresentationControls.prototype.insert_command_divs = function() {
+    // This is run once, after loading HTML.  We can rely on 'ids' being
+    // present, since the HTML is all sent by the server.
+    for (var key in this.presentation_info) {
+        var presinfos = this.presentation_info[key];
+        for (var i = 0; i < presinfos.length; i++) {
+            var pi = presinfos[i];
+            if (pi.prestype == 'command') {
+                var id = key.split('_').slice(1).join('_');
+                this.insert_command_div(id, this.command_dict[pi.name]);
+            }
+        }
+    }
 };
 
 PresentationControls.prototype.update_classlist_item = function(btn, style) {
@@ -414,18 +572,12 @@ PresentationControls.prototype.update_style_display = function(sect_id) {
     var style_list = jQuery.map(styles, function(s, i) {
                                     return self.get_verbose_style_name(s.name);
                                 }).join(", ");
-    if (sect_id.match(/^nerow_/)) {
-        // TODO
-    } else if (sect_id.match(/^newcol_/)) {
-        // TODO
-    } else {
-        this.add_css_rule("#" + sect_id + ":before", 'content: "' + style_list + '"');
-    }
+    this.add_css_rule("#" + sect_id + ":before", 'content: "' + style_list + '"');
 };
 
 PresentationControls.prototype.update_all_style_display = function() {
-    for (var i=0; i < this.stored_headings.length; i++) {
-        this.update_style_display(this.stored_headings[i].sect_id);
+    for (var key in this.presentation_info) {
+        this.update_style_display(key);
     }
 };
 
@@ -439,16 +591,18 @@ PresentationControls.prototype.get_verbose_style_name = function(stylename) {
             return styles[i].verbose_name;
         }
     }
-    if (stylename == "newrow") {
-        return "New row";
-    } else if (stylename == "new column") {
-        return "New column";
+    var commands = this.commands;
+    for (var i2 = 0; i2 < commands; i2++) {
+        if (commands[i2].name == stylename) {
+            return commands[i2].verbose_name;
+        }
     }
     return undefined; // shouldn't get here
 };
 
 PresentationControls.prototype.insert_row = function() {
     // Insert a new row command into outline above selected item
+    var sect_id = get_current_section(this.newrow_style);
     var headingIndex = this.get_heading_index();
     if (headingIndex == null) return;
     var sect_id = this.active_heading_list[headingIndex].sect_id;
@@ -465,7 +619,7 @@ PresentationControls.prototype.insert_row = function() {
             // An empty array will do, don't actually need a
             // command in there (and the GUI will overwrite any
             // anything we put in it)
-            this.presentation_info['newrow_' + sect_id] = Array();
+            this.presentation_info['newrow_' + sect_id] = new Array();
             break;
         }
     }
@@ -505,7 +659,7 @@ PresentationControls.prototype.insert_column = function() {
             // An empty array will do, don't actually need a
             // command in there (and the GUI will overwrite any
             // anything we put in it)
-            this.presentation_info['newcol_' + sect_id] = Array();
+            this.presentation_info['newcol_' + sect_id] = new Array();
             break;
         }
     }
@@ -678,6 +832,20 @@ PresentationControls.prototype.retrieve_styles = function() {
                    });
 };
 
+PresentationControls.prototype.retrieve_commands = function() {
+    var self = this;
+    jQuery.getJSON(this.opts.retrieve_commands_url, {},
+                  function (data) {
+                      self.with_good_data(data, function(value) {
+                                              self.commands = data.value;
+                                              for (var i = 0; i < self.commands.length; i++) {
+                                                  var c = self.commands[i];
+                                                  self.command_dict[c.name] = c;
+                                              }
+                                              self.build_commandlist();
+                                          });
+                  });
+};
 
 // The actual WYMeditor plugin:
 WYMeditor.editor.prototype.semantic = function(options) {
