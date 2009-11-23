@@ -180,10 +180,27 @@ PresentationControls.prototype.ensure_all_ids = function() {
                                                      });
 };
 
+PresentationControls.prototype.clean_presentation_info = function() {
+    // clear out orphaned items
+    var orphaned = [];
+    for (var key in this.presentation_info) {
+        var sel = "#" + key;
+        if (!jQuery(this.wym._doc).find(sel).is(sel)) {
+            orphaned.push(key);
+        }
+    }
+    for (var i = 0; i < orphaned.length; i++) {
+        delete this.presentation_info[orphaned[i]];
+    }
+};
+
 PresentationControls.prototype.form_submit = function(event) {
     // We need to ensure all elements have ids, *and* that div elements have
     // correct ids (which is a side effect of the below).
     this.ensure_all_ids();
+    // this.presentation_info might have old info, if command divs have
+    // been removed.  Need to clean.
+    this.clean_presentation_info();
 
     // Since we are in the middle of submitting the page, an asynchronous
     // request will be too late! So we block instead.
@@ -477,6 +494,8 @@ PresentationControls.prototype.update_classlist_item = function(btn, style) {
 
 PresentationControls.prototype.show_preview = function() {
     var self = this;
+    this.ensure_all_ids();
+    this.clean_presentation_info();
     jQuery.post(this.opts.preview_url, { 'html': self.wym.xhtml(),
                                          'presentation': JSON.stringify(this.presentation_info)
                                         },
