@@ -161,6 +161,10 @@ def retrieve_styles(request):
     return success(map(PI_to_dict,retval))
 
 @json_view
+def retrieve_commands(request):
+    return success(map(PI_to_dict, [NEWROW, NEWCOL]))
+
+@json_view
 def separate_presentation(request):
     """
     Returns a JSON object:
@@ -202,13 +206,12 @@ def _convert_pres(pres):
 def combine_presentation(request):
     """
     Combines submitted 'html' and 'presentation' data,
-    returning a dictionary containg { html: <combined html> }
+    returning a dictionary containing { html: <combined html> }
     """
     html = request.POST.get('html', '')
     presentation = request.POST.get('presentation', '{}')
     presentation = simplejson.loads(presentation)
     presentation = _convert_pres(presentation)
-
     return graceful_errors(AllUserErrors, lambda: dict(html=format_html(html, presentation, pretty_print=True)))
 
 @json_view

@@ -290,7 +290,8 @@ def PresentationCommand(name, verbose_name="", description=""):
     Shortcut for creating commands
     """
     return PresentationInfo(prestype="command",  name=name,
-                            verbose_name=verbose_name, description=description)
+                            verbose_name=verbose_name, description=description,
+                            allowed_elements=sorted(list(technical_blockdef)))
 
 NEWROW = PresentationCommand('newrow',
                              verbose_name = "New row",
@@ -899,6 +900,14 @@ def _replace_block_elements(elem):
             child.tag = 'p'
         _replace_block_elements(child)
 
+def _remove_command_divs(elem):
+    for child in reversed(elem.getchildren()):
+        _remove_command_divs(child)
+        if child.tag == 'div':
+            classes = set(_get_classes_for_node(child))
+            if NEWROW.name in classes or NEWCOL.name in classes:
+                elem.remove(child)
+
 def clean_tree(root):
     """
     Cleans dirty HTML from an ElementTree
@@ -907,6 +916,9 @@ def clean_tree(root):
     body = root[0] # <html><body>
     # If there is text directly in body, it needs wrapping in a block element.
     _promote_child_text(body, 'p')
+
+    # replace 'command' divs
+    _remove_command_divs(body)
 
     # First replace divs
     _replace_block_elements(body)
