@@ -107,6 +107,10 @@ PresentationControls.prototype.setup_controls = function(container) {
                                    self.clean_html();
                                    return false;
                                });
+    jQuery(this.wym._doc).bind("keyup", function(evt) {
+                                   self.doc_keyup(evt);
+                               });
+
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
     jQuery(this.wym._options.updateSelector)
         .bind(this.wym._options.updateEvent, function(event) {
@@ -139,6 +143,32 @@ PresentationControls.prototype.set_html = function(html) {
     // but it doesn't at the moment, so we work around it by wrapping.
     this.wym.html(html);
     this.wym.listen();
+};
+
+PresentationControls.prototype.doc_keyup = function(evt) {
+    // Some browsers (Firefox at least) will insert a new paragraph with the
+    // same ID as the old one when the user presses 'Enter'. This needs fixing
+    // for our styling to work. It's possible that multiple 'p' elements can be inserted
+    // for one keyup event, so we handle that. This appears to happen for any
+    // elements that are created by pressing 'Enter'
+    var self = this;
+    var wym = self.wym;
+    if (evt.keyCode == 13 && !evt.shiftKey) {
+        var container = jQuery(wym.selected()).parentsOrSelf("p,li");
+        if (container.is("p[id],li[id]")) {
+            // Need to clear id on all elem's with that id except the first.
+            // (hoping that jQuery will return them in document order, which it
+            // seems to)
+            jQuery(wym._doc).find(container.get(0).tagName + "#" +  container.attr("id")).
+                each(function(i){
+                         var node = this;
+                         if (i > 0) { // skip the first
+                              jQuery(node).removeAttr('id');
+                         }
+                     });
+        }
+    }
+
 };
 
 // Splits the HTML into 'content HTML' and 'presentation'
