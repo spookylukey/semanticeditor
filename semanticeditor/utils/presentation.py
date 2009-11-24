@@ -966,7 +966,7 @@ def clean_tree(root):
             if pq(n).is_(blockdef_selector):
                 pull_up(n)
 
-    for x in ['br + br', 'p + br', 'p:empty']:
+    for x in ['p + br', 'p:empty']:
         doc(x).remove()
 
     # Removed elements can give problems which need to be fixed again.  We keep
