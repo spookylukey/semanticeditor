@@ -254,6 +254,13 @@ class TestFormat(TestCase):
         outh = "<div class=\"row\"><div><div><h1>1</h1><p>para 1</p><h2>2</h2></div></div></div>"
         self.assertEqual(outh, format_html(html, {'h1_1':[NEWROW]}))
 
+    def test_format_pre(self):
+        html = "<pre>This\r\nis\r\na\r\ntest</pre>"
+        # check that format_html doesn't do anything nasty inside the pre
+        html2 = format_html(html, {})
+        pres, html3 = extract_presentation(html2)
+        self.assertEqual(html, html3)
+
 class TestHacks(TestCase):
     def test_div_format_hack(self):
         html = '<p>Test</p>'

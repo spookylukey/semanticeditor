@@ -226,5 +226,4 @@ def preview(request):
 @json_view
 def clean_html_view(request):
     html = request.POST.get('html', '')
-    print clean_html(html)
     return graceful_errors(AllUserErrors, lambda: dict(html=clean_html(html)))

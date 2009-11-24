@@ -222,36 +222,17 @@ class LayoutDetails(LayoutDetailsBase):
         return tree
 
 ### Parsing ###
-import htmlentitydefs
-def fixentities(htmltext):
-    # replace HTML character entities with numerical references
-    # note: this won't handle CDATA sections properly
-    def repl(m):
-        entity = htmlentitydefs.entitydefs.get(m.group(1).lower())
-        if not entity:
-            return m.group(0)
-        elif len(entity) == 1:
-            if entity in "&<>'\"":
-                return m.group(0)
-            return "&#%d;" % ord(entity)
-        else:
-            return entity
-    return re.sub("&(\w+);?", repl, htmltext)
-
 def parse(content, clean=False):
     """
     Parses the HTML provided into an ElementTree.
     If 'clean' is True, lax parsing is done, the tree is cleaned
     of dirty user provided HTML
     """
+    # We also use HTMLParser for 'strict', because the XML parser seems to eliminate
+    # '\r' for some reason.
+    tree = ET.fromstring(u'<html><body>' + content + u'</body></html>', parser=HTMLParser())
     if clean:
-        tree = ET.fromstring(u'<html><body>' + fixentities(content) + u'</body></html>', parser=HTMLParser())
         clean_tree(tree)
-    else:
-        try:
-            tree = ET.fromstring(u"<html><body>" + fixentities(content) + u"</body></html>")
-        except ET.XMLSyntaxError, e:
-            raise InvalidHtml("HTML content is not well formed.")
     return tree
 
 # NB: ElementTree is bizarre - after parsing some UTF-8 bytestrings, it will
@@ -549,7 +530,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
 def _html_extract(root):
     if len(root) == 0 and root.text is None and root.tail is None:
         return ''
-    return ET.tostring(root).replace('<html>','').replace('</html>','').replace('<body>','').replace('</body>', '').replace("<head/>","")
+    return ET.tostring(root).replace('<html>','').replace('</html>','').replace('<body>','').replace('</body>', '').replace("<head/>","").replace("&#13;", "\r")
 
 def _strip_presentation(tree):
     cleanup(tree, lambda t: t.tag == 'div')
