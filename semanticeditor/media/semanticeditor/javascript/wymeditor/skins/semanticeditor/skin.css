@@ -149,7 +149,7 @@
 
 
 /* SEMANTIC EDITOR PRESENTATION CONTROLS */
-    div.prescontrol             {border-top: 1px solid black; padding-top: 20px;}
+    div.prescontrol             { }
 	.prescontrol td             { padding: 0; }
 	.prescontrolheadings        { margin-right: 260px; }
 	.prescontrolheadings select { background: inherit; border: none; width: 100%;}

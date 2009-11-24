@@ -72,10 +72,9 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Create elements
     container.after(
         "<div class=\"prescontrol\">" +
-        "<table width=\"100%\" border=\"0\" cellpadding=\"0\" cellspacing=\"0\"><tr>" +
-            "<td><input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanhtmlbutton_id  +  "\" /></td>" +
-            "<td><input type=\"submit\" value=\"Preview\" id=\"" + previewbutton_id + "\" /></td>" +
-            "<td width=\"100%\"><div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div></td></tr></table>" +
+            "<input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanhtmlbutton_id  +  "\" />" +
+            "<input type=\"submit\" value=\"Preview\" id=\"" + previewbutton_id + "\" />" +
+            "<div class=\"prescontrolerror\" id=\"" + id_prefix + "errorbox" + "\"></div>" +
         "</div>");
 
     jQuery("body").append("<div style=\"position: absolute; display: none\" class=\"previewbox\" id=\"" + previewbox_id + "\">");
