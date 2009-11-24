@@ -95,11 +95,7 @@ PresentationControls.prototype.setup_controls = function(container) {
 
     this.retrieve_commands();
     this.retrieve_styles();
-    this.separate_presentation(function() {
-                                   // these must come after separate_presentation
-                                   self.insert_command_divs();
-                                   self.update_all_style_display();
-                               });
+    this.separate_presentation();
 
     this.previewbutton.toggle(function(event) {
                                  self.show_preview();
@@ -147,7 +143,7 @@ PresentationControls.prototype.set_html = function(html) {
 };
 
 // Splits the HTML into 'content HTML' and 'presentation'
-PresentationControls.prototype.separate_presentation = function(andthen) {
+PresentationControls.prototype.separate_presentation = function() {
     // 'andthen' is a function to do afterwards.  This is a nasty
     // hack to get things to work.
     var self = this;
@@ -159,9 +155,8 @@ PresentationControls.prototype.separate_presentation = function(andthen) {
                             self.presentation_info = value.presentation;
                             // Update the HTML
                             self.set_html(value.html);
-                            if (andthen != null) {
-                                andthen();
-                            }
+                            // Update presentation of HTML
+                            self.update_after_loading();
                         });
                 }, "json");
 };
@@ -545,6 +540,11 @@ PresentationControls.prototype.update_all_style_display = function() {
     }
 };
 
+PresentationControls.prototype.update_after_loading = function() {
+    this.insert_command_divs();
+    this.update_all_style_display();
+};
+
 PresentationControls.prototype.get_verbose_style_name = function(stylename) {
     // Full style information is not stored against individual headings, only
     // the type and name. So sometimes we need to go from one to the other.
@@ -571,6 +571,7 @@ PresentationControls.prototype.clean_html = function() {
                 function(data) {
                     self.with_good_data(data, function(value) {
                                             self.set_html(value.html);
+                                            self.update_after_loading();
                                         });
                 }, "json");
 };
