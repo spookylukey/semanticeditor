@@ -92,8 +92,8 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Remove any tooltips
     jQuery(".orbitaltooltip-simplebox").unbind().remove();
 
-    this.retrieve_commands();
-    this.retrieve_styles();
+    this.retrieve_commands(); // async
+    this.retrieve_styles(); // async
     this.separate_presentation();
 
     this.previewbutton.toggle(function(event) {
@@ -599,32 +599,46 @@ PresentationControls.prototype.show_error = function(message) {
 };
 
 PresentationControls.prototype.retrieve_styles = function() {
-    // Retrieve via AJAX
     var self = this;
-    jQuery.getJSON(this.opts.retrieve_styles_url, {'template':this.opts.template,
-                                                   'page_id':this.opts.page_id
-                                                  },
-                   function (data) {
-                       self.with_good_data(data, function(value) {
-                           self.available_styles = data.value;
-                           self.build_classlist();
-                       });
-                   });
+    // Needs async=false, since separate_presentation depends on data.
+    var res = jQuery.ajax({
+                  type: "GET",
+                  data: {
+                      'template':this.opts.template,
+                      'page_id':this.opts.page_id
+                  },
+                  url: this.opts.retrieve_styles_url,
+                  dataType: "json",
+                  async: false
+    }).responseText;
+    var data = JSON.parse(res);
+
+    self.with_good_data(data, function(value) {
+        self.available_styles = data.value;
+        self.build_classlist();
+    });
 };
 
 PresentationControls.prototype.retrieve_commands = function() {
     var self = this;
-    jQuery.getJSON(this.opts.retrieve_commands_url, {},
-                  function (data) {
-                      self.with_good_data(data, function(value) {
-                                              self.commands = data.value;
-                                              for (var i = 0; i < self.commands.length; i++) {
-                                                  var c = self.commands[i];
-                                                  self.command_dict[c.name] = c;
-                                              }
-                                              self.build_commandlist();
-                                          });
-                  });
+    // Needs async=false, since separate_presentation depends on data.
+    var res = jQuery.ajax({
+                  type: "GET",
+                  data: {},
+                  url: this.opts.retrieve_commands_url,
+                  dataType: "json",
+                  async: false
+    }).responseText;
+    var data = JSON.parse(res);
+
+    self.with_good_data(data, function(value) {
+                            self.commands = data.value;
+                            for (var i = 0; i < self.commands.length; i++) {
+                                var c = self.commands[i];
+                                self.command_dict[c.name] = c;
+                            }
+                            self.build_commandlist();
+                        });
 };
 
 // The actual WYMeditor plugin:
