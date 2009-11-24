@@ -947,6 +947,14 @@ def clean_tree(root):
             if pq(n).is_(blockdef_selector):
                 pull_up(n)
 
+    # remove duplicate 'id' attributes.
+    ids = [n.get('id', None) for n in doc('*[id]')]
+    ids = [i for i in ids if i != "" and i != None]
+    for i in set(ids):
+        for j, node in enumerate(doc('#' + i)):
+            if (j > 0): # skip the first one
+                del n.attrib['id']
+
     for x in ['p + br', 'p:empty']:
         doc(x).remove()
 
