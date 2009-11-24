@@ -527,5 +527,8 @@ class TestHtmlCleanup(TestCase):
                               "<ul><li>A test</li></ul>")
 
     def test_duplicate_ids(self):
-        self.assertEqualClean('<p id="p_1">test</p><p id="p_1">test 2</p>',
-                              '<p id="p_1">test</p><p>test 2</p>')
+        self.assertEqualClean('<p id="p_1">test</p><p id="p_1">test 2</p>' +
+                              '<ul id="ul_1">test</ul><ul id="ul_1">test 2</p>',
+                              '<p id="p_1">test</p><p>test 2</p>' +
+                              '<ul id="ul_1">test</ul><ul>test 2</ul>')
+

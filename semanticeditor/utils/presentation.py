@@ -941,7 +941,7 @@ def clean_tree(root):
     for i in set(ids):
         for j, node in enumerate(doc('#' + i)):
             if (j > 0): # skip the first one
-                del n.attrib['id']
+                del node.attrib['id']
 
     for x in ['p + br', 'p:empty']:
         doc(x).remove()
