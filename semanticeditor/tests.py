@@ -501,6 +501,10 @@ class TestHtmlCleanup(TestCase):
         self.assertEqualClean("This is<br /><br />a test",
                               "<p>This is</p><p>a test</p>")
 
+    def test_br_in_p(self):
+        self.assertEqualClean("<p>line 1<br />line 2<br />line 3</p>",
+                              "<p>line 1<br />line 2<br />line 3</p>")
+
     def test_p_in_li(self):
         self.assertEqualClean("<ul><li><p>An item</p></li></ul>",
                               "<ul><li>An item</li></ul>")
