@@ -30,7 +30,7 @@ AllUserErrors = (InvalidHtml, IncorrectHeadings, BadStructure, TooManyColumns)
 technical_blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote']) # according to HTML4
 additional_blockdef = set(['li']) # li really act like block elements
 blockdef = technical_blockdef | additional_blockdef
-blockdef_selector = ",".join(blockdef)
+blockdef_selector = ",".join(blockdef) # need to sync with wymeditor.semantic.js
 headingdef = set(['h1','h2','h3','h4','h5','h6'])
 preview_blockdef = technical_blockdef
 

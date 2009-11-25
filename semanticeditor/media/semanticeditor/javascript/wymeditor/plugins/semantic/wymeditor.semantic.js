@@ -19,6 +19,12 @@ function PresentationControls(wym, opts) {
     // command_dict: a dictionary mapping command name to PresentationInfo object.
     this.command_dict = {};
 
+    // the tagName of the current block level element being edited.
+    this.current_tag_name = "";
+
+    // Need to sync with presentation.py
+    this.blockdef_selector = "h1,h2,h3,h4,h5,h6,p,ol,ul,blockquote,li,div,pre";
+
     this.setup_controls(jQuery(wym._bvox).find(".wym_area_bottom"));
 }
 
@@ -107,9 +113,15 @@ PresentationControls.prototype.setup_controls = function(container) {
                                    self.clean_html();
                                    return false;
                                });
-    jQuery(this.wym._doc).bind("keyup", function(evt) {
-                                   self.doc_keyup(evt);
-                               });
+    jQuery(this.wym._doc)
+        .bind("keyup", function(evt) {
+                  // this style of binding give doc_keyup
+                  // access to 'this' PresentationControl
+                  self.doc_keyup(evt);
+              })
+        .bind("mouseup", function(evt) {
+                  self.doc_mouseup(evt);
+              });
 
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
     jQuery(this.wym._options.updateSelector)
@@ -151,10 +163,12 @@ PresentationControls.prototype.doc_keyup = function(evt) {
     // for our styling to work. It's possible that multiple 'p' elements can be inserted
     // for one keyup event, so we handle that. This appears to happen for any
     // elements that are created by pressing 'Enter'
+
+    // We also need to update the disable/enabled state of the classlist and commandlist
     var self = this;
     var wym = self.wym;
+    var container = jQuery(wym.selected()).parentsOrSelf(this.blockdef_selector);
     if (evt.keyCode == 13 && !evt.shiftKey) {
-        var container = jQuery(wym.selected()).parentsOrSelf("p,li");
         if (container.is("p[id],li[id]")) {
             // Need to clear id on all elem's with that id except the first.
             // (hoping that jQuery will return them in document order, which it
@@ -168,6 +182,36 @@ PresentationControls.prototype.doc_keyup = function(evt) {
                      });
         }
     }
+    this.update_classlist_item_all(container);
+};
+
+PresentationControls.prototype.doc_mouseup = function(evt) {
+    this.update_classlist_item_all();
+};
+
+PresentationControls.prototype.update_classlist_item_all = function(cur_container) {
+    var self = this;
+    if (cur_container == undefined) {
+        // For speed
+        cur_container = jQuery(this.wym.selected()).parentsOrSelf(this.blockdef_selector);
+    }
+    var node = cur_container.get(0);
+    if (node != undefined && node.tagName != this.current_tag_name) {
+        // if current tagName has changed, might need to update list
+        this.current_tag_name = node.tagName;
+        // Sets enabled/disabled on all items in classlist and commands
+        var pairs = [[this.available_styles, this.classlist],
+                     [this.commands, this.commandlist]];
+
+        for (var i = 0; i < pairs.length; i++) {
+            var styles = pairs[i][0];
+            var btncontainer = pairs[i][1];
+            btncontainer.find("a").each(function(k) {
+                                            self.update_classlist_item(jQuery(this), styles[k]);
+                                        });
+        }
+    }
+
 
 };
 
@@ -370,7 +414,7 @@ PresentationControls.prototype.update_command_divs = function(node, id, max) {
         return;
     };
     var prev = node.previousSibling;
-    if (prev && prev.tagName.toLowerCase() == 'div') {
+    if (prev != undefined && prev.tagName != undefined && prev.tagName.toLowerCase() == 'div') {
         // command divs are like <div id="newrow_p_1" class="newrow">
         // check we've got a command div.
         var className = prev.className;
