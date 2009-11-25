@@ -24,6 +24,7 @@
  
 /* make HTML blocs visible */
   p,
+  div,
   h1,
   h2,
   h3,
@@ -121,6 +122,7 @@
   blockquote	{font-weight: light; color: #666;}
 
   p,
+  div,
   h1,
   h2,
   h3,
@@ -131,14 +133,70 @@
   ol,
   table,
   blockquote,
-  pre   {margin: 0; 
-      padding: .5em 0 .5em 2em;}
+  pre
+  {
+      margin: 0;
+      padding: 10px 0 .5em 2em;
+      position: relative; /* to establish containing block for ':before' elements */
+  }
+  li
+  {
+      position: relative;
+      padding-top: 10px;
+  }
+
+
+  p:before,
+  div:before,
+  h1:before,
+  h2:before,
+  h3:before,
+  h4:before,
+  h5:before,
+  h6:before,
+  ul:before,
+  ol:before,
+  li:before,
+  table:before,
+  blockquote:before,
+  pre:before
+  {
+      position: absolute;
+      left: 0px;
+      top: 0px;
+      font-size: 8px;
+      color: #888;
+  }
+
+  li:before
+  {
+      left: -2em;
+  }
+
+
+  div.newrow:after {
+      content:" New row";
+  }
+
+  div.newcol:after {
+      content:" New column";
+  }
+
+  div.newrow, div.newcol {
+      background-color: #f8f8f8;
+      font-size: 70%;
+      border-top: 1px solid #ffffff;
+      border-bottom: 1px solid #f0f0f0;
+  }
 
   ol,ul	{border: none;
 		padding: 1em 2em;
 		background-image: url(arkestra-lbl-list.png);
 	  }
 
-  li	{margin-left: 1em; 
-	padding-left: 1em;
-	list-style-position: outside;}
+  li
+  {
+      margin-left: 1em;
+      padding-left: 1em;
+      list-style-position: outside;
+  }
