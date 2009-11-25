@@ -510,9 +510,17 @@ PresentationControls.prototype.update_classlist_item = function(btn, style) {
     var sect_id = this.get_current_section(style);
     if (sect_id == undefined) {
         // Can't use it.
-        btn.addClass("disabled");
+        if (style.prestype == "command")
+            // Don't want the class list (displayed below command list)
+            // to jump up and down
+            btn.addClass("disabled");
+        else
+            btn.hide();
     } else {
-        btn.removeClass("disabled");
+        if (style.prestype == "command")
+            btn.removeClass("disabled");
+        else
+            btn.show();
     }
 };
 
