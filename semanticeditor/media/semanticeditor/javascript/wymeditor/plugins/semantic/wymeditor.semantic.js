@@ -310,9 +310,6 @@ PresentationControls.prototype.build_classlist = function() {
         btn.click(function(event) {
                       self.toggle_style(style);
                   });
-        btn.hover(function(event) {
-                     self.update_classlist_item(btn, style);
-                  });
 
         // Attach tooltip to button we just added:
         var help = item.description;
