@@ -416,7 +416,7 @@ PresentationControls.prototype.update_command_blocks = function(node, id, max) {
         // check we've got a command block.
         var className = prev.className;
         var prev_id = prev.id;
-        if (prev_id && prev_id.match(eval("/^" + className + "/"))) {
+        if (prev_id && className && prev_id.match(eval("/^" + className + "_/"))) {
             prev.id = className + "_" + id;
             // need to update presentation_info as well
             this.presentation_info[prev.id] = this.presentation_info[prev_id];
