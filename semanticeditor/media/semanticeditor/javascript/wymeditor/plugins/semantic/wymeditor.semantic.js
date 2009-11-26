@@ -122,7 +122,7 @@ PresentationControls.prototype.setup_controls = function(container) {
                   self.doc_keyup(evt);
               })
         .bind("mouseup", function(evt) {
-                  self.doc_mouseup(evt);
+                  self.update_classlist_item_all();
               });
     jQuery(this.wym._options.containersSelector).find("a")
          .bind("click", function(evt) {
@@ -189,10 +189,6 @@ PresentationControls.prototype.doc_keyup = function(evt) {
         }
     }
     this.update_classlist_item_all(container);
-};
-
-PresentationControls.prototype.doc_mouseup = function(evt) {
-    this.update_classlist_item_all();
 };
 
 PresentationControls.prototype.update_classlist_item_all = function(cur_container) {
