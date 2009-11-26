@@ -529,7 +529,6 @@ PresentationControls.prototype.insert_command_block = function(sect_id, command)
     elem.before(newelem);
     var new_id = command.name + "_" + sect_id; // duplication with do_command
     newelem.attr('id', new_id);
-    this.update_style_display(new_id);
     return new_id;
 };
 
@@ -541,12 +540,12 @@ PresentationControls.prototype.do_command = function(command) {
         alert("Cannot use this command on current element.");
         return;
     }
-    var new_id = command.name + "_" + sect_id; // duplication with insert_command_block
-    this.register_section(new_id);
-    this.presentation_info[new_id].push(command);
     // newrow and newcol are the only commands at the moment.
     // We handle both using inserted blocks
-    this.insert_command_block(sect_id, command);
+    var new_id = this.insert_command_block(sect_id, command);
+    this.register_section(new_id);
+    this.presentation_info[new_id].push(command);
+    this.update_style_display(new_id);
 };
 
 PresentationControls.prototype.insert_command_blocks = function() {
@@ -557,6 +556,7 @@ PresentationControls.prototype.insert_command_blocks = function() {
         for (var i = 0; i < presinfos.length; i++) {
             var pi = presinfos[i];
             if (pi.prestype == 'command') {
+                // key = e.g. 'newrow_p_1', we need 'p_1'
                 var id = key.split('_').slice(1).join('_');
                 this.insert_command_block(id, this.command_dict[pi.name]);
             }
