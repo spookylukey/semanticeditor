@@ -98,6 +98,8 @@ PresentationControls.prototype.setup_controls = function(container) {
     // Remove any tooltips
     jQuery(".orbitaltooltip-simplebox").unbind().remove();
 
+    // retrieve_commands() must come before retrieve_styles(), due to use
+    // of calculate_selectors() which needs .commands to be set.
     this.retrieve_commands(); // async
     this.retrieve_styles(); // async
     this.separate_presentation();
@@ -438,10 +440,26 @@ PresentationControls.prototype.register_section = function(sect_id) {
     this.presentation_info[sect_id] = new Array();
 };
 
+PresentationControls.prototype.calculate_selectors = function(stylelist) {
+    // Given a list of styles, add a 'allowed_elements_selector' attribute
+    // on the basis of the 'allowed_elements' attribute.
+
+    // This is just an optimisation to avoid doing this work multiple times.
+
+    var self = this;
+    for (var i = 0; i < stylelist.length; i++) {
+        var style = stylelist[i];
+        style.allowed_elements_selector =
+            jQuery.map(style.allowed_elements,
+                       function(t,j) { return self.tagname_to_selector(t); }
+                      ).join(",");
+    }
+};
+
 PresentationControls.prototype.tagname_to_selector = function(name) {
     // Convert a tag name into a selector used to match elements that represent
     // that tag.  This function accounts for the use of p elements to represent
-    // commands in the document
+    // commands in the document.
 
     var c = this.command_dict[name];
     if (c == null) {
@@ -482,9 +500,7 @@ PresentationControls.prototype.get_current_section = function(style) {
     // was not defined already.
     var wym = this.wym;
     var self = this;
-    var expr = jQuery.map(style.allowed_elements,
-                          function(t,i) { return self.tagname_to_selector(t); }
-                         ).join(",");
+    var expr = style.allowed_elements_selector;
     var container = jQuery(wym.selected()).parentsOrSelf(expr);
     if (container.is(expr)) {
         var first = container.get(0);
@@ -717,6 +733,7 @@ PresentationControls.prototype.retrieve_styles = function() {
 
     self.with_good_data(data, function(value) {
         self.available_styles = data.value;
+        self.calculate_selectors(self.available_styles);
         self.build_classlist();
     });
 };
@@ -735,6 +752,7 @@ PresentationControls.prototype.retrieve_commands = function() {
 
     self.with_good_data(data, function(value) {
                             self.commands = data.value;
+                            self.calculate_selectors(self.commands);
                             for (var i = 0; i < self.commands.length; i++) {
                                 var c = self.commands[i];
                                 self.command_dict[c.name] = c;
