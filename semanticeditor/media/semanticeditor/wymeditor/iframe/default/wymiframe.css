@@ -174,19 +174,20 @@
   }
 
 
-  div.newrow:after {
+  p.newrow:after {
       content:" New row";
   }
 
-  div.newcol:after {
+  p.newcol:after {
       content:" New column";
   }
 
-  div.newrow, div.newcol {
+  p.newrow, p.newcol {
       background-color: #f8f8f8;
       font-size: 70%;
       border-top: 1px solid #ffffff;
       border-bottom: 1px solid #f0f0f0;
+      background-image: none;
   }
 
   ol,ul	{border: none;

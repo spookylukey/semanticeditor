@@ -19,11 +19,11 @@ function PresentationControls(wym, opts) {
     // command_dict: a dictionary mapping command name to PresentationInfo object.
     this.command_dict = {};
 
-    // the tagName of the current block level element being edited.
-    this.current_tag_name = "";
+    // the node of the current block level element being edited.
+    this.current_node = null;
 
     // Need to sync with presentation.py
-    this.blockdef_selector = "h1,h2,h3,h4,h5,h6,p,ol,ul,blockquote,li,div,pre";
+    this.blockdef_selector = "h1,h2,h3,h4,h5,h6,p,ol,ul,blockquote,li,pre";
 
     this.setup_controls(jQuery(wym._bvox).find(".wym_area_bottom"));
 }
@@ -192,13 +192,12 @@ PresentationControls.prototype.doc_mouseup = function(evt) {
 PresentationControls.prototype.update_classlist_item_all = function(cur_container) {
     var self = this;
     if (cur_container == undefined) {
-        // For speed
         cur_container = jQuery(this.wym.selected()).parentsOrSelf(this.blockdef_selector);
     }
     var node = cur_container.get(0);
-    if (node != undefined && node.tagName != this.current_tag_name) {
-        // if current tagName has changed, might need to update list
-        this.current_tag_name = node.tagName;
+    if (node != undefined && node != this.current_node) {
+        // if current node has changed, might need to update list
+        this.current_node = node;
         // Sets enabled/disabled on all items in classlist and commands
         var pairs = [[this.available_styles, this.classlist],
                      [this.commands, this.commandlist]];
@@ -235,8 +234,9 @@ PresentationControls.prototype.separate_presentation = function() {
 };
 
 PresentationControls.prototype.ensure_all_ids = function() {
-    // First there might be some divs that need fixing up.  We check all block
-    // level elements (or all elements that can have commands applied to them)
+    // We check all block level elements (or all elements that can have commands
+    // applied to them)
+
     var self = this;
     var elems = [];
     for (var i = 0; i < this.commands.length; i++) {
@@ -263,10 +263,10 @@ PresentationControls.prototype.clean_presentation_info = function() {
 };
 
 PresentationControls.prototype.form_submit = function(event) {
-    // We need to ensure all elements have ids, *and* that div elements have
-    // correct ids (which is a side effect of the below).
+    // We need to ensure all elements have ids, *and* that command block
+    // elements have correct ids (which is a side effect of the below).
     this.ensure_all_ids();
-    // this.presentation_info might have old info, if command divs have
+    // this.presentation_info might have old info, if command blocks have
     // been removed.  Need to clean.
     this.clean_presentation_info();
 
@@ -406,14 +406,14 @@ PresentationControls.prototype.next_id = function(tagName) {
     }
 };
 
-PresentationControls.prototype.update_command_divs = function(node, id, max) {
+PresentationControls.prototype.update_command_blocks = function(node, id, max) {
     if (max == 0) {
         return;
     };
     var prev = node.previousSibling;
-    if (prev != undefined && prev.tagName != undefined && prev.tagName.toLowerCase() == 'div') {
-        // command divs are like <div id="newrow_p_1" class="newrow">
-        // check we've got a command div.
+    if (prev != undefined && prev.tagName != undefined && prev.tagName.toLowerCase() == 'p') {
+        // command blocks are like <p id="newrow_p_1" class="newrow">
+        // check we've got a command block.
         var className = prev.className;
         var prev_id = prev.id;
         if (prev_id && prev_id.match(eval("/^" + className + "/"))) {
@@ -424,20 +424,19 @@ PresentationControls.prototype.update_command_divs = function(node, id, max) {
             // and then the visible indicators
             this.update_style_display(prev.id);
             // do the next one.
-            this.update_command_divs(prev, id, max - 1);
+            this.update_command_blocks(prev, id, max - 1);
         }
     }
 };
 
 PresentationControls.prototype.assign_id = function(node, id) {
-
-    // Assign an ID to an element.  This can be tricky, because if the section
-    // has a command div before it, we need to make sure that the id of those
-    // divs are changed, since the 'position' of the command divs are only stored
+    // Assign an ID to an element.  This can be tricky, because, if the section
+    // has a command block before it, we need to make sure that the id of those
+    // blocks are changed, since the 'position' of the command blocks are only stored
     // by giving them the right id.
     node.id = id;
     // Need to change (up to) the two previous siblings.
-    this.update_command_divs(node, id, 2);
+    this.update_command_blocks(node, id, 2);
 };
 
 PresentationControls.prototype.register_section = function(sect_id) {
@@ -446,15 +445,25 @@ PresentationControls.prototype.register_section = function(sect_id) {
 };
 
 PresentationControls.prototype.tagname_to_selector = function(name) {
-    // Convert a tag name into a selector used to match
-    // elements that represent that tag.  This function accounts
-    // for the use of div elemennts to represent commands.
+    // Convert a tag name into a selector used to match elements that represent
+    // that tag.  This function accounts for the use of p elements to represent
+    // commands in the document
+
     var c = this.command_dict[name];
     if (c == null) {
         // not a command
+        if (name == "p") {
+            // Need to ensure we don't match commands
+            var selector = "p";
+            for (var i = 0; i < this.commands.length; i++) {
+                selector = selector + "[class!='" + this.commands[i].name + "']";
+            }
+            return selector;
+        } else {
         return name;
+        }
     } else {
-        return "div." + c.name;
+        return "p." + c.name;
     }
 };
 
@@ -470,6 +479,13 @@ PresentationControls.prototype.ensure_id = function(node) {
 };
 
 PresentationControls.prototype.get_current_section = function(style) {
+    // Returns the section ID of the current section that is applicable
+    // to the given style, or undefined if there is none.
+    // Since sections can be nested, if more than one section is possible
+    // for the given style, the first section found (starting from the
+    // current selection and moving up the HTML tree) will be returned.
+    // This function has the side effect of adding a section ID if one
+    // was not defined already.
     var wym = this.wym;
     var self = this;
     var expr = jQuery.map(style.allowed_elements,
@@ -501,11 +517,13 @@ PresentationControls.prototype.toggle_style = function(style) {
     this.update_style_display(sect_id);
 };
 
-PresentationControls.prototype.insert_command_div = function(sect_id, command) {
-    var newelem = jQuery("<div class=\"" + command.name + "\">*</div>");
+PresentationControls.prototype.insert_command_block = function(sect_id, command) {
+    // There is some custom logic about the different commands here i.e.
+    // that newrow should appear before newcol.
+    var newelem = jQuery("<p class=\"" + command.name + "\">*</p>");
     var elem = jQuery(this.wym._doc).find("#" + sect_id);
     // New row should appear before new col
-    if (elem.prev().is("div.newcol") && command.name == 'newrow') {
+    if (elem.prev().is("p.newcol") && command.name == 'newrow') {
         elem = elem.prev();
     }
     elem.before(newelem);
@@ -523,15 +541,15 @@ PresentationControls.prototype.do_command = function(command) {
         alert("Cannot use this command on current element.");
         return;
     }
-    var new_id = command.name + "_" + sect_id; // duplication with insert_command_div
+    var new_id = command.name + "_" + sect_id; // duplication with insert_command_block
     this.register_section(new_id);
     this.presentation_info[new_id].push(command);
     // newrow and newcol are the only commands at the moment.
-    // We handle both using inserted divs and images.
-    this.insert_command_div(sect_id, command);
+    // We handle both using inserted blocks
+    this.insert_command_block(sect_id, command);
 };
 
-PresentationControls.prototype.insert_command_divs = function() {
+PresentationControls.prototype.insert_command_blocks = function() {
     // This is run once, after loading HTML.  We can rely on 'ids' being
     // present, since the HTML is all sent by the server.
     for (var key in this.presentation_info) {
@@ -540,7 +558,7 @@ PresentationControls.prototype.insert_command_divs = function() {
             var pi = presinfos[i];
             if (pi.prestype == 'command') {
                 var id = key.split('_').slice(1).join('_');
-                this.insert_command_div(id, this.command_dict[pi.name]);
+                this.insert_command_block(id, this.command_dict[pi.name]);
             }
         }
     }
@@ -619,7 +637,7 @@ PresentationControls.prototype.update_all_style_display = function() {
 };
 
 PresentationControls.prototype.update_after_loading = function() {
-    this.insert_command_divs();
+    this.insert_command_blocks();
     this.update_all_style_display();
 };
 

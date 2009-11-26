@@ -4,7 +4,7 @@ from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_structure, extract_presentation, format_html, preview_html, AllUserErrors, NEWROW, NEWCOL, PresentationInfo, PresentationClass, clean_html
+from semanticeditor.utils import extract_structure, extract_presentation, format_html, preview_html, AllUserErrors, COMMANDS, PresentationInfo, PresentationClass, clean_html
 from semanticeditor.models import CssClass
 import sys
 try:
@@ -162,7 +162,7 @@ def retrieve_styles(request):
 
 @json_view
 def retrieve_commands(request):
-    return success(map(PI_to_dict, [NEWROW, NEWCOL]))
+    return success(map(PI_to_dict, COMMANDS))
 
 @json_view
 def separate_presentation(request):

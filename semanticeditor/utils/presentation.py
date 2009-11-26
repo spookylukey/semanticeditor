@@ -323,6 +323,8 @@ command has been used to start a set of columns.</p>
 
 """)
 
+COMMANDS = [NEWROW, NEWCOL]
+
 ## General utilities
 
 def any(seq):
@@ -903,9 +905,9 @@ def _replace_block_elements(elem):
 def _remove_command_divs(elem):
     for child in reversed(elem.getchildren()):
         _remove_command_divs(child)
-        if child.tag == 'div':
+        if child.tag == 'div' or child.tag == 'p':
             classes = set(_get_classes_for_node(child))
-            if NEWROW.name in classes or NEWCOL.name in classes:
+            if any(c.name in classes for c in COMMANDS):
                 elem.remove(child)
 
 def clean_tree(root):
