@@ -263,13 +263,7 @@ PresentationControls.prototype.clean_presentation_info = function() {
 };
 
 PresentationControls.prototype.form_submit = function(event) {
-    // We need to ensure all elements have ids, *and* that command block
-    // elements have correct ids (which is a side effect of the below).
-    this.ensure_all_ids();
-    // this.presentation_info might have old info, if command blocks have
-    // been removed.  Need to clean.
-    this.clean_presentation_info();
-
+    this.prepare_data();
     // Since we are in the middle of submitting the page, an asynchronous
     // request will be too late! So we block instead.
 
@@ -584,9 +578,8 @@ PresentationControls.prototype.update_classlist_item = function(btn, style) {
 };
 
 PresentationControls.prototype.show_preview = function() {
+    this.prepare_data();
     var self = this;
-    this.ensure_all_ids();
-    this.clean_presentation_info();
     jQuery.post(this.opts.preview_url, { 'html': self.wym.xhtml(),
                                          'presentation': JSON.stringify(this.presentation_info)
                                         },
@@ -660,7 +653,19 @@ PresentationControls.prototype.get_verbose_style_name = function(stylename) {
     return undefined; // shouldn't get here
 };
 
+PresentationControls.prototype.prepare_data = function() {
+    // Prepare data/html for sending server side.
+
+    // We need to ensure all elements have ids, *and* that command block
+    // elements have correct ids (which is a side effect of the below).
+    this.ensure_all_ids();
+    // this.presentation_info might have old info, if command blocks have
+    // been removed.  Need to clean.
+    this.clean_presentation_info();
+};
+
 PresentationControls.prototype.clean_html = function() {
+    this.prepare_data();
     var self = this;
     var html = this.wym.xhtml();
     jQuery.post(this.opts.clean_html_url, {'html':html},
