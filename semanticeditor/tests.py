@@ -93,6 +93,7 @@ class TestFormat(TestCase):
 
     def test_remove_command_divs(self):
         self.assertEqual('<div class="row"><div><div><p>Test</p></div></div></div>', format_html('<div class="newrow">* </div><p>Test</p>', {}))
+        self.assertEqual('<div class="row"><div><div><p>Test</p></div></div></div>', format_html('<p class="newrow">* </p><p>Test</p>', {}))
 
     def test_empty(self):
         self.assertEqual('<div class="row"/>', format_html('', {}));
