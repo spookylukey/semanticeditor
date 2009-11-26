@@ -124,6 +124,10 @@ PresentationControls.prototype.setup_controls = function(container) {
         .bind("mouseup", function(evt) {
                   self.doc_mouseup(evt);
               });
+    jQuery(this.wym._options.containersSelector).find("a")
+         .bind("click", function(evt) {
+                   self.update_classlist_item_all();
+               });
 
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
     jQuery(this.wym._options.updateSelector)
