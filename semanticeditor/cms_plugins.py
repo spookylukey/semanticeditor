@@ -1,13 +1,16 @@
+from cms.models import Page
 from cms.plugins.text.cms_plugins import TextPlugin
 from cms.plugins.text.models import Text
 from cms.plugins.text.forms import TextForm
+from cms.plugins.text.utils import plugin_tags_to_user_html
 from cms.plugin_pool import plugin_pool
 from cms.plugin_base import CMSPluginBase
 from django.utils.translation import ugettext_lazy as _
 
 from semanticeditor.widgets import SemanticEditor
-from cms.plugins.text.utils import plugin_tags_to_user_html
 from django.forms.fields import CharField
+
+import re
 
 class SemanticTextPlugin(TextPlugin):
 
@@ -37,6 +40,16 @@ class SemanticTextPlugin(TextPlugin):
         page = None
         if obj:
             page = obj.page
+        else:
+            # Ugly hack here - we really need to get the page id.
+            m = re.search("/page/(\d+)/edit-plugin/(\d+)/$", request.path)
+            if m is not None:
+                page = Page.objects.get(pk=int(m.groups()[0]))
+
+        if page is None:
+            import warnings
+            warnings.warn("Could not work out what page we are on, which will result in problems with class list")
+
         plugins = plugin_pool.get_text_enabled_plugins(self.placeholder)
         form = self.get_form_class(request, plugins, page)
         kwargs['form'] = form # override standard form
