@@ -468,7 +468,8 @@ def extract_structure(content):
     Extracts H1, H2, etc headings, and other block level elements and
     returns a list of tuples containing (level, name, tag)
     """
-    # Parse
+    # This function is no longer used externally, but it has tests
+    # against it that are useful at checking the behaviour of get_structure
     tree = parse(content, clean=True)
     structure = get_structure(tree, assert_structure=True)
     return structure
@@ -479,8 +480,6 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     The dictionary has keys which are the ids of sections,
     and values which are lists of CSS classes or special commands.
     """
-    #import pdb
-    #pdb.set_trace()
     layout_strategy = get_layout_details_strategy()
     html = layout_strategy.format_pre_parse_hacks(html, styleinfo)
     root = parse(html, clean=True)

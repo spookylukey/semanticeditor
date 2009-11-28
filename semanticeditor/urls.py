@@ -2,7 +2,6 @@ from django.conf.urls.defaults import patterns, url
 from semanticeditor.views import *
 
 urlpatterns = patterns('',
-    url(r'extract_structure/', extract_structure_view, name="semantic.extract_structure"),
     url(r'retrieve_styles/', retrieve_styles, name="semantic.retrieve_styles"),
     url(r'retrieve_commands/', retrieve_commands, name="semantic.retrieve_commands"),
     url(r'separate_presentation/', separate_presentation, name="semantic.separate_presentation"),

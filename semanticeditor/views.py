@@ -4,7 +4,7 @@ from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_structure, extract_presentation, format_html, preview_html, AllUserErrors, COMMANDS, PresentationInfo, PresentationClass, clean_html
+from semanticeditor.utils import extract_presentation, format_html, preview_html, AllUserErrors, COMMANDS, PresentationInfo, PresentationClass, clean_html
 from semanticeditor.models import CssClass
 import sys
 try:
@@ -102,19 +102,6 @@ def graceful_errors(exceptions, callback):
     except exceptions, e:
         return failure(e.args[0])
     return success(val)
-
-def SI_to_dict(si):
-    """
-    Convert a StructureItem to dictionary for use client side
-    """
-    return dict((k,v) for k,v in si.__dict__.items() if k != 'node')
-
-@json_view
-def extract_structure_view(request):
-    data = request.POST.get('html','')
-    def _handled():
-        return map(SI_to_dict, extract_structure(data))
-    return graceful_errors(AllUserErrors, _handled)
 
 def PI_to_dict(pi):
     """
