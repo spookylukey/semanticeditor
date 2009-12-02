@@ -344,11 +344,6 @@ PresentationControls.prototype.build_commandlist = function() {
         btn.click(function(event) {
                       self.do_command(command);
                   });
-        btn.hover(function(event) {
-                      // update_classlist_item works for
-                      // commands as well as classes.
-                     self.update_classlist_item(btn, command);
-                  });
 
         // Attach tooltip to label we just added:
         var help = item.description;
