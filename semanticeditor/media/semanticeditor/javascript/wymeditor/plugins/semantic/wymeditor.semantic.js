@@ -295,54 +295,36 @@ PresentationControls.prototype.form_submit = function(event) {
     }
 };
 
+
 PresentationControls.prototype.build_classlist = function() {
-    this.classlist.empty();
-
     var self = this;
-    jQuery.each(this.available_styles, function(i, item) {
-        var btn = jQuery("<li><a href='#'>" + escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.classlist).find("a");
-        // event handlers
-        var style = self.available_styles[i];
-        btn.click(function(event) {
-                      self.toggle_style(style);
-                  });
-
-        // Attach tooltip to button we just added:
-        var help = item.description;
-        if (help == "") {
-            help = "(No help available)";
-        }
-        help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
-        help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
-        // Assign an id, because orbitaltooltip doesn't work without it.
-        btn.attr('id', 'id_classlist_' + i);
-        setTimeout(function() {
-                       btn.orbitaltooltip({
-                           orbitalPosition: 270,
-                           // Small spacing means we can move onto the tooltip
-                           // in order to scroll it if the help text has
-                           // produced scroll bars.
-                           spacing:         8,
-                           tooltipClass:         'orbitaltooltip-simplebox',
-                           html:            help
-                       });
-        }, 1000); // Delay, otherwise tooltips can end up in wrong position.
-    });
-
-
+    this.build_list_generic(this.classlist, this.available_styles,
+                            function(style) { self.toggle_style(style); },
+                            'id_classlist_');
 };
 
-PresentationControls.prototype.build_commandlist = function() {
-    this.commandlist.empty();
+PresentationControls.prototype.build_commandlist = function () {
+    var self = this;
+    this.build_list_generic(this.commandlist, this.commands,
+                            function(command) { self.do_command(command); },
+                            'id_commandlist_');
+};
+
+PresentationControls.prototype.build_list_generic = function(container, stylelist, btn_action, id_stem) {
+    // container - jQuery object that will hold the 'buttons'
+    // stylelist - list of PresentationInfo objects
+    // btn_action - function to call when the button is clicked
+    // id_stem - stem of 'id' attribute to use for each button.
+    container.empty();
 
     var self = this;
-    jQuery.each(this.commands, function(i, item) {
-        var btn = jQuery("<li><a href='#'>" + escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.commandlist).find("a");
+    jQuery.each(stylelist, function(i, item) {
+        var btn = jQuery("<li><a href='#'>" + escapeHtml(item.verbose_name) + "</a></li>").appendTo(container).find("a");
         // event handlers
-        var command = self.commands[i];
+        var style = stylelist[i];
 
         btn.click(function(event) {
-                      self.do_command(command);
+                      btn_action(style);
                   });
 
         // Attach tooltip to label we just added:
@@ -351,9 +333,9 @@ PresentationControls.prototype.build_commandlist = function() {
             help = "(No help available)";
         }
         help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
-        help = help + '<br/><hr/><p>Can be inserted on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
+        help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
         // Assign an id, because orbitaltooltip doesn't work without it.
-        btn.attr('id', 'id_commandlist_' + i);
+        btn.attr('id', id_stem + i);
         setTimeout(function() {
                        btn.orbitaltooltip({
                            orbitalPosition: 270,
