@@ -306,7 +306,7 @@ PresentationControls.prototype.build_classlist = function() {
 PresentationControls.prototype.build_commandlist = function () {
     var self = this;
     this.build_list_generic(this.commandlist, this.commands,
-                            function(command, btn) { self.do_command(command); },
+                            function(command, btn) { self.do_command(command, btn); },
                             'id_commandlist_');
 };
 
@@ -530,7 +530,7 @@ PresentationControls.prototype.insert_command_block = function(sect_id, command)
     return new_id;
 };
 
-PresentationControls.prototype.do_command = function(command) {
+PresentationControls.prototype.do_command = function(command, btn) {
     // What section are we on?
     var sect_id = this.get_current_section(command);
     if (sect_id == undefined) {
@@ -544,6 +544,7 @@ PresentationControls.prototype.do_command = function(command) {
     this.register_section(new_id);
     this.presentation_info[new_id].push(command);
     this.update_style_display(new_id);
+    this.update_classlist_item(btn, command);
 };
 
 PresentationControls.prototype.insert_command_blocks = function() {
