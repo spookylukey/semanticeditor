@@ -299,14 +299,14 @@ PresentationControls.prototype.form_submit = function(event) {
 PresentationControls.prototype.build_classlist = function() {
     var self = this;
     this.build_list_generic(this.classlist, this.available_styles,
-                            function(style) { self.toggle_style(style); },
+                            function(style, btn) { self.toggle_style(style, btn); },
                             'id_classlist_');
 };
 
 PresentationControls.prototype.build_commandlist = function () {
     var self = this;
     this.build_list_generic(this.commandlist, this.commands,
-                            function(command) { self.do_command(command); },
+                            function(command, btn) { self.do_command(command); },
                             'id_commandlist_');
 };
 
@@ -324,7 +324,7 @@ PresentationControls.prototype.build_list_generic = function(container, stylelis
         var style = stylelist[i];
 
         btn.click(function(event) {
-                      btn_action(style);
+                      btn_action(style, btn);
                   });
 
         // Attach tooltip to label we just added:
@@ -487,7 +487,7 @@ PresentationControls.prototype.get_current_section = function(style) {
     return undefined;
 };
 
-PresentationControls.prototype.toggle_style = function(style) {
+PresentationControls.prototype.toggle_style = function(style, btn) {
     // What section are we on?
     var sect_id = this.get_current_section(style);
     if (sect_id == undefined) {
@@ -502,6 +502,7 @@ PresentationControls.prototype.toggle_style = function(style) {
         this.add_style(sect_id, style);
     }
     this.update_style_display(sect_id);
+    this.update_classlist_item(btn, style);
 };
 
 PresentationControls.prototype.insert_command_block = function(sect_id, command) {
@@ -567,6 +568,11 @@ PresentationControls.prototype.update_classlist_item = function(btn, style) {
             btn.removeClass("disabled");
         else
             btn.show();
+        if (self.has_style(sect_id, style)) {
+            btn.addClass("used");
+        } else {
+            btn.removeClass("used");
+        }
     }
 };
 

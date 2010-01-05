@@ -66,15 +66,33 @@
         .wym_skin_semanticeditor .wym_section            { margin-bottom: 5px; }
         .wym_skin_semanticeditor .wym_section h2,
         .wym_skin_semanticeditor .wym_section h3         { padding: 1px 3px; margin: 0; color:#333; }
-        .wym_skin_semanticeditor .wym_section a          { padding: 0 5px; display: block; text-decoration: none; color: #903; 
+        .wym_skin_semanticeditor .wym_section a {
+            padding: 0 5px;
+            display: block;
+            text-decoration: none;
+            color: #903;
             margin: 4px 0;
             font-family: "Futura";
-            background: #cde8cd ;
+            background-color: #cde8cd;
+            border: 1px solid #cde8cd;
         }
-        .wym_skin_semanticeditor .wym_section a:hover    { background-color: #903; color: #cde8cd;}
+        .wym_skin_semanticeditor .wym_section a:hover {
+            background-color: #903;
+            border: 1px solid #903;
+            color: #cde8cd;
+        }
 
-        .wym_skin_semanticeditor .wym_section a.disabled { color: #888; cursor: default; background-color: #dde8dd; }
-        .wym_skin_semanticeditor .wym_section a.disabled:hover    { color: #888; background-color: #dde8dd; }
+        .wym_skin_semanticeditor .wym_section a.disabled,
+        .wym_skin_semanticeditor .wym_section a.disabled:hover
+        {
+            color: #888;
+            cursor: default;
+            background-color: #dde8dd;
+            border: 1px solid #dde88d;
+        }
+        .wym_skin_semanticeditor .wym_section a.used {
+            border: 1px solid #903;
+        }
       /*hide section titles by default*/
         .wym_skin_semanticeditor .wym_section h2         { display: none; }
       /*disable any margin-collapse*/
