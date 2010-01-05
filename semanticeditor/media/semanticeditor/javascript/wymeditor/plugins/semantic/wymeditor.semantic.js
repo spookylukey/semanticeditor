@@ -363,6 +363,13 @@ PresentationControls.prototype.has_style = function(sect_id, style) {
     return false;
 };
 
+PresentationControls.prototype.has_command = function(sect_id, command) {
+    // Returns true if the section has the command before it.
+    // For section 'p_1' command 'newrow', we just need to check
+    // for the existence of 'newrow_p_1'.
+    return (this.presentation_info[command.name + "_" + sect_id] != undefined);
+}
+
 PresentationControls.prototype.next_id = function(tagName) {
     // All sections that can receive styles need a section ID.
     // For the initial HTML, this is assigned server-side when the
@@ -382,6 +389,7 @@ PresentationControls.prototype.next_id = function(tagName) {
 };
 
 PresentationControls.prototype.update_command_blocks = function(node, id, max) {
+    // Updates the 'id' of any HTML block that represents a command.
     if (max == 0) {
         return;
     };
@@ -517,7 +525,7 @@ PresentationControls.prototype.insert_command_block = function(sect_id, command)
         elem = elem.prev();
     }
     elem.before(newelem);
-    var new_id = command.name + "_" + sect_id; // duplication with do_command
+    var new_id = command.name + "_" + sect_id; // duplication with update_command_blocks
     newelem.attr('id', new_id);
     return new_id;
 };
@@ -555,25 +563,32 @@ PresentationControls.prototype.insert_command_blocks = function() {
 };
 
 PresentationControls.prototype.update_classlist_item = function(btn, style) {
-    var self = this;
     var sect_id = this.get_current_section(style);
     if (sect_id == undefined) {
         // Can't use it.
-        if (style.prestype == "command")
+        if (style.prestype == "command") {
             // Don't want the class list (displayed below command list)
             // to jump up and down
             btn.addClass("disabled");
-        else
-            btn.hide();
-    } else {
-        if (style.prestype == "command")
-            btn.removeClass("disabled");
-        else
-            btn.show();
-        if (self.has_style(sect_id, style)) {
-            btn.addClass("used");
-        } else {
             btn.removeClass("used");
+        } else {
+            btn.hide();
+        }
+    } else {
+        if (style.prestype == "command") {
+            btn.removeClass("disabled");
+            if (this.has_command(sect_id, style)) {
+                btn.addClass("used");
+            } else {
+                btn.removeClass("used");
+            }
+        } else {
+            btn.show();
+            if (this.has_style(sect_id, style)) {
+                btn.addClass("used");
+            } else {
+                btn.removeClass("used");
+            }
         }
     }
 };
