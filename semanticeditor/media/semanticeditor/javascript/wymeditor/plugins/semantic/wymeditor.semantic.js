@@ -365,9 +365,7 @@ PresentationControls.prototype.has_style = function(sect_id, style) {
 
 PresentationControls.prototype.has_command = function(sect_id, command) {
     // Returns true if the section has the command before it.
-    // For section 'p_1' command 'newrow', we just need to check
-    // for the existence of 'newrow_p_1'.
-    return (this.presentation_info[command.name + "_" + sect_id] != undefined);
+    return (this.presentation_info[this.command_block_id(sect_id, command)] != undefined);
 }
 
 PresentationControls.prototype.next_id = function(tagName) {
@@ -515,6 +513,13 @@ PresentationControls.prototype.toggle_style = function(style, btn) {
     this.update_classlist_item(btn, style);
 };
 
+PresentationControls.prototype.command_block_id = function(sect_id, command) {
+    // Returns the ID to use for a command block that appears before
+    // section sect_id for a given command.  This is also the key used
+    // in this.presentation_info
+    return command.name + "_" + sect_id;
+}
+
 PresentationControls.prototype.insert_command_block = function(sect_id, command) {
     // There is some custom logic about the different commands here i.e.
     // that newrow should appear before newcol.
@@ -525,7 +530,7 @@ PresentationControls.prototype.insert_command_block = function(sect_id, command)
         elem = elem.prev();
     }
     elem.before(newelem);
-    var new_id = command.name + "_" + sect_id; // duplication with update_command_blocks
+    var new_id = this.command_block_id(sect_id, command);
     newelem.attr('id', new_id);
     return new_id;
 };
@@ -540,10 +545,17 @@ PresentationControls.prototype.do_command = function(command, btn) {
     }
     // newrow and newcol are the only commands at the moment.
     // We handle both using inserted blocks
-    var new_id = this.insert_command_block(sect_id, command);
-    this.register_section(new_id);
-    this.presentation_info[new_id].push(command);
-    this.update_style_display(new_id);
+    if (this.has_command(sect_id, command)) {
+        // remove it.
+        var id = this.command_block_id(sect_id, command);
+        jQuery(this.wym._doc).find('#' + id).remove();
+        delete this.presentation_info[id];
+    } else {
+        var new_id = this.insert_command_block(sect_id, command);
+        this.register_section(new_id);
+        this.presentation_info[new_id].push(command);
+        this.update_style_display(new_id);
+    }
     this.update_classlist_item(btn, command);
 };
 
