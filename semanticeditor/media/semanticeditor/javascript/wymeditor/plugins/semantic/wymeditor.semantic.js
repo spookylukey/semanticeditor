@@ -353,6 +353,8 @@ PresentationControls.prototype.build_list_generic = function(container, stylelis
 
 PresentationControls.prototype.has_style = function(sect_id, style) {
     var styles = this.presentation_info[sect_id];
+    if (styles == undefined)
+        return false;
     for (var i = 0; i < styles.length; i++) {
         if (flattenPresStyle(styles[i]) == flattenPresStyle(style)) {
             return true;
