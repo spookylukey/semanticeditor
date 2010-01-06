@@ -19,6 +19,9 @@ function PresentationControls(wym, opts) {
     // command_dict: a dictionary mapping command name to PresentationInfo object.
     this.command_dict = {};
 
+    // a selector which matches any command block.  Filled in later.
+    this.all_command_selectors = "";
+
     // the node of the current block level element being edited.
     this.current_node = null;
 
@@ -117,9 +120,12 @@ PresentationControls.prototype.setup_controls = function(container) {
                                });
     jQuery(this.wym._doc)
         .bind("keyup", function(evt) {
-                  // this style of binding give doc_keyup
+                  // this style of binding gives doc_keyup
                   // access to 'this' PresentationControl
                   self.doc_keyup(evt);
+              })
+        .bind("keydown", function(evt) {
+                  self.doc_keydown(evt);
               })
         .bind("mouseup", function(evt) {
                   self.update_classlist_item_all();
@@ -163,6 +169,40 @@ PresentationControls.prototype.set_html = function(html) {
     this.wym.listen();
 };
 
+PresentationControls.prototype.nextElementSibling = function(node) {
+    var next = node;
+    while (true) {
+        if (next == null) {
+            return null;
+        }
+        if (next.nextSibling == null) {
+            next = next.parentNode;
+        } else {
+            next = next.nextSibling;
+            if (next.nodeName != "#text") {
+                return next;
+            }
+        }
+    }
+}
+
+PresentationControls.prototype.previousElementSibling = function(node) {
+    var prev = node;
+    while (true) {
+        if (prev == null) {
+            return null;
+        }
+        if (prev.previousSibling == null) {
+            prev = prev.parentNode;
+        } else {
+            prev = prev.previousSibling;
+            if (prev.nodeName != "#text") {
+                return prev;
+            }
+        }
+    }
+}
+
 PresentationControls.prototype.doc_keyup = function(evt) {
     // Some browsers (Firefox at least) will insert a new paragraph with the
     // same ID as the old one when the user presses 'Enter'. This needs fixing
@@ -189,6 +229,56 @@ PresentationControls.prototype.doc_keyup = function(evt) {
         }
     }
     this.update_classlist_item_all(container);
+};
+
+PresentationControls.prototype.doc_keydown = function(evt) {
+    // Need to intercept backspace and delete, to stop command blocks
+    // being deleted. (The system copes fairly well with them being
+    // deleted, but it can be very confusing for the user.)
+    var is_backspace = (evt.keyCode == 8);
+    var is_delete = (evt.keyCode == 46);
+
+    if (is_backspace || is_delete) {
+
+        s = this.wym._iframe.contentWindow.getSelection()
+        if (s.anchorNode != s.focusNode) {
+            // an extended selection.  It doesn't matter if this
+            // contains command blocks - it doesn't confuse the user
+            // if these are deleted wholesale.
+            return;
+        }
+        if (s.focusNode == null) {
+            return;
+        }
+
+        node = s.focusNode;
+        if (node.nodeName == "#text") {
+            // always true?
+            node = node.parentNode;
+        }
+        if (is_backspace) {
+            if (s.focusOffset != 0) {
+                return; // not at first character within text node
+            }
+            // need to check *previous* node
+            target = this.previousElementSibling(node);
+        }
+        if (is_delete) {
+            if (s.focusOffset != s.focusNode.textContent.length) {
+                return; // not at last character within text node
+            }
+            // need to check *next* node
+            target = this.nextElementSibling(node);
+        }
+        if (target == null) {
+            return;
+        }
+
+        if (jQuery(target).is(this.all_command_selectors)) {
+            // stop backspace or delete from working.
+            evt.preventDefault();
+        }
+    }
 };
 
 PresentationControls.prototype.update_classlist_item_all = function(cur_container) {
@@ -523,7 +613,7 @@ PresentationControls.prototype.command_block_id = function(sect_id, command) {
 PresentationControls.prototype.insert_command_block = function(sect_id, command) {
     // There is some custom logic about the different commands here i.e.
     // that newrow should appear before newcol.
-    var newelem = jQuery("<p class=\"" + command.name + "\">*</p>");
+    var newelem = jQuery("<p class=\"" + command.name + "\">&nbsp;</p>");
     var elem = jQuery(this.wym._doc).find("#" + sect_id);
     // New row should appear before new col
     if (elem.prev().is("p.newcol") && command.name == 'newrow') {
@@ -770,6 +860,9 @@ PresentationControls.prototype.retrieve_commands = function() {
                                 var c = self.commands[i];
                                 self.command_dict[c.name] = c;
                             }
+                            self.all_command_selectors = jQuery.map(self.commands,
+                                                                    function(c, i) { return self.tagname_to_selector(c.name); }
+                                                                    ).join(",");
                             self.build_commandlist();
                         });
 };
