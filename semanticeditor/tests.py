@@ -3,6 +3,7 @@
 from django.test import TestCase
 from semanticeditor.utils import *
 
+
 PC = PresentationClass
 
 class TestExtractStructure(TestCase):
@@ -69,6 +70,7 @@ class TestExtractStructure(TestCase):
         structure = get_structure(parse(html))
         self.assertEqual(["h1_1", "h1_4", "h1_2", "h1_3"], [s.sect_id for s in structure])
 
+
 class TestPresentationInfo(TestCase):
     def test_equality(self):
         p1 = PresentationInfo(prestype="command", name="foo", verbose_name="blah")
@@ -77,6 +79,7 @@ class TestPresentationInfo(TestCase):
         self.assertEqual(p1, p2)
         self.assertNotEqual(p2, p3)
         self.assertEqual(set([p1]), set([p2]))
+
 
 class TestFormat(TestCase):
     def setUp(self):
@@ -262,17 +265,48 @@ class TestFormat(TestCase):
         pres, html3 = extract_presentation(html2)
         self.assertEqual(html, html3)
 
+
 class TestHacks(TestCase):
     def test_div_format_hack(self):
+        """
+        Check that we can convert 'p' tags into 'div' using the 'div' class hack
+        """
         html = '<p>Test</p>'
         outh = '<div class=\"row\"><div><div><div class="div">Test</div></div></div></div>'
         self.assertEqual(outh, format_html(html, {'p_1':[PC('div')]}))
 
     def test_div_extract_hack(self):
+        """
+        Check that a div with class "div" is recognised and turned back into a 'p'
+        when extracting
+        """
         html = '<div class="div">Test</div>'
         pres, html2 = extract_presentation(html)
         self.assertEqual({'p_1':set([PC('div')])}, pres)
         self.assertEqual('<p id="p_1">Test</p>', html2);
+
+    def test_plugin_p_hack(self):
+        """
+        Check that a 'p' with only a plugin object is converted to a 'div'
+        """
+        # NB: current implementation of plugin objects is that they are
+        # represented by an image in the editor.  Our code has to run before
+        # these are converted, so we have to work with this implementation detail.
+        html = '<p> <img src="blah" id="plugin_obj_123"/></p>'
+        outh = '<div class="row"><div><div><div class="div"> <img src="blah" id="plugin_obj_123"/></div></div></div></div>'
+        self.assertEqual(outh, format_html(html, {}))
+
+    def test_plugin_p_hack_empty_only(self):
+        """
+        Check that if 'p' has any text in it, it is not converted
+        """
+        html = '<p>X <img src="blah" id="plugin_obj_123" /></p>'
+        outh = '<div class="row"><div><div><p>X <img src="blah" id="plugin_obj_123"/></p></div></div></div>'
+        self.assertEqual(outh, format_html(html, {}))
+        html2 = '<p> <img src="blah" id="plugin_obj_123" />X</p>'
+        outh2 = '<div class="row"><div><div><p> <img src="blah" id="plugin_obj_123"/>X</p></div></div></div>'
+        self.assertEqual(outh2, format_html(html2, {}))
+
 
 class TestElementTreeUtils(TestCase):
     def test_get_parent(self):
@@ -291,7 +325,7 @@ class TestElementTreeUtils(TestCase):
         t = parse("<a><b1></b1><b2></b2></a>")
         n = t.find(".//b2")
         p = get_parent(t, n)
-        self.assertEqual(1, get_index(p,n))
+        self.assertEqual(1, get_index(p, n))
 
     def test_eliminate_tag_1(self):
         t = ET.fromstring("<a>Hello<b>Goodbye</b>End</a>")
@@ -444,6 +478,7 @@ class TestExtractPresentation(TestCase):
                 }
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
+
 
 class TestHtmlCleanup(TestCase):
     safari_example_1 = """

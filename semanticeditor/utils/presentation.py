@@ -212,6 +212,23 @@ class LayoutDetails(LayoutDetailsBase):
         for n in tree.getiterator():
             if n.tag == 'p' and ('div' in _get_classes_for_node(n)):
                 n.tag = 'div'
+            if n.tag == 'p':
+                # If only child element is a plugin object, convert to
+                # a div.
+                # NB: current implementation of plugin objects is that they
+                # are represented by an image in the editor.  Our code has to
+                # run before these are converted, so we have to work with this
+                # implementation detail.
+                children = n.getchildren()
+                if ((n.text is None or n.text.strip() == "")
+                    and len(children) == 1
+                    and children[0].tag == "img"
+                    and (children[0].tail is None or children[0].tail.strip() == "")
+                    and children[0].attrib.get('id', '').startswith("plugin_obj")):
+                        n.tag = 'div'
+                        # Add 'div' to list of classes
+                        # This handles the reverse transform for us:
+                        n.attrib['class'] = ' '.join(n.attrib.get('class', '').split(' ') + ['div']).strip()
         return tree
 
     def extract_post_parse_hacks(self, tree):
