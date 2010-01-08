@@ -27,11 +27,11 @@ AllUserErrors = (InvalidHtml, IncorrectHeadings, BadStructure, TooManyColumns)
 
 ### Definitions ###
 
-technical_blockdef = set(['h1','h2','h3','h4','h5','h6', 'p', 'ol', 'ul', 'blockquote']) # according to HTML4
+technical_blockdef = set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'ol', 'ul', 'blockquote']) # according to HTML4
 additional_blockdef = set(['li']) # li really act like block elements
 blockdef = technical_blockdef | additional_blockdef
 blockdef_selector = ",".join(blockdef) # need to sync with wymeditor.semantic.js
-headingdef = set(['h1','h2','h3','h4','h5','h6'])
+headingdef = set(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
 preview_blockdef = technical_blockdef
 
 # The number of chars we trim block level elements to.
@@ -280,7 +280,7 @@ def PresentationClass(name, verbose_name="", description="", allowed_elements=No
     """
     Shortcut for creating CSS classes
     """
-    return PresentationInfo(prestype="class",  name=name,
+    return PresentationInfo(prestype="class", name=name,
                             verbose_name=verbose_name, description=description,
                             allowed_elements=allowed_elements,
                             column_equiv=column_equiv)
@@ -289,13 +289,13 @@ def PresentationCommand(name, verbose_name="", description=""):
     """
     Shortcut for creating commands
     """
-    return PresentationInfo(prestype="command",  name=name,
+    return PresentationInfo(prestype="command", name=name,
                             verbose_name=verbose_name, description=description,
                             allowed_elements=sorted(list(technical_blockdef)))
 
 NEWROW = PresentationCommand('newrow',
-                             verbose_name = "New row",
-                             description = """
+                             verbose_name="New row",
+                             description="""
 <p>Use this command to start a new row.</p>
 
 <p>This must be used in conjunction with 'New column'
@@ -316,8 +316,8 @@ just one column in it.</p>
                              )
 
 NEWCOL = PresentationCommand('newcol',
-                             verbose_name = "New column",
-                             description = """
+                             verbose_name="New column",
+                             description="""
 <p>Use this command to start a new column, after a 'New row'
 command has been used to start a set of columns.</p>
 
@@ -334,10 +334,10 @@ def any(seq):
     return False
 
 def _invert_dict(d):
-    return dict((v,k) for (k,v) in d.items())
+    return dict((v, k) for (k, v) in d.items())
 
 def _get_classes_for_node(node):
-    return filter(len, node.get('class','').split(' '))
+    return filter(len, node.get('class', '').split(' '))
 
 def _find_next_available_name(stem, used_names):
     i = 2
@@ -426,7 +426,7 @@ def get_structure(root, assert_structure=False):
                     if len(heading_names) > 0 and level > last_heading_num + 1:
                         raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d, '
                                                 'but it should be level H%(rightnum)d or less' %
-                                                dict(name=name,foundnum=level,
+                                                dict(name=name, foundnum=level,
                                                      rightnum=last_heading_num + 1))
                 last_heading_num = level
                 heading_names.add(name)
@@ -531,7 +531,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
 def _html_extract(root):
     if len(root) == 0 and root.text is None and root.tail is None:
         return ''
-    return ET.tostring(root).replace('<html>','').replace('</html>','').replace('<body>','').replace('</body>', '').replace("<head/>","").replace("&#13;", "\r")
+    return ET.tostring(root).replace('<html>', '').replace('</html>', '').replace('<body>', '').replace('</body>', '').replace("<head/>", "").replace("&#13;", "\r")
 
 def _strip_presentation(tree):
     cleanup(tree, lambda t: t.tag == 'div')
@@ -641,29 +641,29 @@ def _create_layout(root, styleinfo, structure):
         si = sect_dict.get(node)
 
         if si:
-           row_presinfo = row_info.get(si.sect_id)
-           if row_presinfo is not None:
-               # We can assume row_presinfo contains NEWROW command
+            row_presinfo = row_info.get(si.sect_id)
+            if row_presinfo is not None:
+                # We can assume row_presinfo contains NEWROW command
 
-               # Finish current col and row, if they have anything in them
-               if col.nodes:
-                   row.columns.append(col)
-               if row.columns:
-                   layout.rows.append(row)
-               # Start new row with styles
-               row = LayoutRow(presinfo=row_presinfo)
-               # Start new col
-               col = LayoutColumn()
+                # Finish current col and row, if they have anything in them
+                if col.nodes:
+                    row.columns.append(col)
+                if row.columns:
+                    layout.rows.append(row)
+                # Start new row with styles
+                row = LayoutRow(presinfo=row_presinfo)
+                # Start new col
+                col = LayoutColumn()
 
-           col_presinfo = col_info.get(si.sect_id)
-           if col_presinfo is not None:
-               # Assume col_presinfo contains NEWCOL command
+            col_presinfo = col_info.get(si.sect_id)
+            if col_presinfo is not None:
+                # Assume col_presinfo contains NEWCOL command
 
-               # Finish current col, if it is non-empty
-               if col.nodes:
-                   row.columns.append(col)
-               # Start new col with styles
-               col = LayoutColumn(presinfo=col_presinfo)
+                # Finish current col, if it is non-empty
+                if col.nodes:
+                    row.columns.append(col)
+                # Start new col with styles
+                col = LayoutColumn(presinfo=col_presinfo)
 
         # Now deal with content itself
         col.nodes.append(node)
@@ -745,7 +745,7 @@ def _create_preview(node, structure, known_nodes):
         else:
             sect = known_nodes.get(n)
             if sect is not None and (n.tag in blockdef):
-                n.set('class', 'structural ' + "tag" + n.tag.lower() )
+                n.set('class', 'structural ' + "tag" + n.tag.lower())
                 n.tag = "div"
                 n[:] = []
                 n.text = sect.name
@@ -943,7 +943,7 @@ def clean_tree(root):
     # "li p:only-child" appears to be buggy.  It works like
     # "li p:only-descendent" or something.
 
-    for x in ['strong','em','b','i']:
+    for x in ['strong', 'em', 'b', 'i']:
         for n in doc(x):
             if pq(n).is_(blockdef_selector):
                 pull_up(n)
