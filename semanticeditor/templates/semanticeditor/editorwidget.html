@@ -53,14 +53,14 @@ $(document).ready(function(){
             }
 
             symanticopts = {
-                retrieve_styles_url: "{% url semantic.retrieve_styles %}",
-                retrieve_commands_url: "{% url semantic.retrieve_commands %}",
-                separate_presentation_url: "{% url semantic.separate_presentation %}",
-                combine_presentation_url: "{% url semantic.combine_presentation %}",
-                clean_html_url: "{% url semantic.clean_html %}",
-                preview_url: "{% url semantic.preview %}",
+                retrieveStylesUrl: "{% url semantic.retrieve_styles %}",
+                retrieveCommandsUrl: "{% url semantic.retrieve_commands %}",
+                separatePresentationUrl: "{% url semantic.separate_presentation %}",
+                combinePresentationUrl: "{% url semantic.combine_presentation %}",
+                cleanHtmlUrl: "{% url semantic.clean_html %}",
+                previewUrl: "{% url semantic.preview %}",
                 template: template,
-                page_id: "{{ page.id }}"
+                pageId: "{{ page.id }}"
             };
             wym.semantic(symanticopts);
 
