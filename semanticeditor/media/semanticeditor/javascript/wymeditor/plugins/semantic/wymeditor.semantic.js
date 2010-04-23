@@ -31,25 +31,17 @@ function PresentationControls(wym, opts) {
     this.setupControls(jQuery(wym._bvox).find(".wym_area_bottom"));
 }
 
-function escapeHtml(html) {
+PresentationControls.prototype.escapeHtml = function(html) {
     return html.replace(/&/g,"&amp;")
         .replace(/\"/g,"&quot;")
         .replace(/</g,"&lt;")
         .replace(/>/g,"&gt;");
-}
+};
 
-function flattenPresStyle(pres) {
+PresentationControls.prototype.flattenPresStyle = function(pres) {
     // Convert a PresentationInfo object to a string
     return pres.prestype + ":" + pres.name;
-}
-
-function expandPresStyle(presstr) {
-    // Convert a string to PresentationInfo object
-    var comps = presstr.match(/^([^:]+):(.*)$/);
-    return { prestype: comps[1],
-             name: comps[2] };
-}
-
+};
 
 PresentationControls.prototype.setupCssStorage = function() {
     // We need a place to store custom CSS rules. (Existing jQuery plugins don't
@@ -409,7 +401,7 @@ PresentationControls.prototype.buildListGeneric = function(container, stylelist,
 
     var self = this;
     jQuery.each(stylelist, function(i, item) {
-        var btn = jQuery("<li><a href='#'>" + escapeHtml(item.verbose_name) + "</a></li>").appendTo(container).find("a");
+        var btn = jQuery("<li><a href='#'>" + self.escapeHtml(item.verbose_name) + "</a></li>").appendTo(container).find("a");
         // event handlers
         var style = stylelist[i];
 
@@ -422,7 +414,7 @@ PresentationControls.prototype.buildListGeneric = function(container, stylelist,
         if (help == "") {
             help = "(No help available)";
         }
-        help = "<h1>" + escapeHtml(item.verbose_name) + "</h1>" + help;
+        help = "<h1>" + self.escapeHtml(item.verbose_name) + "</h1>" + help;
         help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
         // Assign an id, because orbitaltooltip doesn't work without it.
         btn.attr('id', idStem + i);
@@ -446,7 +438,7 @@ PresentationControls.prototype.hasStyle = function(sectId, style) {
     if (styles == undefined)
         return false;
     for (var i = 0; i < styles.length; i++) {
-        if (flattenPresStyle(styles[i]) == flattenPresStyle(style)) {
+        if (this.flattenPresStyle(styles[i]) == this.flattenPresStyle(style)) {
             return true;
         };
     }
@@ -816,7 +808,7 @@ PresentationControls.prototype.clearError = function() {
 
 PresentationControls.prototype.showError = function(message) {
     this.clearError();
-    this.errorBox.append(escapeHtml(message));
+    this.errorBox.append(this.escapeHtml(message));
 };
 
 PresentationControls.prototype.retrieveStyles = function() {
