@@ -31,37 +31,9 @@ function PresentationControls(wym, opts) {
     this.setupControls(jQuery(wym._bvox).find(".wym_area_bottom"));
 }
 
-PresentationControls.prototype.escapeHtml = function(html) {
-    return html.replace(/&/g,"&amp;")
-        .replace(/\"/g,"&quot;")
-        .replace(/</g,"&lt;")
-        .replace(/>/g,"&gt;");
-};
+// ---- Setup and loading ----
 
-PresentationControls.prototype.flattenPresStyle = function(pres) {
-    // Convert a PresentationInfo object to a string
-    return pres.prestype + ":" + pres.name;
-};
-
-PresentationControls.prototype.setupCssStorage = function() {
-    // We need a place to store custom CSS rules. (Existing jQuery plugins don't
-    // allow for our need of changing style sheet of document in an iframe, and
-    // rolling our own is easier than fixing them).
-
-    // code partly copied from jquery.cssRule.js
-    var cssStorageNode = jQuery('<style rel="stylesheet" type="text/css">').appendTo(jQuery(this.wym._doc).find("head"))[0];
-    this.stylesheet = this.wym._doc.styleSheets[0];
-};
-
-PresentationControls.prototype.addCssRule = function(selector, rule) {
-    var ss = this.stylesheet;
-    var rules = ss.rules ? 'rules' : 'cssRules';
-    // should work with IE and Firefox, don't know about Safari
-    if (ss.addRule)
-        ss.addRule(selector, rule||'x:y' );//IE won't allow empty rules
-    else if (ss.insertRule)
-        ss.insertRule(selector + '{'+ rule +'}', ss[rules].length);
-};
+// -- Setup static controls
 
 PresentationControls.prototype.setupControls = function(container) {
     var idPrefix = "id_prescontrol_" + this.name + "_";
@@ -153,13 +125,183 @@ PresentationControls.prototype.setupControls = function(container) {
 
 };
 
-PresentationControls.prototype.setHtml = function(html) {
-    // WUMEditor ought to call .listen() after setting
-    // the HTML (to rebind events for images),
-    // but it doesn't at the moment, so we work around it by wrapping.
-    this.wym.html(html);
-    this.wym.listen();
+// Setup document - splits the HTML into 'content HTML' and 'presentation'
+PresentationControls.prototype.separatePresentation = function() {
+    // 'andthen' is a function to do afterwards.  This is a nasty
+    // hack to get things to work in the right order.
+    var self = this;
+    jQuery.post(this.opts.separatePresentationUrl, { html: self.wym.xhtml() } ,
+                function(data) {
+                    self.withGoodData(data,
+                        function(value) {
+                            // Store the presentation
+                            self.presentationInfo = value.presentation;
+                            // Update the HTML
+                            self.setHtml(value.html);
+                            // Update presentation of HTML
+                            self.updateAfterLoading();
+                        });
+                }, "json");
 };
+
+PresentationControls.prototype.updateAfterLoading = function() {
+    this.insertCommandBlocks();
+    this.updateAllStyleDisplay();
+};
+
+PresentationControls.prototype.retrieveCommands = function() {
+    var self = this;
+    // Needs async=false, since separatePresentation depends on data.
+    var res = jQuery.ajax({
+                  type: "GET",
+                  data: {},
+                  url: this.opts.retrieveCommandsUrl,
+                  dataType: "json",
+                  async: false
+    }).responseText;
+    var data = JSON.parse(res);
+
+    self.withGoodData(data, function(value) {
+                            self.commands = data.value;
+                            self.calculateSelectors(self.commands);
+                            for (var i = 0; i < self.commands.length; i++) {
+                                var c = self.commands[i];
+                                self.commandDict[c.name] = c;
+                            }
+                            self.allCommandSelectors = jQuery.map(self.commands,
+                                                                    function(c, i) { return self.tagnameToSelector(c.name); }
+                                                                    ).join(",");
+                            self.buildCommandList();
+                        });
+};
+
+PresentationControls.prototype.retrieveStyles = function() {
+    var self = this;
+    // Needs async=false, since separatePresentation depends on data.
+    var res = jQuery.ajax({
+                  type: "GET",
+                  data: {
+                      'template':this.opts.template,
+                      'page_id':this.opts.pageId
+                  },
+                  url: this.opts.retrieveStylesUrl,
+                  dataType: "json",
+                  async: false
+    }).responseText;
+    var data = JSON.parse(res);
+
+    self.withGoodData(data, function(value) {
+        self.availableStyles = data.value;
+        self.calculateSelectors(self.availableStyles);
+        self.buildClassList();
+    });
+};
+
+PresentationControls.prototype.calculateSelectors = function(stylelist) {
+    // Given a list of styles, add a 'allowed_elements_selector' attribute
+    // on the basis of the 'allowed_elements' attribute.
+
+    // This is just an optimisation to avoid doing this work multiple times.
+
+    var self = this;
+    for (var i = 0; i < stylelist.length; i++) {
+        var style = stylelist[i];
+        style.allowed_elements_selector =
+            jQuery.map(style.allowed_elements,
+                       function(t,j) { return self.tagnameToSelector(t); }
+                      ).join(",");
+    }
+};
+
+PresentationControls.prototype.tagnameToSelector = function(name) {
+    // Convert a tag name into a selector used to match elements that represent
+    // that tag.  This function accounts for the use of p elements to represent
+    // commands in the document.
+
+    var c = this.commandDict[name];
+    if (c == null) {
+        // not a command
+        if (name == "p") {
+            // Need to ensure we don't match commands
+            var selector = "p";
+            for (var i = 0; i < this.commands.length; i++) {
+                selector = selector + "[class!='" + this.commands[i].name + "']";
+            }
+            return selector;
+        } else {
+        return name;
+        }
+    } else {
+        return "p." + c.name;
+    }
+};
+
+PresentationControls.prototype.setupCssStorage = function() {
+    // We need a place to store custom CSS rules. (Existing jQuery plugins don't
+    // allow for our need of changing style sheet of document in an iframe, and
+    // rolling our own is easier than fixing them).
+
+    // code partly copied from jquery.cssRule.js
+    var cssStorageNode = jQuery('<style rel="stylesheet" type="text/css">').appendTo(jQuery(this.wym._doc).find("head"))[0];
+    this.stylesheet = this.wym._doc.styleSheets[0];
+};
+
+// ---- Saving data ----
+
+
+PresentationControls.prototype.prepareData = function() {
+    // Prepare data/html for sending server side.
+
+    // We need to ensure all elements have ids, *and* that command block
+    // elements have correct ids (which is a side effect of the below).
+    this.ensureAllIds();
+    // this.presentationInfo might have old info, if command blocks have
+    // been removed.  Need to clean.
+    this.cleanPresentationInfo();
+};
+
+PresentationControls.prototype.cleanHtml = function() {
+    this.prepareData();
+    var self = this;
+    var html = this.wym.xhtml();
+    jQuery.post(this.opts.cleanHtmlUrl, {'html':html},
+                function(data) {
+                    self.withGoodData(data, function(value) {
+                                            self.setHtml(value.html);
+                                            self.updateAfterLoading();
+                                        });
+                }, "json");
+};
+
+// ---- Utility functions ----
+
+PresentationControls.prototype.escapeHtml = function(html) {
+    return html.replace(/&/g,"&amp;")
+        .replace(/\"/g,"&quot;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;");
+};
+
+PresentationControls.prototype.flattenPresStyle = function(pres) {
+    // Convert a PresentationInfo object to a string
+    return pres.prestype + ":" + pres.name;
+};
+
+// If data contains an error message, display to the user,
+// otherwise clear the displayed error and perform the callback
+// with the value in the data.
+PresentationControls.prototype.withGoodData = function(data, callback) {
+    if (data.result == 'ok') {
+        this.clearError();
+        callback(data.value);
+    } else {
+        // TODO - perhaps distinguish between a server error
+        // and a user error
+        this.showError(data.message);
+    }
+};
+
+// ---- DOM utility ----
 
 PresentationControls.prototype.nextElementSibling = function(node) {
     var next = node;
@@ -194,6 +336,22 @@ PresentationControls.prototype.previousElementSibling = function(node) {
         }
     }
 };
+
+// ---- CSS utility ----
+
+PresentationControls.prototype.addCssRule = function(selector, rule) {
+    var ss = this.stylesheet;
+    var rules = ss.rules ? 'rules' : 'cssRules';
+    // should work with IE and Firefox, don't know about Safari
+    if (ss.addRule)
+        ss.addRule(selector, rule||'x:y' );//IE won't allow empty rules
+    else if (ss.insertRule)
+        ss.insertRule(selector + '{'+ rule +'}', ss[rules].length);
+};
+
+// ---- Event handlers ----
+
+// Long event handlers below, most are defined inline.
 
 PresentationControls.prototype.docKeyup = function(evt) {
     // Some browsers (Firefox at least) will insert a new paragraph with the
@@ -273,79 +431,6 @@ PresentationControls.prototype.docKeydown = function(evt) {
     }
 };
 
-PresentationControls.prototype.updateClassListItemAll = function(curContainer) {
-    var self = this;
-    if (curContainer == undefined) {
-        curContainer = jQuery(this.wym.selected()).parentsOrSelf(this.blockdefSelector);
-    }
-    var node = curContainer.get(0);
-    if (node != undefined && node != this.currentNode) {
-        // if current node has changed, might need to update list
-        this.currentNode = node;
-        // Sets enabled/disabled on all items in classList and commands
-        var pairs = [[this.availableStyles, this.classList],
-                     [this.commands, this.commandList]];
-
-        for (var i = 0; i < pairs.length; i++) {
-            var styles = pairs[i][0];
-            var btncontainer = pairs[i][1];
-            btncontainer.find("a").each(function(k) {
-                                            self.updateClassListItem(jQuery(this), styles[k]);
-                                        });
-        }
-    }
-
-
-};
-
-// Splits the HTML into 'content HTML' and 'presentation'
-PresentationControls.prototype.separatePresentation = function() {
-    // 'andthen' is a function to do afterwards.  This is a nasty
-    // hack to get things to work.
-    var self = this;
-    jQuery.post(this.opts.separatePresentationUrl, { html: self.wym.xhtml() } ,
-                function(data) {
-                    self.withGoodData(data,
-                        function(value) {
-                            // Store the presentation
-                            self.presentationInfo = value.presentation;
-                            // Update the HTML
-                            self.setHtml(value.html);
-                            // Update presentation of HTML
-                            self.updateAfterLoading();
-                        });
-                }, "json");
-};
-
-PresentationControls.prototype.ensureAllIds = function() {
-    // We check all block level elements (or all elements that can have commands
-    // applied to them)
-
-    var self = this;
-    var elems = [];
-    for (var i = 0; i < this.commands.length; i++) {
-        elems = jQuery.merge(elems, this.commands[i].allowed_elements);
-    }
-    elems = jQuery.unique(elems);
-    jQuery(this.wym._doc).find(elems.join(",")).each(function(i) {
-                                                         self.ensureId(this);
-                                                     });
-};
-
-PresentationControls.prototype.cleanPresentationInfo = function() {
-    // clear out orphaned items
-    var orphaned = [];
-    for (var key in this.presentationInfo) {
-        var sel = "#" + key;
-        if (!jQuery(this.wym._doc).find(sel).is(sel)) {
-            orphaned.push(key);
-        }
-    }
-    for (var i = 0; i < orphaned.length; i++) {
-        delete this.presentationInfo[orphaned[i]];
-    }
-};
-
 PresentationControls.prototype.formSubmit = function(event) {
     this.prepareData();
     // Since we are in the middle of submitting the page, an asynchronous
@@ -377,6 +462,169 @@ PresentationControls.prototype.formSubmit = function(event) {
     }
 };
 
+// ---- Manipulation of edited document ----
+
+PresentationControls.prototype.setHtml = function(html) {
+    // WUMEditor ought to call .listen() after setting
+    // the HTML (to rebind events for images),
+    // but it doesn't at the moment, so we work around it by wrapping.
+    this.wym.html(html);
+    this.wym.listen();
+};
+
+PresentationControls.prototype.ensureAllIds = function() {
+    // We check all block level elements (or all elements that can have commands
+    // applied to them)
+
+    var self = this;
+    var elems = [];
+    for (var i = 0; i < this.commands.length; i++) {
+        elems = jQuery.merge(elems, this.commands[i].allowed_elements);
+    }
+    elems = jQuery.unique(elems);
+    jQuery(this.wym._doc).find(elems.join(",")).each(function(i) {
+                                                         self.ensureId(this);
+                                                     });
+};
+
+PresentationControls.prototype.ensureId = function(node) {
+    var id = node.id;
+
+    if (id == undefined || id == "") {
+        id = this.nextId(node.tagName.toLowerCase());
+        this.assignId(node, id);
+        this.registerSection(id);
+    }
+    return id;
+};
+
+PresentationControls.prototype.assignId = function(node, id) {
+    // Assign an ID to an element.  This can be tricky, because, if the section
+    // has a command block before it, we need to make sure that the id of those
+    // blocks are changed, since the 'position' of the command blocks are only stored
+    // by giving them the right id.
+    node.id = id;
+    // Need to change (up to) the two previous siblings.
+    this.updateCommandBlocks(node, id, 2);
+};
+
+PresentationControls.prototype.nextId = function(tagName) {
+    // All sections that can receive styles need a section ID.
+    // For the initial HTML, this is assigned server-side when the
+    // HTML is split into 'semantic HTML' and 'presentation info'.
+    // For newly added HTML, however, we need to add it ourself
+
+    var i = 1;
+    var id = "";
+    while (true) {
+        id = tagName + "_" + i.toString();
+        if (jQuery(this.wym._doc).find('#' + id).is(tagName)) {
+            i++;
+        } else {
+            return id;
+        }
+    }
+};
+
+PresentationControls.prototype.commandBlockId = function(sectId, command) {
+    // Returns the ID to use for a command block that appears before
+    // section sectId for a given command.  This is also the key used
+    // in this.presentationInfo
+    return command.name + "_" + sectId;
+};
+
+PresentationControls.prototype.insertCommandBlock = function(sectId, command) {
+    // There is some custom logic about the different commands here i.e.
+    // that newrow should appear before newcol.
+    var newelem = jQuery("<p class=\"" + command.name + "\">&nbsp;</p>");
+    var elem = jQuery(this.wym._doc).find("#" + sectId);
+    // New row should appear before new col
+    if (elem.prev().is("p.newcol") && command.name == 'newrow') {
+        elem = elem.prev();
+    }
+    elem.before(newelem);
+    var newId = this.commandBlockId(sectId, command);
+    newelem.attr('id', newId);
+    return newId;
+};
+
+PresentationControls.prototype.insertCommandBlocks = function() {
+    // This is run once, after loading HTML.  We can rely on 'ids' being
+    // present, since the HTML is all sent by the server.
+    for (var key in this.presentationInfo) {
+        var presinfos = this.presentationInfo[key];
+        for (var i = 0; i < presinfos.length; i++) {
+            var pi = presinfos[i];
+            if (pi.prestype == 'command') {
+                // key = e.g. 'newrow_p_1', we need 'p_1'
+                var id = key.split('_').slice(1).join('_');
+                this.insertCommandBlock(id, this.commandDict[pi.name]);
+            }
+        }
+    }
+};
+
+PresentationControls.prototype.updateCommandBlocks = function(node, id, max) {
+    // Updates the 'id' of any HTML block that represents a command.
+    if (max == 0) {
+        return;
+    };
+    var prev = node.previousSibling;
+    if (prev != undefined && prev.tagName != undefined && prev.tagName.toLowerCase() == 'p') {
+        // command blocks are like <p id="newrow_p_1" class="newrow">
+        // check we've got a command block.
+        var className = prev.className;
+        var prevId = prev.id;
+        if (prevId && className && prevId.match(eval("/^" + className + "_/"))) {
+            prev.id = className + "_" + id;
+            // need to update presentationInfo as well
+            this.presentationInfo[prev.id] = this.presentationInfo[prevId];
+            delete this.presentationInfo[prevId];
+            // and then the visible indicators
+            this.updateStyleDisplay(prev.id);
+            // do the next one.
+            this.updateCommandBlocks(prev, id, max - 1);
+        }
+    }
+};
+
+// ---- Display of style information on document.
+
+PresentationControls.prototype.updateStyleDisplay = function(sectId) {
+    var styles = this.presentationInfo[sectId];
+    var self = this;
+    var stylelist = jQuery.map(styles, function(s, i) {
+                                   return self.getVerboseStyleName(s.name);
+                               }).join(", ");
+    this.addCssRule("#" + sectId + ":before", 'content: "' + stylelist + '"');
+};
+
+PresentationControls.prototype.updateAllStyleDisplay = function() {
+    for (var key in this.presentationInfo) {
+        this.updateStyleDisplay(key);
+    }
+};
+
+PresentationControls.prototype.getVerboseStyleName = function(stylename) {
+    // Full style information is not stored against individual headings, only
+    // the type and name. So sometimes we need to go from one to the other.
+
+    var styles = this.availableStyles;
+    for (var i = 0; i < styles.length; i++) {
+        if (styles[i].name == stylename) {
+            return styles[i].verbose_name;
+        }
+    }
+    var commands = this.commands;
+    for (var i2 = 0; i2 < commands; i2++) {
+        if (commands[i2].name == stylename) {
+            return commands[i2].verbose_name;
+        }
+    }
+    return undefined; // shouldn't get here
+};
+
+// ---- Manipulation of class and command list ----
 
 PresentationControls.prototype.buildClassList = function() {
     var self = this;
@@ -433,230 +681,6 @@ PresentationControls.prototype.buildListGeneric = function(container, stylelist,
 
 };
 
-PresentationControls.prototype.hasStyle = function(sectId, style) {
-    var styles = this.presentationInfo[sectId];
-    if (styles == undefined)
-        return false;
-    for (var i = 0; i < styles.length; i++) {
-        if (this.flattenPresStyle(styles[i]) == this.flattenPresStyle(style)) {
-            return true;
-        };
-    }
-    return false;
-};
-
-PresentationControls.prototype.hasCommand = function(sectId, command) {
-    // Returns true if the section has the command before it.
-    return (this.presentationInfo[this.commandBlockId(sectId, command)] != undefined);
-};
-
-PresentationControls.prototype.nextId = function(tagName) {
-    // All sections that can receive styles need a section ID.
-    // For the initial HTML, this is assigned server-side when the
-    // HTML is split into 'semantic HTML' and 'presentation info'.
-    // For newly added HTML, however, we need to add it ourself
-
-    var i = 1;
-    var id = "";
-    while (true) {
-        id = tagName + "_" + i.toString();
-        if (jQuery(this.wym._doc).find('#' + id).is(tagName)) {
-            i++;
-        } else {
-            return id;
-        }
-    }
-};
-
-PresentationControls.prototype.updateCommandBlocks = function(node, id, max) {
-    // Updates the 'id' of any HTML block that represents a command.
-    if (max == 0) {
-        return;
-    };
-    var prev = node.previousSibling;
-    if (prev != undefined && prev.tagName != undefined && prev.tagName.toLowerCase() == 'p') {
-        // command blocks are like <p id="newrow_p_1" class="newrow">
-        // check we've got a command block.
-        var className = prev.className;
-        var prevId = prev.id;
-        if (prevId && className && prevId.match(eval("/^" + className + "_/"))) {
-            prev.id = className + "_" + id;
-            // need to update presentationInfo as well
-            this.presentationInfo[prev.id] = this.presentationInfo[prevId];
-            delete this.presentationInfo[prevId];
-            // and then the visible indicators
-            this.updateStyleDisplay(prev.id);
-            // do the next one.
-            this.updateCommandBlocks(prev, id, max - 1);
-        }
-    }
-};
-
-PresentationControls.prototype.assignId = function(node, id) {
-    // Assign an ID to an element.  This can be tricky, because, if the section
-    // has a command block before it, we need to make sure that the id of those
-    // blocks are changed, since the 'position' of the command blocks are only stored
-    // by giving them the right id.
-    node.id = id;
-    // Need to change (up to) the two previous siblings.
-    this.updateCommandBlocks(node, id, 2);
-};
-
-PresentationControls.prototype.registerSection = function(sectId) {
-    // Make sure we have somewhere to store styles for a section.
-    this.presentationInfo[sectId] = new Array();
-};
-
-PresentationControls.prototype.calculateSelectors = function(stylelist) {
-    // Given a list of styles, add a 'allowed_elements_selector' attribute
-    // on the basis of the 'allowed_elements' attribute.
-
-    // This is just an optimisation to avoid doing this work multiple times.
-
-    var self = this;
-    for (var i = 0; i < stylelist.length; i++) {
-        var style = stylelist[i];
-        style.allowed_elements_selector =
-            jQuery.map(style.allowed_elements,
-                       function(t,j) { return self.tagnameToSelector(t); }
-                      ).join(",");
-    }
-};
-
-PresentationControls.prototype.tagnameToSelector = function(name) {
-    // Convert a tag name into a selector used to match elements that represent
-    // that tag.  This function accounts for the use of p elements to represent
-    // commands in the document.
-
-    var c = this.commandDict[name];
-    if (c == null) {
-        // not a command
-        if (name == "p") {
-            // Need to ensure we don't match commands
-            var selector = "p";
-            for (var i = 0; i < this.commands.length; i++) {
-                selector = selector + "[class!='" + this.commands[i].name + "']";
-            }
-            return selector;
-        } else {
-        return name;
-        }
-    } else {
-        return "p." + c.name;
-    }
-};
-
-PresentationControls.prototype.ensureId = function(node) {
-    var id = node.id;
-
-    if (id == undefined || id == "") {
-        id = this.nextId(node.tagName.toLowerCase());
-        this.assignId(node, id);
-        this.registerSection(id);
-    }
-    return id;
-};
-
-PresentationControls.prototype.getCurrentSection = function(style) {
-    // Returns the section ID of the current section that is applicable
-    // to the given style, or undefined if there is none.
-    // Since sections can be nested, if more than one section is possible
-    // for the given style, the first section found (starting from the
-    // current selection and moving up the HTML tree) will be returned.
-    // This function has the side effect of adding a section ID if one
-    // was not defined already.
-    var wym = this.wym;
-    var self = this;
-    var expr = style.allowed_elements_selector;
-    var container = jQuery(wym.selected()).parentsOrSelf(expr);
-    if (container.is(expr)) {
-        var first = container.get(0);
-        var id = this.ensureId(first);
-        return id;
-    }
-    return undefined;
-};
-
-PresentationControls.prototype.toggleStyle = function(style, btn) {
-    // What section are we on?
-    var sectId = this.getCurrentSection(style);
-    if (sectId == undefined) {
-        // No allowed to use it there
-        alert("Cannot use this style on current element.");
-        return;
-    }
-
-    if (this.hasStyle(sectId, style)) {
-        this.removeStyle(sectId, style);
-    } else {
-        this.addStyle(sectId, style);
-    }
-    this.updateStyleDisplay(sectId);
-    this.updateClassListItem(btn, style);
-};
-
-PresentationControls.prototype.commandBlockId = function(sectId, command) {
-    // Returns the ID to use for a command block that appears before
-    // section sectId for a given command.  This is also the key used
-    // in this.presentationInfo
-    return command.name + "_" + sectId;
-};
-
-PresentationControls.prototype.insertCommandBlock = function(sectId, command) {
-    // There is some custom logic about the different commands here i.e.
-    // that newrow should appear before newcol.
-    var newelem = jQuery("<p class=\"" + command.name + "\">&nbsp;</p>");
-    var elem = jQuery(this.wym._doc).find("#" + sectId);
-    // New row should appear before new col
-    if (elem.prev().is("p.newcol") && command.name == 'newrow') {
-        elem = elem.prev();
-    }
-    elem.before(newelem);
-    var newId = this.commandBlockId(sectId, command);
-    newelem.attr('id', newId);
-    return newId;
-};
-
-PresentationControls.prototype.doCommand = function(command, btn) {
-    // What section are we on?
-    var sectId = this.getCurrentSection(command);
-    if (sectId == undefined) {
-        // Not allowed to use it there
-        alert("Cannot use this command on current element.");
-        return;
-    }
-    // newrow and newcol are the only commands at the moment.
-    // We handle both using inserted blocks, and both commands
-    // act as toggles (remove if already present).
-    if (this.hasCommand(sectId, command)) {
-        var id = this.commandBlockId(sectId, command);
-        jQuery(this.wym._doc).find('#' + id).remove();
-        delete this.presentationInfo[id];
-    } else {
-        var newId = this.insertCommandBlock(sectId, command);
-        this.registerSection(newId);
-        this.presentationInfo[newId].push(command);
-        this.updateStyleDisplay(newId);
-    }
-    this.updateClassListItem(btn, command);
-};
-
-PresentationControls.prototype.insertCommandBlocks = function() {
-    // This is run once, after loading HTML.  We can rely on 'ids' being
-    // present, since the HTML is all sent by the server.
-    for (var key in this.presentationInfo) {
-        var presinfos = this.presentationInfo[key];
-        for (var i = 0; i < presinfos.length; i++) {
-            var pi = presinfos[i];
-            if (pi.prestype == 'command') {
-                // key = e.g. 'newrow_p_1', we need 'p_1'
-                var id = key.split('_').slice(1).join('_');
-                this.insertCommandBlock(id, this.commandDict[pi.name]);
-            }
-        }
-    }
-};
-
 PresentationControls.prototype.updateClassListItem = function(btn, style) {
     var sectId = this.getCurrentSection(style);
     if (sectId == undefined) {
@@ -688,6 +712,156 @@ PresentationControls.prototype.updateClassListItem = function(btn, style) {
     }
 };
 
+PresentationControls.prototype.updateClassListItemAll = function(curContainer) {
+    var self = this;
+    if (curContainer == undefined) {
+        curContainer = jQuery(this.wym.selected()).parentsOrSelf(this.blockdefSelector);
+    }
+    var node = curContainer.get(0);
+    if (node != undefined && node != this.currentNode) {
+        // if current node has changed, might need to update list
+        this.currentNode = node;
+        // Sets enabled/disabled on all items in classList and commands
+        var pairs = [[this.availableStyles, this.classList],
+                     [this.commands, this.commandList]];
+
+        for (var i = 0; i < pairs.length; i++) {
+            var styles = pairs[i][0];
+            var btncontainer = pairs[i][1];
+            btncontainer.find("a").each(function(k) {
+                                            self.updateClassListItem(jQuery(this), styles[k]);
+                                        });
+        }
+    }
+};
+
+// ---- Manipulation/query of stored presentation info ----
+
+PresentationControls.prototype.registerSection = function(sectId) {
+    // Make sure we have somewhere to store styles for a section.
+    this.presentationInfo[sectId] = new Array();
+};
+
+PresentationControls.prototype.getCurrentSection = function(style) {
+    // Returns the section ID of the current section that is applicable
+    // to the given style, or undefined if there is none.
+    // Since sections can be nested, if more than one section is possible
+    // for the given style, the first section found (starting from the
+    // current selection and moving up the HTML tree) will be returned.
+    // This function has the side effect of adding a section ID if one
+    // was not defined already.
+    var wym = this.wym;
+    var self = this;
+    var expr = style.allowed_elements_selector;
+    var container = jQuery(wym.selected()).parentsOrSelf(expr);
+    if (container.is(expr)) {
+        var first = container.get(0);
+        var id = this.ensureId(first);
+        return id;
+    }
+    return undefined;
+};
+
+PresentationControls.prototype.hasStyle = function(sectId, style) {
+    var styles = this.presentationInfo[sectId];
+    if (styles == undefined)
+        return false;
+    for (var i = 0; i < styles.length; i++) {
+        if (this.flattenPresStyle(styles[i]) == this.flattenPresStyle(style)) {
+            return true;
+        };
+    }
+    return false;
+};
+
+PresentationControls.prototype.hasCommand = function(sectId, command) {
+    // Returns true if the section has the command before it.
+    return (this.presentationInfo[this.commandBlockId(sectId, command)] != undefined);
+};
+
+PresentationControls.prototype.addStyle = function(sectId, presinfo) {
+    var styles = this.presentationInfo[sectId];
+    styles.push(presinfo);
+    this.presentationInfo[sectId] = jQuery.unique(styles);
+};
+
+PresentationControls.prototype.removeStyle = function(sectId, presinfo) {
+    var styles = this.presentationInfo[sectId];
+    styles = jQuery.grep(styles, function(item, i) {
+                             return !(item.prestype == presinfo.prestype
+                                      && item.name == presinfo.name);
+                         });
+    this.presentationInfo[sectId] = styles;
+};
+
+PresentationControls.prototype.toggleStyle = function(style, btn) {
+    // What section are we on?
+    var sectId = this.getCurrentSection(style);
+    if (sectId == undefined) {
+        // No allowed to use it there
+        alert("Cannot use this style on current element.");
+        return;
+    }
+
+    if (this.hasStyle(sectId, style)) {
+        this.removeStyle(sectId, style);
+    } else {
+        this.addStyle(sectId, style);
+    }
+    this.updateStyleDisplay(sectId);
+    this.updateClassListItem(btn, style);
+};
+
+PresentationControls.prototype.doCommand = function(command, btn) {
+    // What section are we on?
+    var sectId = this.getCurrentSection(command);
+    if (sectId == undefined) {
+        // Not allowed to use it there
+        alert("Cannot use this command on current element.");
+        return;
+    }
+    // newrow and newcol are the only commands at the moment.
+    // We handle both using inserted blocks, and both commands
+    // act as toggles (remove if already present).
+    if (this.hasCommand(sectId, command)) {
+        var id = this.commandBlockId(sectId, command);
+        jQuery(this.wym._doc).find('#' + id).remove();
+        delete this.presentationInfo[id];
+    } else {
+        var newId = this.insertCommandBlock(sectId, command);
+        this.registerSection(newId);
+        this.presentationInfo[newId].push(command);
+        this.updateStyleDisplay(newId);
+    }
+    this.updateClassListItem(btn, command);
+};
+
+PresentationControls.prototype.cleanPresentationInfo = function() {
+    // clear out orphaned items
+    var orphaned = [];
+    for (var key in this.presentationInfo) {
+        var sel = "#" + key;
+        if (!jQuery(this.wym._doc).find(sel).is(sel)) {
+            orphaned.push(key);
+        }
+    }
+    for (var i = 0; i < orphaned.length; i++) {
+        delete this.presentationInfo[orphaned[i]];
+    }
+};
+
+// ---- Error box -----
+
+PresentationControls.prototype.clearError = function() {
+    this.errorBox.empty();
+};
+
+PresentationControls.prototype.showError = function(message) {
+    this.clearError();
+    this.errorBox.append(this.escapeHtml(message));
+};
+// ---- Preview ---
+
 PresentationControls.prototype.showPreview = function() {
     this.prepareData();
     var self = this;
@@ -710,154 +884,7 @@ PresentationControls.prototype.showPreview = function() {
     return false;
 };
 
-PresentationControls.prototype.addStyle = function(sectId, presinfo) {
-    var styles = this.presentationInfo[sectId];
-    styles.push(presinfo);
-    this.presentationInfo[sectId] = jQuery.unique(styles);
-};
-
-PresentationControls.prototype.removeStyle = function(sectId, presinfo) {
-    var styles = this.presentationInfo[sectId];
-    styles = jQuery.grep(styles, function(item, i) {
-                             return !(item.prestype == presinfo.prestype
-                                      && item.name == presinfo.name);
-                         });
-    this.presentationInfo[sectId] = styles;
-};
-
-PresentationControls.prototype.updateStyleDisplay = function(sectId) {
-    var styles = this.presentationInfo[sectId];
-    var self = this;
-    var stylelist = jQuery.map(styles, function(s, i) {
-                                   return self.getVerboseStyleName(s.name);
-                               }).join(", ");
-    this.addCssRule("#" + sectId + ":before", 'content: "' + stylelist + '"');
-};
-
-PresentationControls.prototype.updateAllStyleDisplay = function() {
-    for (var key in this.presentationInfo) {
-        this.updateStyleDisplay(key);
-    }
-};
-
-PresentationControls.prototype.updateAfterLoading = function() {
-    this.insertCommandBlocks();
-    this.updateAllStyleDisplay();
-};
-
-PresentationControls.prototype.getVerboseStyleName = function(stylename) {
-    // Full style information is not stored against individual headings, only
-    // the type and name. So sometimes we need to go from one to the other.
-
-    var styles = this.availableStyles;
-    for (var i = 0; i < styles.length; i++) {
-        if (styles[i].name == stylename) {
-            return styles[i].verbose_name;
-        }
-    }
-    var commands = this.commands;
-    for (var i2 = 0; i2 < commands; i2++) {
-        if (commands[i2].name == stylename) {
-            return commands[i2].verbose_name;
-        }
-    }
-    return undefined; // shouldn't get here
-};
-
-PresentationControls.prototype.prepareData = function() {
-    // Prepare data/html for sending server side.
-
-    // We need to ensure all elements have ids, *and* that command block
-    // elements have correct ids (which is a side effect of the below).
-    this.ensureAllIds();
-    // this.presentationInfo might have old info, if command blocks have
-    // been removed.  Need to clean.
-    this.cleanPresentationInfo();
-};
-
-PresentationControls.prototype.cleanHtml = function() {
-    this.prepareData();
-    var self = this;
-    var html = this.wym.xhtml();
-    jQuery.post(this.opts.cleanHtmlUrl, {'html':html},
-                function(data) {
-                    self.withGoodData(data, function(value) {
-                                            self.setHtml(value.html);
-                                            self.updateAfterLoading();
-                                        });
-                }, "json");
-};
-
-// If data contains an error message, display to the user,
-// otherwise clear the displayed error and perform the callback
-// with the value in the data.
-PresentationControls.prototype.withGoodData = function(data, callback) {
-    if (data.result == 'ok') {
-        this.clearError();
-        callback(data.value);
-    } else {
-        // TODO - perhaps distinguish between a server error
-        // and a user error
-        this.showError(data.message);
-    }
-};
-
-PresentationControls.prototype.clearError = function() {
-    this.errorBox.empty();
-};
-
-PresentationControls.prototype.showError = function(message) {
-    this.clearError();
-    this.errorBox.append(this.escapeHtml(message));
-};
-
-PresentationControls.prototype.retrieveStyles = function() {
-    var self = this;
-    // Needs async=false, since separatePresentation depends on data.
-    var res = jQuery.ajax({
-                  type: "GET",
-                  data: {
-                      'template':this.opts.template,
-                      'page_id':this.opts.pageId
-                  },
-                  url: this.opts.retrieveStylesUrl,
-                  dataType: "json",
-                  async: false
-    }).responseText;
-    var data = JSON.parse(res);
-
-    self.withGoodData(data, function(value) {
-        self.availableStyles = data.value;
-        self.calculateSelectors(self.availableStyles);
-        self.buildClassList();
-    });
-};
-
-PresentationControls.prototype.retrieveCommands = function() {
-    var self = this;
-    // Needs async=false, since separatePresentation depends on data.
-    var res = jQuery.ajax({
-                  type: "GET",
-                  data: {},
-                  url: this.opts.retrieveCommandsUrl,
-                  dataType: "json",
-                  async: false
-    }).responseText;
-    var data = JSON.parse(res);
-
-    self.withGoodData(data, function(value) {
-                            self.commands = data.value;
-                            self.calculateSelectors(self.commands);
-                            for (var i = 0; i < self.commands.length; i++) {
-                                var c = self.commands[i];
-                                self.commandDict[c.name] = c;
-                            }
-                            self.allCommandSelectors = jQuery.map(self.commands,
-                                                                    function(c, i) { return self.tagnameToSelector(c.name); }
-                                                                    ).join(",");
-                            self.buildCommandList();
-                        });
-};
+// ---- WYMeditor plugin definition ----
 
 // The actual WYMeditor plugin:
 WYMeditor.editor.prototype.semantic = function(options) {
