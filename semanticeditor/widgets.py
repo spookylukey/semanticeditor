@@ -10,6 +10,7 @@ import os
 join = os.path.join
 
 class SemanticEditor(WYMEditor):
+
     class Media:
         js = [join(settings.SEMANTICEDITOR_MEDIA_URL, path) for path in
               ('javascript/wymeditor/plugins/semantic/wymeditor.semantic.js',
@@ -35,6 +36,8 @@ class SemanticEditor(WYMEditor):
             'WYM_TOOLS': mark_safe(text_settings.WYM_TOOLS),
             'WYM_CONTAINERS': mark_safe(containers),
             'WYM_CLASSES': mark_safe(text_settings.WYM_CLASSES),
+            'WYM_STYLES': mark_safe(text_settings.WYM_STYLES),
+            'WYM_STYLESHEET': mark_safe(text_settings.WYM_STYLESHEET),
             'installed_plugins': self.installed_plugins,
             'page': self.page,
         }

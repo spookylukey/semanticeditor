@@ -99,7 +99,7 @@ class LayoutDetailsBase(object):
         Given a list a PresentationInfo objects, return the ones that should be
         applied to the outer column div.
         """
-        if self.use_inner_column_div:
+        if not self.use_inner_column_div:
             return presinfo
         else:
             raise NotImplementedError()
@@ -601,7 +601,7 @@ def is_root(node):
 def _find_layout_commands(root, structure, styleinfo):
     # Layout commands are not stored against normal sections,
     # but have their own entry in the section list, using an id
-    # of 'newrow_' or 'newcol_' + id of block they preceed.
+    # of 'newrow_' or 'newcol_' + id of block they precede.
 
     sect_dict = dict((s.sect_id, s) for s in structure)
     row_info = {} # key = sect_id, val = [PresentationInfo]
