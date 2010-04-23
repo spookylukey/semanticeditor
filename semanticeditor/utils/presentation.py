@@ -99,7 +99,7 @@ class LayoutDetailsBase(object):
         Given a list a PresentationInfo objects, return the ones that should be
         applied to the outer column div.
         """
-        if self.use_inner_column_div:
+        if not self.use_inner_column_div:
             return presinfo
         else:
             raise NotImplementedError()
