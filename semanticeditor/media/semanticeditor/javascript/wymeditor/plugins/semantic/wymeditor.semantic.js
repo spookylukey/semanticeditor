@@ -655,6 +655,7 @@ PresentationControls.prototype.buildListGeneric = function(container, stylelist,
 
         btn.click(function(event) {
                       btnAction(style, btn);
+                      event.preventDefault();
                   });
 
         // Attach tooltip to label we just added:
