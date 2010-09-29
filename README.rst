@@ -19,9 +19,7 @@ The aim is to have an editor in which content is edited semantically, and both
 column layout and styling are applied separately.  However, in the database only
 the combined HTML is stored.  So, we have the following situation:
 
-HTML content is stored in the database something like:
-
-.. code-block:: html
+HTML content is stored in the database something like::
 
     <div class="row columns2">
        <div class="column">
@@ -34,17 +32,13 @@ HTML content is stored in the database something like:
     </div>
 
 This is loaded into a custom editor in the browser which then immediately does
-some AJAX calls to the server to decompose it into simplified HTML:
-
-.. code-block:: html
+some AJAX calls to the server to decompose it into simplified HTML::
 
     <h1 id="h1_1">Heading</h1>
     <p id="p_1">Some text</p>
     <p id='p_2'>Some more text</p>
 
-and an array of objects specifying presentation e.g.
-
-.. code-block:: python
+and an array of objects specifying presentation e.g.::
 
     [
        {'h1_1': ['fancy']},                # styles for the H1
