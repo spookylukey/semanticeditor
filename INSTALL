@@ -8,8 +8,9 @@ Dependencies
 ============
 
  * Django, tested on trunk r9538 (1.0 perhaps OK?)
- * django-cms2, test on r172 or later
- * elementtree 1.2.7 or greater
+ * django-cms2, tested on r172 or later
+ * lxml, tested with 2.2.4
+ * pyquery, tested with 0.3.1
  * Javascript dependencies are included in media/
 
 Settings
