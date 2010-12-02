@@ -560,7 +560,11 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # Create new ET tree from layout.  The individual nodes that belong to
     # 'root' are not altered, but just added to a new tree.  This means that the
     # information in 'structure' does not need updating.
-    rendered = _render_layout(layout, layout_strategy)
+    nodes = layout.as_nodes(layout_strategy)
+    rendered = ET.fromstring("<html><body></body></html>")
+    rendered.getchildren()[0].extend(nodes)
+
+    # Apply hacks
     rendered = layout_strategy.format_post_layout_hacks(rendered, structure, styleinfo)
 
     # Pretty print
@@ -604,9 +608,86 @@ def _sanitise_styleinfo(styleinfo, sect_ids):
 #### Layout related ####
 
 # Some dumb container structures
-Layout = struct("Layout", (object,), dict(rows=list))
-LayoutRow = struct("LayoutRow", (object,), dict(columns=list, presinfo=list))
-LayoutColumn = struct("LayoutColumn", (object,), dict(nodes=list, presinfo=list))
+class Content(object):
+    def as_nodes(self):
+        """
+        Returns as list of ElementTree nodes
+        """
+        raise NotImplemented()
+
+class NodeContent(object):
+    def __init__(self, node):
+        self.node = node
+
+    def as_nodes(self):
+        return [self.node]
+
+
+# Layout contains a list of content, where content can be either ElementTree
+# nodes or LayoutRows.
+class Layout(list):
+
+    def as_nodes(self, layout_strategy):
+        """
+        Returns layout as a list of ElementTree nodes
+        """
+        root = []
+        for row in self:
+            # Row
+            logical_column_count = _layout_column_count(row)
+            actual_column_count = len(row.columns)
+            rowdiv = ET.Element('div')
+            classes = layout_strategy.row_classes(logical_column_count, actual_column_count) + _get_classes_from_presinfo(row.presinfo)
+            if classes:
+                rowdiv.set('class', ' '.join(classes))
+
+            # Columns
+            logical_column_num = 1
+            for i, col in  enumerate(row.columns):
+                coldiv = ET.Element('div')
+                classes = layout_strategy.column_classes(logical_column_num,
+                                                         i + 1,
+                                                         logical_column_count,
+                                                         actual_column_count) + \
+                        _get_classes_from_presinfo(layout_strategy.outer_column_classes(col.presinfo))
+                if classes:
+                    coldiv.set('class', ' '.join(classes))
+                if layout_strategy.use_inner_column_div:
+                    contentdiv = ET.Element('div')
+                    coldiv.append(contentdiv)
+                    inner_classes = _get_classes_from_presinfo(layout_strategy.inner_column_classes(col.presinfo))
+                    if inner_classes:
+                        contentdiv.set('class', ' '.join(inner_classes))
+                else:
+                    contentdiv = coldiv
+                for n in col.content:
+                    contentdiv.extend(n.as_nodes())
+                rowdiv.append(coldiv)
+
+                logical_column_num += _layout_column_width(col)
+            root.append(rowdiv)
+        return root
+
+# LayoutRow contains a list of columns, and a list of PresentationInfo objects
+class LayoutRow(object):
+    def __init__(self, columns=None, presinfo=None):
+        if columns is None:
+            columns = []
+        if presinfo is None:
+            presinfo = []
+        self.columns = columns
+        self.presinfo = presinfo
+
+# LayoutColumn contains a list of content, and a list of PresentationInfo objects.
+class LayoutColumn(object):
+    def __init__(self, content=None, presinfo=None):
+        if content is None:
+            content = Layout()
+        if presinfo is None:
+            presinfo = []
+        self.content = content
+        self.presinfo = presinfo
+
 
 def _layout_column_width(col):
     """
@@ -689,10 +770,10 @@ def _create_layout(root, styleinfo, structure):
                 # We have a NEWROW against si.sect_id
 
                 # Finish current col and row, if they have anything in them
-                if col.nodes:
+                if col.content:
                     row.columns.append(col)
                 if row.columns:
-                    layout.rows.append(row)
+                    layout.append(row)
                 # Start new row with styles
                 row = LayoutRow(presinfo=row_presinfo)
                 # Start new col
@@ -703,73 +784,34 @@ def _create_layout(root, styleinfo, structure):
                 # We have NEWCOL against si.sect_id
 
                 # Finish current col, if it is non-empty
-                if col.nodes:
+                if col.content:
                     row.columns.append(col)
                 # Start new col with styles
                 col = LayoutColumn(presinfo=col_presinfo)
 
         # Now deal with content itself
-        col.nodes.append(node)
+        col.content.append(NodeContent(node))
 
     # Close last col and row
-    if col.nodes:
+    if col.content:
         row.columns.append(col)
-    layout.rows.append(row)
+    layout.append(row)
 
     return layout
 
 def _check_layout(layout, structure, layout_strategy):
     sect_dict = dict((si.node, si) for si in structure)
     max_cols = layout_strategy.max_columns
-    for row in layout.rows:
+    for row in layout:
         if _layout_column_count(row) > max_cols:
             # Because columns can be multiple width, we can't easily work out
             # which column needs to be moved, so just refer user to whole
             # section.
-            node = row.columns[0].nodes[0]
+            node = row.columns[0].content[0].as_nodes()[0]
             sect = sect_dict[node]
             raise TooManyColumns("The maximum number of columns is %(max)d. "
                                  "Please adjust columns in section '%(name)s'." %
                                  dict(max=max_cols, name=sect.name))
-
-def _render_layout(layout, layout_strategy):
-    docroot = ET.fromstring("<html><body></body></html>")
-    root = docroot.getchildren()[0] # body
-    for row in layout.rows:
-        # Row
-        logical_column_count = _layout_column_count(row)
-        actual_column_count = len(row.columns)
-        rowdiv = ET.Element('div')
-        classes = layout_strategy.row_classes(logical_column_count, actual_column_count) + _get_classes_from_presinfo(row.presinfo)
-        if classes:
-            rowdiv.set('class', ' '.join(classes))
-
-        # Columns
-        logical_column_num = 1
-        for i, col in  enumerate(row.columns):
-            coldiv = ET.Element('div')
-            classes = layout_strategy.column_classes(logical_column_num,
-                                                     i + 1,
-                                                     logical_column_count,
-                                                     actual_column_count) + \
-                    _get_classes_from_presinfo(layout_strategy.outer_column_classes(col.presinfo))
-            if classes:
-                coldiv.set('class', ' '.join(classes))
-            if layout_strategy.use_inner_column_div:
-                contentdiv = ET.Element('div')
-                coldiv.append(contentdiv)
-                inner_classes = _get_classes_from_presinfo(layout_strategy.inner_column_classes(col.presinfo))
-                if inner_classes:
-                    contentdiv.set('class', ' '.join(inner_classes))
-            else:
-                contentdiv = coldiv
-            for n in col.nodes:
-                contentdiv.append(n)
-            rowdiv.append(coldiv)
-
-            logical_column_num += _layout_column_width(col)
-        root.append(rowdiv)
-    return docroot
 
 def preview_html(html, pres):
     root, structure = format_html(html, pres, return_tree=True)
