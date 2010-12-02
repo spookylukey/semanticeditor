@@ -275,7 +275,7 @@ class PresentationInfo(object):
         self.name = name
         # verbose_name, description and allowed_elements are additional pieces
         # of information that are only needed when the client is requesting a
-        # list of styles.  In other sitations these objects may not have these
+        # list of styles.  In other situations these objects may not have these
         # attributes filled in.
         self.verbose_name = verbose_name
         self.description = description
@@ -320,9 +320,15 @@ class PresentationCommand(PresentationInfo):
     @property
     def prefix(self):
         """
-        This is a prefix used to generate a name for storing this command
-        against a section.
+        This is a prefix used to generate a name used for registering this
+        command against a section and storing other presentation info.
         """
+        # If there is, for example, a section 'h1_1' in the document, this
+        # prefix is used to generate e.g. newrow_h1_1. The presence of the
+        # name 'newrow_h1_1' says that a 'newrow' command was used against
+        # h1_1, and it also allows PresentationClass objects to be stored
+        # against newrow_h1_1 itself, which represents the entire row.
+
         return self.name + "_"
 
 NEWROW = PresentationCommand('newrow',
@@ -680,7 +686,7 @@ def _create_layout(root, styleinfo, structure):
         if si:
             row_presinfo = row_info.get(si.sect_id)
             if row_presinfo is not None:
-                # We can assume row_presinfo contains NEWROW command
+                # We have a NEWROW against si.sect_id
 
                 # Finish current col and row, if they have anything in them
                 if col.nodes:
@@ -694,7 +700,7 @@ def _create_layout(root, styleinfo, structure):
 
             col_presinfo = col_info.get(si.sect_id)
             if col_presinfo is not None:
-                # Assume col_presinfo contains NEWCOL command
+                # We have NEWCOL against si.sect_id
 
                 # Finish current col, if it is non-empty
                 if col.nodes:
