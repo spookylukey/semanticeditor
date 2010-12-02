@@ -293,22 +293,37 @@ class PresentationInfo(object):
     def __repr__(self):
         return "PresentationInfo(prestype=\"%s\", name=\"%s\")" % (self.prestype, self.name)
 
-def PresentationClass(name, verbose_name="", description="", allowed_elements=None, column_equiv=None):
-    """
-    Shortcut for creating CSS classes
-    """
-    return PresentationInfo(prestype="class", name=name,
-                            verbose_name=verbose_name, description=description,
-                            allowed_elements=allowed_elements,
-                            column_equiv=column_equiv)
 
-def PresentationCommand(name, verbose_name="", description=""):
+class PresentationClass(PresentationInfo):
     """
-    Shortcut for creating commands
+    A PresentationInfo representing a CSS class applied to a section.
     """
-    return PresentationInfo(prestype="command", name=name,
-                            verbose_name=verbose_name, description=description,
-                            allowed_elements=sorted(list(technical_blockdef)))
+    def __init__(self, name, verbose_name="", description="", allowed_elements=None, column_equiv=None):
+        super(PresentationClass, self).__init__(prestype="class",
+                                                name=name,
+                                                verbose_name=verbose_name,
+                                                description=description,
+                                                allowed_elements=allowed_elements,
+                                                column_equiv=column_equiv)
+
+class PresentationCommand(PresentationInfo):
+    """
+    A PresentationInfo representing a command applied to a section
+    """
+    def __init__(self, name, verbose_name="", description=""):
+        super(PresentationCommand, self).__init__(prestype="command",
+                                                  name=name,
+                                                  verbose_name=verbose_name,
+                                                  description=description,
+                                                  allowed_elements=sorted(list(technical_blockdef)))
+
+    @property
+    def prefix(self):
+        """
+        This is a prefix used to generate a name for storing this command
+        against a section.
+        """
+        return self.name + "_"
 
 NEWROW = PresentationCommand('newrow',
                              verbose_name="New row",
@@ -622,9 +637,8 @@ def _find_layout_commands(root, structure, styleinfo):
 
     for sect_id, presinfo in styleinfo.items():
         for c in COMMANDS:
-            prefix = c.name + "_"
-            if sect_id.startswith(prefix):
-                real_sect_id = sect_id[len(prefix):]
+            if sect_id.startswith(c.prefix):
+                real_sect_id = sect_id[len(c.prefix):]
                 sect = sect_dict.get(real_sect_id)
                 if sect is not None:
                     parent = get_parent(root, sect.node)
@@ -870,14 +884,14 @@ def extract_presentation(html):
         if row_node is not None:
             r_classes = _get_classes_for_node(row_node)
             row_pres = set([NEWROW] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
-            pres[NEWROW.name + "_" + si.sect_id] = row_pres
+            pres[NEWROW.prefix + si.sect_id] = row_pres
 
         if col_node is not None:
             c_classes = _get_classes_for_node(col_node)
             if inner_col_node is not None:
                 c_classes.extend(_get_classes_for_node(inner_col_node))
             col_pres = set([NEWCOL] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
-            pres[NEWCOL.name + "_" + si.sect_id] = col_pres
+            pres[NEWCOL.prefix + si.sect_id] = col_pres
 
     _strip_presentation(root)
     out_html = _html_extract(root)
