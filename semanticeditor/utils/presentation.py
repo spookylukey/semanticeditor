@@ -333,7 +333,27 @@ command has been used to start a set of columns.</p>
 
 """)
 
-COMMANDS = [NEWROW, NEWCOL]
+NEWINNERROW = PresentationCommand('newinnerrow',
+                                  verbose_name="Inner row",
+                                  description="""
+<p>Use this command to start a nested, inner row within an existing column
+structure.</p>
+
+<p>This must be used in conjunction with 'Inner column'
+to create a column layout.</p>
+
+"""
+                                  )
+
+NEWINNERCOL = PresentationCommand('newinnercol',
+                                  verbose_name="Inner column",
+                                  description="""
+<p>Use this command to start a new inner column, after an 'Inner row' command
+has been used to start a set of nested columns.</p>
+
+""")
+
+COMMANDS = [NEWROW, NEWCOL, NEWINNERROW, NEWINNERCOL]
 
 ## General utilities
 

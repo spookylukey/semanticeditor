@@ -182,7 +182,15 @@
       content:" New column";
   }
 
-  p.newrow, p.newcol {
+  p.newinnerrow:after {
+      content:" Inner row";
+  }
+
+  p.newinnercol:after {
+      content:" Inner column";
+  }
+
+  p.newrow, p.newcol, p.newinnerrow, p.newinnercol {
       background-color: #ffffff;
       color: #adc8ad;
       font-weight: bold;
