@@ -258,6 +258,113 @@ class TestFormat(TestCase):
         outh = "<div class=\"row\"><div><div><h1>1</h1><p>para 1</p><h2>2</h2></div></div></div>"
         self.assertEqual(outh, format_html(html, {'h1_1':[NEWROW]}))
 
+    def test_nested_layout(self):
+        html = ("<h1>1</h1>"
+                "<h1>2</h1>"
+                "<h1>3</h1>"
+                "<h1>4</h1>"
+                "<h1>5</h1>"
+                "<h1>6</h1>"
+                "<h1>7</h1>")
+        # - row 1:
+        #   - 3 columns
+        #   - middle column has inner row structure with
+        #     - 1 row
+        #     - 2 columns
+        # - row 2:
+        #   - 2 columns
+        pres = {'newrow_h1_1':[NEWROW],
+                'newcol_h1_2':[NEWCOL],
+                'newinnerrow_h1_3':[NEWINNERROW],
+                'newinnercol_h1_4':[NEWINNERCOL],
+                'newcol_h1_5':[NEWCOL],
+                'newrow_h1_6':[NEWROW],
+                'newcol_h1_7':[NEWCOL],
+                }
+        outh = ('<div class="row columns3">'
+                  '<div class="column firstcolumn">'
+                    '<div><h1>1</h1></div>'
+                  '</div>'
+                  '<div class="column">'
+                    '<div>'
+                      '<h1>2</h1>'
+                      '<div class="row columns2">'
+                        '<div class="column firstcolumn">'
+                          '<div><h1>3</h1></div>'
+                        '</div>'
+                        '<div class="column lastcolumn">'
+                          '<div><h1>4</h1></div>'
+                        '</div>'
+                      '</div>'
+                    '</div>'
+                  '</div>'
+                  '<div class="column lastcolumn">'
+                      '<div><h1>5</h1></div>'
+                  '</div>'
+                '</div>'
+                '<div class="row columns2">'
+                  '<div class="column firstcolumn">'
+                    '<div><h1>6</h1></div>'
+                  '</div>'
+                  '<div class="column lastcolumn">'
+                    '<div><h1>7</h1></div>'
+                  '</div>'
+                '</div>'
+                )
+        self.assertEqual(outh, format_html(html, pres))
+
+    def test_nested_layout_2(self):
+        html = ("<h1>1</h1>"
+                "<h1>2</h1>"
+                "<h1>3</h1>"
+                "<h1>4</h1>")
+        # - row 1:
+        #   - 2 columns
+        #   - 2nd middle column has inner row structure with
+        #     - 1 row
+        #     - 2 columns
+        pres = {'newrow_h1_1':[NEWROW],
+                'newcol_h1_2':[NEWCOL],
+                'newinnerrow_h1_3':[NEWINNERROW],
+                'newinnercol_h1_4':[NEWINNERCOL],
+                }
+        outh = ('<div class="row columns2">'
+                  '<div class="column firstcolumn">'
+                    '<div><h1>1</h1></div>'
+                  '</div>'
+                  '<div class="column lastcolumn">'
+                    '<div>'
+                      '<h1>2</h1>'
+                      '<div class="row columns2">'
+                        '<div class="column firstcolumn">'
+                          '<div><h1>3</h1></div>'
+                        '</div>'
+                        '<div class="column lastcolumn">'
+                          '<div><h1>4</h1></div>'
+                        '</div>'
+                      '</div>'
+                    '</div>'
+                  '</div>'
+                '</div>'
+                )
+        self.assertEqual(outh, format_html(html, pres))
+
+    def test_max_cols_nested(self):
+        """
+        Tests the error message for when the first col contains a nested layout.
+        """
+        html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1><h1>6</h1>"
+        self.assertRaises(TooManyColumns, format_html, html,
+                          {'newrow_h1_1':[NEWROW],
+                           'newinnerrow_h1_1':[NEWINNERROW],
+                           'newinnercol_h1_2':[NEWINNERCOL],
+                           'newcol_h1_3':[NEWCOL],
+                           'newcol_h1_4':[NEWCOL],
+                           'newcol_h1_5':[NEWCOL],
+                           'newcol_h1_6':[NEWCOL],
+                           })
+
+
     def test_format_pre(self):
         html = "<pre>This\r\nis\r\na\r\ntest</pre>"
         # check that format_html doesn't do anything nasty inside the pre

@@ -612,11 +612,11 @@ class NodeContent(object):
     def __init__(self, node):
         self.node = node
 
-    def as_nodes(self):
+    def as_nodes(self, layout_strategy):
         return [self.node]
 
 # Layout contains a list of content, where content can be either ElementTree
-# nodes or LayoutRows.
+# nodes (wrapped in NodeContent) or LayoutRows.
 class Layout(list):
 
     def as_nodes(self, layout_strategy):
@@ -653,7 +653,7 @@ class Layout(list):
                 else:
                     contentdiv = coldiv
                 for n in col.content:
-                    contentdiv.extend(n.as_nodes())
+                    contentdiv.extend(n.as_nodes(layout_strategy))
                 rowdiv.append(coldiv)
 
                 logical_column_num += _layout_column_width(col)
@@ -738,6 +738,8 @@ def _create_layout(root, styleinfo, structure):
     command_info = _find_layout_commands(root, structure, styleinfo)
     row_info = command_info[NEWROW.name]
     col_info = command_info[NEWCOL.name]
+    innerrow_info = command_info[NEWINNERROW.name]
+    innercol_info = command_info[NEWINNERCOL.name]
 
     # Build a Layout structure
 
@@ -746,6 +748,9 @@ def _create_layout(root, styleinfo, structure):
     layout = Layout()
     row = LayoutRow()
     col = LayoutColumn()
+    innerlayout = None
+    innercol = None
+    innerrow = None
     sect_dict = dict((si.node, si) for si in structure)
 
     # Build Layout
@@ -761,6 +766,16 @@ def _create_layout(root, styleinfo, structure):
             if row_presinfo is not None:
                 # We have a NEWROW against si.sect_id
 
+                # Finish any inner rows/columns
+                if innercol is not None and innercol.content:
+                    innerrow.columns.append(innercol)
+                    if innerrow.columns:
+                        innerlayout.append(innerrow)
+                    col.content.append(innerlayout)
+                    innerlayout = None
+                    innercol = None
+                    innerrow = None
+
                 # Finish current col and row, if they have anything in them
                 if col.content:
                     row.columns.append(col)
@@ -771,9 +786,20 @@ def _create_layout(root, styleinfo, structure):
                 # Start new col
                 col = LayoutColumn()
 
+
             col_presinfo = col_info.get(si.sect_id)
             if col_presinfo is not None:
                 # We have NEWCOL against si.sect_id
+
+                # Finish any inner rows/columns
+                if innercol is not None and innercol.content:
+                    innerrow.columns.append(innercol)
+                    if innerrow.columns:
+                        innerlayout.append(innerrow)
+                    col.content.append(innerlayout)
+                    innerlayout = None
+                    innercol = None
+                    innerrow = None
 
                 # Finish current col, if it is non-empty
                 if col.content:
@@ -781,8 +807,54 @@ def _create_layout(root, styleinfo, structure):
                 # Start new col with styles
                 col = LayoutColumn(presinfo=col_presinfo)
 
+            innerrow_presinfo = innerrow_info.get(si.sect_id)
+            if innerrow_presinfo is not None:
+                # We have a NEWINNERROW against si.sect_id
+
+                # Finish current col and row, if they have anything in them
+                if innerlayout is None:
+                    innerlayout = Layout()
+                    innerrow = LayoutRow()
+                    innercol = LayoutColumn()
+                else:
+                    if innercol.content:
+                        innerrow.columns.append(innercol)
+                    if innerrow.columns:
+                        innerlayout.append(innerrow)
+
+                    # Start new inner row
+                    innerrow = LayoutRow(innerrow_presinfo)
+                    # Start new inner column
+                    innercol = LayoutColumn()
+
+            innercol_presinfo = innercol_info.get(si.sect_id)
+            if innercol_presinfo is not None:
+                # We have NEWINNERCOL against si.sect_id
+
+                # Finish current col, if it is non-empty
+                if innerlayout is None:
+                    # This could occur if there an NEWINNERROW command was
+                    # missing.
+                    innerlayout = Layout()
+                    innerrow = LayoutRow()
+                    innercol = LayoutColumn()
+                elif innercol.content:
+                    innerrow.columns.append(innercol)
+                # Start new col with styles
+                innercol = LayoutColumn(presinfo=innercol_presinfo)
+
         # Now deal with content itself
-        col.content.append(NodeContent(node))
+        if innercol is not None:
+            innercol.content.append(NodeContent(node))
+        else:
+            col.content.append(NodeContent(node))
+
+    # Finish any inner rows/columns
+    if innercol is not None and innercol.content:
+        innerrow.columns.append(innercol)
+        if innerrow.columns:
+            innerlayout.append(innerrow)
+        col.content.append(innerlayout)
 
     # Close last col and row
     if col.content:
@@ -799,8 +871,17 @@ def _check_layout(layout, structure, layout_strategy):
             # Because columns can be multiple width, we can't easily work out
             # which column needs to be moved, so just refer user to whole
             # section.
-            node = row.columns[0].content[0].as_nodes()[0]
-            sect = sect_dict[node]
+
+            nodes = row.columns[0].content[0].as_nodes(layout_strategy)
+            while True:
+                # nodes[0] might be a div created for layout.  If so, it won't
+                # be in sect_dict. But one of its children will be.
+                sect = sect_dict.get(nodes[0], None)
+                if sect is not None:
+                    break
+                else:
+                    nodes = nodes[0]
+
             raise TooManyColumns("The maximum number of columns is %(max)d. "
                                  "Please adjust columns in section '%(name)s'." %
                                  dict(max=max_cols, name=sect.name))
