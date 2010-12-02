@@ -617,41 +617,37 @@ def _find_layout_commands(root, structure, styleinfo):
     # of 'newrow_' or 'newcol_' + id of block they precede.
 
     sect_dict = dict((s.sect_id, s) for s in structure)
-    row_info = {} # key = sect_id, val = [PresentationInfo]
-    col_info = {} # key = sect_id, val = [PresentationInfo]
+    command_info = {}
+    for c in COMMANDS:
+        # for each command, store a dictionary that is
+        # key = sect_id, val = [PresentationInfo]
+        command_info[c.name] = {}
+
     for sect_id, presinfo in styleinfo.items():
-        if sect_id.startswith(_NEWROW_PREFIX):
-            real_sect_id = sect_id[len(_NEWROW_PREFIX):]
-            sect = sect_dict.get(real_sect_id)
-            if sect is not None:
-                parent = get_parent(root, sect.node)
-                if not is_root(parent):
-                    raise BadStructure("Section \"%(name)s\" is not at the top level of "
-                                       "the document, and therefore cannot have a column "
-                                       "structure applied to it.  Please move the 'New row' "
-                                       "command to a top level element." %
-                                       dict(name=sect.name))
+        for c in COMMANDS:
+            prefix = c.name + "_"
+            if sect_id.startswith(prefix):
+                real_sect_id = sect_id[len(prefix):]
+                sect = sect_dict.get(real_sect_id)
+                if sect is not None:
+                    parent = get_parent(root, sect.node)
+                    if not is_root(parent):
+                        raise BadStructure("Section \"%(name)s\" is not at the top level of the"
+                                           " document, and therefore cannot have a column"
+                                           " structure applied to it.  Please move the"
+                                           " '%(commandname)s' command to a top level element." %
+                                           dict(name=sect.name,
+                                                commandname=c.name))
 
-                row_info[real_sect_id] = presinfo
+                command_info[c.name][real_sect_id] = presinfo
 
-        if sect_id.startswith(_NEWCOL_PREFIX):
-            real_sect_id = sect_id[len(_NEWCOL_PREFIX):]
-            sect = sect_dict.get(real_sect_id)
-            if sect is not None:
-                parent = get_parent(root, sect.node)
-                if not is_root(parent):
-                    raise BadStructure("Section \"%(name)s\" is not at the top level of "
-                                       "the document, and therefore cannot have a column "
-                                       "structure applied to it.  Please move the 'New column' "
-                                       "command to a top level element." %
-                                       dict(name=sect.name))
-                col_info[real_sect_id] = presinfo
-
-    return row_info, col_info
+    return command_info
 
 def _create_layout(root, styleinfo, structure):
     # Find the layout commands
-    row_info, col_info = _find_layout_commands(root, structure, styleinfo)
+    command_info = _find_layout_commands(root, structure, styleinfo)
+    row_info = command_info[NEWROW.name]
+    col_info = command_info[NEWCOL.name]
 
     # Build a Layout structure
 
