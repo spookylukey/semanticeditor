@@ -587,9 +587,6 @@ Layout = struct("Layout", (object,), dict(rows=list))
 LayoutRow = struct("LayoutRow", (object,), dict(columns=list, presinfo=list))
 LayoutColumn = struct("LayoutColumn", (object,), dict(nodes=list, presinfo=list))
 
-_NEWROW_PREFIX = 'newrow_'
-_NEWCOL_PREFIX = 'newcol_'
-
 def _layout_column_width(col):
     """
     Returns the logical column width of a column
@@ -873,14 +870,14 @@ def extract_presentation(html):
         if row_node is not None:
             r_classes = _get_classes_for_node(row_node)
             row_pres = set([NEWROW] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
-            pres[_NEWROW_PREFIX + si.sect_id] = row_pres
+            pres[NEWROW.name + "_" + si.sect_id] = row_pres
 
         if col_node is not None:
             c_classes = _get_classes_for_node(col_node)
             if inner_col_node is not None:
                 c_classes.extend(_get_classes_for_node(inner_col_node))
             col_pres = set([NEWCOL] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
-            pres[_NEWCOL_PREFIX + si.sect_id] = col_pres
+            pres[NEWCOL.name + "_" + si.sect_id] = col_pres
 
     _strip_presentation(root)
     out_html = _html_extract(root)
