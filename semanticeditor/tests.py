@@ -571,3 +571,14 @@ class TestHtmlCleanup(TestCase):
                               '<p id="p_1">test</p><p>test 2</p>' +
                               '<ul id="ul_1">test</ul><ul>test 2</ul>')
 
+    def test_remove_hard_spaces(self):
+        # &nbsp;
+        self.assertEqualClean('<p>&nbsp;Hello&nbsp;</p>',
+                              '<p> Hello </p>')
+        # &#160;
+        self.assertEqualClean('<p>&#160;Hello&#160;</p>',
+                              '<p> Hello </p>')
+
+        # Some unicode
+        self.assertEqualClean(u'<p>&nbsp;Frappé&nbsp;</p>',
+                              u'<p> Frapp&#233; </p>')

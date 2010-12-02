@@ -878,12 +878,20 @@ def extract_presentation(html):
 
     return (pres, out_html)
 
+def _clean_text(t):
+    return t.replace(u'\xa0', u' ')
+
 def _clean_elem(d):
     for x in ['style', 'class']:
         try:
             d.removeAttr(x)
         except KeyError:
             pass
+    for elem in d:
+        if elem.text is not None:
+            elem.text = _clean_text(elem.text)
+        if elem.tail is not None:
+            elem.tail = _clean_text(elem.tail)
 
 def _empty_text(x):
     return x is None or x.strip() == ""
