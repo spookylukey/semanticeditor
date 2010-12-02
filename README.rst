@@ -1,16 +1,19 @@
 Semantic Editor
 ===============
 
-Semantic editor is a Django CMS plugin for text editing. It allows you to edit a
-web site in a semantic way, and then assign presentation and layout details to
-each section of the text. It supports complex column layouts using a simple set
-of controls (new row, new column).
+Semantic editor is a `Django CMS <http://www.django-cms.org/>`_ plugin for
+text editing.  It allows you to edit the content of a page in a semantic
+way, and then assign presentation and layout details to each section of the
+text.  It supports complex column layouts using a simple set of controls
+(new row, new column).
 
 CSS classes are stored in the database, and can be limited to certain elements
 (p, ul, li etc) and to certain templates.
 
 This project is used as part of Arkestra by Cardiff University School of
-Medecine, who conceived of the system.
+Medicine, who conceived of the system.
+
+Screen shots can be found at https://bitbucket.org/spookylukey/semanticeditor/wiki/Home
 
 Overview
 --------
@@ -53,13 +56,6 @@ AJAX call to combine the two parts.  Note the use of the 'id' attributes are
 added to help identify what the styling information belongs to -- these will be
 removed before saving in the database.
 
-Depending on the GUI for editing the presentation info, the user may have to
-press a 'refresh' button so that they can assign presentation info to newly
-entered paragraphs and headings etc.  Newly entered paragraphs and headings will
-obviously not have the 'id' attributes, so the HTML may have to be updated at
-this point as well, so everything has an id.
-
-
 WYMeditor extensions
 --------------------
 
@@ -88,6 +84,6 @@ customisations:
 - a new django widget 'SemanticEditor' has been created that inherits from
   the django 'WYMEditor' widget in django-cms2.  This is needed so that:
 
-   - the WYMeditor 'semantic' plugin javascript file can be added to Media
-   - our editorwdiget.html template can be used.
+  - the WYMeditor 'semantic' plugin javascript file can be added to Media
+  - our editorwdiget.html template can be used.
 
