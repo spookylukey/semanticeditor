@@ -560,7 +560,9 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # Create new ET tree from layout.  The individual nodes that belong to
     # 'root' are not altered, but just added to a new tree.  This means that the
     # information in 'structure' does not need updating.
-    nodes = layout.as_nodes(layout_strategy)
+    nodes = []
+    for row in layout:
+        nodes.extend(row.as_nodes(layout_strategy))
     rendered = ET.fromstring("<html><body></body></html>")
     rendered.getchildren()[0].extend(nodes)
 
@@ -615,69 +617,59 @@ class NodeContent(object):
     def as_nodes(self, layout_strategy):
         return [self.node]
 
-# Layout contains a list of content, where content can be either ElementTree
-# nodes (wrapped in NodeContent) or LayoutRows.
-class Layout(list):
+
+# LayoutRow contains a list of columns, and a list of PresentationInfo objects
+class LayoutRow(object):
+    def __init__(self, presinfo=None):
+        if presinfo is None:
+            presinfo = []
+        self.columns = []
+        self.presinfo = presinfo
 
     def as_nodes(self, layout_strategy):
         """
         Returns layout as a list of ElementTree nodes
         """
-        root = []
-        for row in self:
-            # Row
-            logical_column_count = _layout_column_count(row)
-            actual_column_count = len(row.columns)
-            rowdiv = ET.Element('div')
-            classes = layout_strategy.row_classes(logical_column_count, actual_column_count) + _get_classes_from_presinfo(row.presinfo)
+        # Row
+        logical_column_count = _layout_column_count(self)
+        actual_column_count = len(self.columns)
+        rowdiv = ET.Element('div')
+        classes = layout_strategy.row_classes(logical_column_count, actual_column_count) + _get_classes_from_presinfo(self.presinfo)
+        if classes:
+            rowdiv.set('class', ' '.join(classes))
+
+        # Columns
+        logical_column_num = 1
+        for i, col in  enumerate(self.columns):
+            coldiv = ET.Element('div')
+            classes = layout_strategy.column_classes(logical_column_num,
+                                                     i + 1,
+                                                     logical_column_count,
+                                                     actual_column_count) + \
+                    _get_classes_from_presinfo(layout_strategy.outer_column_classes(col.presinfo))
             if classes:
-                rowdiv.set('class', ' '.join(classes))
+                coldiv.set('class', ' '.join(classes))
+            if layout_strategy.use_inner_column_div:
+                contentdiv = ET.Element('div')
+                coldiv.append(contentdiv)
+                inner_classes = _get_classes_from_presinfo(layout_strategy.inner_column_classes(col.presinfo))
+                if inner_classes:
+                    contentdiv.set('class', ' '.join(inner_classes))
+            else:
+                contentdiv = coldiv
+            for n in col.content:
+                contentdiv.extend(n.as_nodes(layout_strategy))
+            rowdiv.append(coldiv)
 
-            # Columns
-            logical_column_num = 1
-            for i, col in  enumerate(row.columns):
-                coldiv = ET.Element('div')
-                classes = layout_strategy.column_classes(logical_column_num,
-                                                         i + 1,
-                                                         logical_column_count,
-                                                         actual_column_count) + \
-                        _get_classes_from_presinfo(layout_strategy.outer_column_classes(col.presinfo))
-                if classes:
-                    coldiv.set('class', ' '.join(classes))
-                if layout_strategy.use_inner_column_div:
-                    contentdiv = ET.Element('div')
-                    coldiv.append(contentdiv)
-                    inner_classes = _get_classes_from_presinfo(layout_strategy.inner_column_classes(col.presinfo))
-                    if inner_classes:
-                        contentdiv.set('class', ' '.join(inner_classes))
-                else:
-                    contentdiv = coldiv
-                for n in col.content:
-                    contentdiv.extend(n.as_nodes(layout_strategy))
-                rowdiv.append(coldiv)
-
-                logical_column_num += _layout_column_width(col)
-            root.append(rowdiv)
-        return root
-
-# LayoutRow contains a list of columns, and a list of PresentationInfo objects
-class LayoutRow(object):
-    def __init__(self, columns=None, presinfo=None):
-        if columns is None:
-            columns = []
-        if presinfo is None:
-            presinfo = []
-        self.columns = columns
-        self.presinfo = presinfo
+            logical_column_num += _layout_column_width(col)
+        return [rowdiv]
 
 # LayoutColumn contains a list of content, and a list of PresentationInfo objects.
 class LayoutColumn(object):
-    def __init__(self, content=None, presinfo=None):
-        if content is None:
-            content = Layout()
+    def __init__(self, presinfo=None):
         if presinfo is None:
             presinfo = []
-        self.content = content
+        self.content = []
         self.presinfo = presinfo
 
 
@@ -745,12 +737,11 @@ def _create_layout(root, styleinfo, structure):
 
     # We put everything inside a Row and Column, even if there is
     # only one column.
-    layout = Layout()
+    layout = []
     row = LayoutRow()
     col = LayoutColumn()
-    innerlayout = None
-    innercol = None
     innerrow = None
+    innercol = None
     sect_dict = dict((si.node, si) for si in structure)
 
     # Build Layout
@@ -767,12 +758,9 @@ def _create_layout(root, styleinfo, structure):
                 # We have a NEWROW against si.sect_id
 
                 # Finish any inner rows/columns
-                if innercol is not None and innercol.content:
+                if innercol is not None:
                     innerrow.columns.append(innercol)
-                    if innerrow.columns:
-                        innerlayout.append(innerrow)
-                    col.content.append(innerlayout)
-                    innerlayout = None
+                    col.content.append(innerrow)
                     innercol = None
                     innerrow = None
 
@@ -792,11 +780,9 @@ def _create_layout(root, styleinfo, structure):
                 # We have NEWCOL against si.sect_id
 
                 # Finish any inner rows/columns
-                if innercol is not None and innercol.content:
+                if innercol is not None:
                     innerrow.columns.append(innercol)
-                    if innerrow.columns:
-                        innerlayout.append(innerrow)
-                    col.content.append(innerlayout)
+                    col.content.append(innerrow)
                     innerlayout = None
                     innercol = None
                     innerrow = None
@@ -812,15 +798,14 @@ def _create_layout(root, styleinfo, structure):
                 # We have a NEWINNERROW against si.sect_id
 
                 # Finish current col and row, if they have anything in them
-                if innerlayout is None:
-                    innerlayout = Layout()
+                if innerrow is None:
                     innerrow = LayoutRow()
                     innercol = LayoutColumn()
                 else:
                     if innercol.content:
                         innerrow.columns.append(innercol)
                     if innerrow.columns:
-                        innerlayout.append(innerrow)
+                        col.content.append(innerrow)
 
                     # Start new inner row
                     innerrow = LayoutRow(innerrow_presinfo)
@@ -832,10 +817,9 @@ def _create_layout(root, styleinfo, structure):
                 # We have NEWINNERCOL against si.sect_id
 
                 # Finish current col, if it is non-empty
-                if innerlayout is None:
+                if innerrow is None:
                     # This could occur if there an NEWINNERROW command was
                     # missing.
-                    innerlayout = Layout()
                     innerrow = LayoutRow()
                     innercol = LayoutColumn()
                 elif innercol.content:
@@ -850,11 +834,9 @@ def _create_layout(root, styleinfo, structure):
             col.content.append(NodeContent(node))
 
     # Finish any inner rows/columns
-    if innercol is not None and innercol.content:
+    if innercol is not None:
         innerrow.columns.append(innercol)
-        if innerrow.columns:
-            innerlayout.append(innerrow)
-        col.content.append(innerlayout)
+        col.content.append(innerrow)
 
     # Close last col and row
     if col.content:
