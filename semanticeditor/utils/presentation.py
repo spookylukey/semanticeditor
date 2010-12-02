@@ -607,21 +607,13 @@ def _sanitise_styleinfo(styleinfo, sect_ids):
 
 #### Layout related ####
 
-# Some dumb container structures
-class Content(object):
-    def as_nodes(self):
-        """
-        Returns as list of ElementTree nodes
-        """
-        raise NotImplemented()
-
+# Simple wrapper for nodes to provide as_nodes() method.
 class NodeContent(object):
     def __init__(self, node):
         self.node = node
 
     def as_nodes(self):
         return [self.node]
-
 
 # Layout contains a list of content, where content can be either ElementTree
 # nodes or LayoutRows.
