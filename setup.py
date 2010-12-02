@@ -16,9 +16,9 @@ setup(
     packages = find_packages(),
     classifiers = [
         'Development Status :: 4 - Beta',
-        'Environment :: Console',
+        'Environment :: Web Environment',
         'Framework :: Django',
-        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
