@@ -318,13 +318,6 @@ NEWROW = PresentationCommand('newrow',
 <p>This must be used in conjunction with 'New column'
 to create a column layout.</p>
 
-<p>Please note that new rows and columns cannot be started at any
-point in the document.  Within a given row, new columns can only be
-started on section headings of the same level.  The 'New row' command
-must be applied to the first section heading for which a column layout
-is required and subsequent headings of the same level may be given
-a 'New column' command.</p>
-
 <p>If you wish to stop an existing column layout for a section, then you will
 need to apply a 'New row' command to that section, creating a row with
 just one column in it.</p>
