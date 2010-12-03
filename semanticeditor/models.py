@@ -19,7 +19,8 @@ class CssClass(models.Model):
 
     allowed_elements = models.CharField("Allowed HTML elements", max_length=255,
                                         help_text="A space separated list of HTML "
-                                        "element names.  Use 'newrow' or 'newcol' to indicate "
+                                        "element names.  Use 'newrow'/'newcol'/"
+                                        "'innerrow'/'innercol' to indicate "
                                         "it can be applied to layout rows or columns ",
                                         default="h1 h2 h3 h4 h5 h6 p blockquote ul ol li newrow newcol")
 

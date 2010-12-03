@@ -354,7 +354,7 @@ command has been used to start a set of columns.</p>
 
 """)
 
-NEWINNERROW = PresentationCommand('newinnerrow',
+NEWINNERROW = PresentationCommand('innerrow',
                                   verbose_name="Inner row",
                                   description="""
 <p>Use this command to start a nested, inner row within an existing column
@@ -366,7 +366,7 @@ to create a column layout.</p>
 """
                                   )
 
-NEWINNERCOL = PresentationCommand('newinnercol',
+NEWINNERCOL = PresentationCommand('innercol',
                                   verbose_name="Inner column",
                                   description="""
 <p>Use this command to start a new inner column, after an 'Inner row' command

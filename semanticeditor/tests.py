@@ -269,8 +269,8 @@ class TestFormat(TestCase):
         #   - 2 columns
         pres = {'newrow_h1_1':[NEWROW],
                 'newcol_h1_2':[NEWCOL],
-                'newinnerrow_h1_3':[NEWINNERROW],
-                'newinnercol_h1_4':[NEWINNERCOL],
+                'innerrow_h1_3':[NEWINNERROW],
+                'innercol_h1_4':[NEWINNERCOL],
                 'newcol_h1_5':[NEWCOL],
                 'newrow_h1_6':[NEWROW],
                 'newcol_h1_7':[NEWCOL],
@@ -319,8 +319,8 @@ class TestFormat(TestCase):
         #     - 2 columns
         pres = {'newrow_h1_1':[NEWROW],
                 'newcol_h1_2':[NEWCOL],
-                'newinnerrow_h1_3':[NEWINNERROW],
-                'newinnercol_h1_4':[NEWINNERCOL],
+                'innerrow_h1_3':[NEWINNERROW],
+                'innercol_h1_4':[NEWINNERCOL],
                 }
         outh = ('<div class="row columns2">'
                   '<div class="column firstcolumn">'
@@ -351,8 +351,8 @@ class TestFormat(TestCase):
         self.assertRaises(TooManyColumns, format_html, html,
                           {'newrow_h1_1':[NEWROW],
                            'newcol_h1_1':[NEWCOL],
-                           'newinnerrow_h1_1':[NEWINNERROW],
-                           'newinnercol_h1_2':[NEWINNERCOL],
+                           'innerrow_h1_1':[NEWINNERROW],
+                           'innercol_h1_2':[NEWINNERCOL],
                            'newcol_h1_3':[NEWCOL],
                            'newcol_h1_4':[NEWCOL],
                            'newcol_h1_5':[NEWCOL],
@@ -588,9 +588,9 @@ class TestExtractPresentation(TestCase):
         pres = {'newrow_h1_1':set([NEWROW]),
                 'newcol_h1_1':set([NEWCOL]),
                 'newcol_h1_2':set([NEWCOL]),
-                'newinnerrow_h1_3':set([NEWINNERROW]),
-                'newinnercol_h1_3':set([NEWINNERCOL]),
-                'newinnercol_h1_4':set([NEWINNERCOL]),
+                'innerrow_h1_3':set([NEWINNERROW]),
+                'innercol_h1_3':set([NEWINNERCOL]),
+                'innercol_h1_4':set([NEWINNERCOL]),
                 'newcol_h1_5':set([NEWCOL]),
                 'newrow_h1_6':set([NEWROW]),
                 'newcol_h1_6':set([NEWCOL]),
