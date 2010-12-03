@@ -581,6 +581,60 @@ class TestExtractPresentation(TestCase):
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
 
+    def test_extract_nested_layout(self):
+        """
+        Tests that we can properly extract a layout created using inner rows/columns.
+        """
+        pres = {'newrow_h1_1':set([NEWROW]),
+                'newcol_h1_1':set([NEWCOL]),
+                'newcol_h1_2':set([NEWCOL]),
+                'newinnerrow_h1_3':set([NEWINNERROW]),
+                'newinnercol_h1_3':set([NEWINNERCOL]),
+                'newinnercol_h1_4':set([NEWINNERCOL]),
+                'newcol_h1_5':set([NEWCOL]),
+                'newrow_h1_6':set([NEWROW]),
+                'newcol_h1_6':set([NEWCOL]),
+                'newcol_h1_7':set([NEWCOL]),
+                'h1_1':set([]),
+                'h1_2':set([]),
+                'h1_3':set([]),
+                'h1_4':set([]),
+                'h1_5':set([]),
+                'h1_6':set([]),
+                'h1_7':set([]),
+                }
+        html = ('<div class="row columns3">'
+                  '<div class="column firstcolumn">'
+                    '<div><h1>1</h1></div>'
+                  '</div>'
+                  '<div class="column">'
+                    '<div>'
+                      '<h1>2</h1>'
+                      '<div class="row columns2">'
+                        '<div class="column firstcolumn">'
+                          '<div><h1>3</h1></div>'
+                        '</div>'
+                        '<div class="column lastcolumn">'
+                          '<div><h1>4</h1></div>'
+                        '</div>'
+                      '</div>'
+                    '</div>'
+                  '</div>'
+                  '<div class="column lastcolumn">'
+                      '<div><h1>5</h1></div>'
+                  '</div>'
+                '</div>'
+                '<div class="row columns2">'
+                  '<div class="column firstcolumn">'
+                    '<div><h1>6</h1></div>'
+                  '</div>'
+                  '<div class="column lastcolumn">'
+                    '<div><h1>7</h1></div>'
+                  '</div>'
+                '</div>'
+                )
+        pres2, html2 = extract_presentation(html)
+        self.assertEqual(pres, pres2)
 
 class TestHtmlCleanup(TestCase):
     safari_example_1 = """

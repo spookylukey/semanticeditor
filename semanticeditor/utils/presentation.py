@@ -874,6 +874,23 @@ def _create_preview(node, structure, known_nodes):
             else:
                 node.remove(n)
 
+def _count_row_divs(root, node, layout_strategy):
+    """
+    Counts the number of divs from root to node that are divs for layout rows
+    """
+    # Get the path from root to node.
+    # This algorithmically bad, but probably fast enough.
+
+    count = 0
+    p = node
+    while p is not root:
+        p = get_parent(root, p)
+        p_classes = _get_classes_for_node(p)
+        if any(layout_strategy.is_row_class(c) for c in p_classes):
+            count += 1
+
+    return count
+
 def _find_row_col_divs(root, node, layout_strategy):
     """
     Finds the row and column divs that a node belongs to.
@@ -963,20 +980,35 @@ def extract_presentation(html):
         # Try to find 'row' and 'column' divs that this node belongs to.
         # Columns can have inner divs for styling purposes.  Some CSS classes
         # will be applied to the outer column div, some to the inner column div.
-
         row_node, col_node, inner_col_node = _find_row_col_divs(root, si.node, layout_strategy)
 
-        if row_node is not None:
-            r_classes = _get_classes_for_node(row_node)
-            row_pres = set([NEWROW] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
-            pres[NEWROW.prefix + si.sect_id] = row_pres
+        # To know whether it is new/row col or *inner* row/col, we count the
+        # number of levels of row divs.
+        count_row_divs = _count_row_divs(root, si.node, layout_strategy)
 
+        # New row
+        if row_node is not None:
+            if count_row_divs > 1:
+                command = NEWINNERROW
+            else:
+                command = NEWROW
+
+            r_classes = _get_classes_for_node(row_node)
+            row_pres = set([command] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
+            pres[command.prefix + si.sect_id] = row_pres
+
+        # New column
         if col_node is not None:
+            if count_row_divs > 1:
+                command = NEWINNERCOL
+            else:
+                command = NEWCOL
+
             c_classes = _get_classes_for_node(col_node)
             if inner_col_node is not None:
                 c_classes.extend(_get_classes_for_node(inner_col_node))
-            col_pres = set([NEWCOL] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
-            pres[NEWCOL.prefix + si.sect_id] = col_pres
+            col_pres = set([command] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
+            pres[command.prefix + si.sect_id] = col_pres
 
     _strip_presentation(root)
     out_html = _html_extract(root)
