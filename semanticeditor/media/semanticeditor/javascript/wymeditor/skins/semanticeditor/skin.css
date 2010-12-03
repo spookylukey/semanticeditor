@@ -250,16 +250,16 @@
 	    margin-bottom: 3px; */
 	}
 
-	.previewbox .columns2 .column {
+	.previewbox .columns2 > .column {
 	    float: left;
 	    width: 50%;
 	}
 
-	.previewbox .columns3 .column {
+	.previewbox .columns3 > .column {
 	    float: left;
 	    width: 33%;
 	}
-	.previewbox .columns4 .column {
+	.previewbox .columns4 > .column {
 	    float: left;
 	    width: 25%;
 	}
