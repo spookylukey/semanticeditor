@@ -469,9 +469,10 @@ def get_structure(root, assert_structure=False):
                                                     "heading, which was H%d." %
                                                     first_heading_level)
 
+                    if name == "":
+                        name = "?"
                     if name in heading_names:
-                        raise IncorrectHeadings('There are duplicate headings with the name'
-                                                ' "%s".' % name)
+                        name = _find_next_available_name(name, heading_names)
 
                     # Headings should decrease or monotonically increase
                     if len(heading_names) > 0 and level > last_heading_num + 1:
@@ -483,7 +484,10 @@ def get_structure(root, assert_structure=False):
                 heading_names.add(name)
             else:
                 name = text[0:BLOCK_LEVEL_TRIM_LENGTH]
-                name = name + "..."
+                if name == '':
+                    name = '?'
+                else:
+                    name = name + "..."
                 if name in names:
                     name = _find_next_available_name(name, names)
                 names.add(name)

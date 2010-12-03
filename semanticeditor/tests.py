@@ -49,9 +49,6 @@ class TestExtractStructure(TestCase):
     def test_rejects_improper_headings(self):
         self.assertRaises(IncorrectHeadings, extract_structure, "<h1>Hello</h1><h3>Bad heading</h3>")
 
-    def test_rejects_duplicate_headings(self):
-        self.assertRaises(IncorrectHeadings, extract_structure, "<h1>Hello</h1><h2>Hello</h2>")
-
     def test_use_existing_sect_ids(self):
         html = "<h1 id='h1_10'>Hi</h1><h1>There</h1>"
         structure = get_structure(parse(html))
