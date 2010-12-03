@@ -784,7 +784,7 @@ def _create_layout(root, styleinfo, structure):
                         raise BadStructure('Section "%(sect)s" has command "%(command)s" '
                                            'but there needs to be a "%(lowercommand)s" '
                                            'command first.' %
-                                           dict(sect=si.sect_id,
+                                           dict(sect=si.name,
                                                 command=command_name,
                                                 lowercommand=commands[command_level-1])
                                            )
