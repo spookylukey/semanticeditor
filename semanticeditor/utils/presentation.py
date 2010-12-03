@@ -877,11 +877,11 @@ def _create_preview(node, structure, known_nodes):
     if children and children[0].tag == 'body':
         children = children[0].getchildren()
     for n in children:
-        if n.tag == 'div':
+        if n.tag == 'div' and n not in known_nodes:
             _create_preview(n, structure, known_nodes)
         else:
             sect = known_nodes.get(n)
-            if sect is not None and (n.tag in blockdef):
+            if sect is not None and (n.tag in blockdef or n.tag == 'div'):
                 n.set('class', 'structural ' + "tag" + n.tag.lower())
                 n.tag = "div"
                 n[:] = []
