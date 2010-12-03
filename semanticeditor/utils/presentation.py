@@ -556,7 +556,8 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
 
     # Create layout from row/column commands
     layout = _create_layout(root, styleinfo, structure)
-    _check_layout(layout, structure, layout_strategy)
+    for c in layout.content:
+        _check_layout(c, structure, layout_strategy)
     # Create new ET tree from layout.  The individual nodes that belong to
     # 'root' are not altered, but just added to a new tree.  This means that the
     # information in 'structure' does not need updating.
@@ -627,12 +628,18 @@ class LayoutRow(object):
         self.content = []
         self.presinfo = presinfo
 
+    def column_count(self):
+        """
+        Get the number of logical columns.
+        """
+        return sum(_layout_column_width(c) for c in self.content)
+
     def as_nodes(self, layout_strategy):
         """
         Returns layout as a list of ElementTree nodes
         """
         # Row
-        logical_column_count = _layout_column_count(self)
+        logical_column_count = self.column_count()
         actual_column_count = len(self.content)
         rowdiv = ET.Element('div')
         classes = layout_strategy.row_classes(logical_column_count, actual_column_count) + _get_classes_from_presinfo(self.presinfo)
@@ -673,6 +680,11 @@ class LayoutColumn(object):
         self.content = []
         self.presinfo = presinfo
 
+# Simple container for whole layout.
+class Layout(object):
+    def __init__(self):
+        self.content = []
+
 
 def _layout_column_width(col):
     """
@@ -685,12 +697,6 @@ def _layout_column_width(col):
         return column_equivs[0]
     else:
         return 1
-
-def _layout_column_count(row):
-    """
-    Get the number of logical columns in a LayoutRow
-    """
-    return sum(_layout_column_width(c) for c in row.content)
 
 def is_root(node):
     return node.tag == 'html' or node.tag == 'body'
@@ -731,8 +737,7 @@ def _create_layout(root, styleinfo, structure):
     command_info = _find_layout_commands(root, structure, styleinfo)
 
     # Build a Layout structure.
-    # a column is fine for a top level container, as it has a 'contents' attribute
-    layout = LayoutColumn()
+    layout = Layout()
 
     # Get nodes
     nodes = root.getchildren()
@@ -822,33 +827,39 @@ def _trim_empty_layout(layout):
             else:
                 _trim_empty_layout(l)
 
-def _check_layout(layout, structure, layout_strategy):
-    sect_dict = dict((si.node, si) for si in structure)
+def _check_layout(row, structure, layout_strategy, sect_dict=None):
+    if sect_dict is None:
+        sect_dict = dict((si.node, si) for si in structure)
     max_cols = layout_strategy.max_columns
-    for row in layout.content:
-        # Cope with NodeContent:
-        if not hasattr(row, 'content'):
-            continue
-        # TODO - need to check nested layout structures
 
-        if _layout_column_count(row) > max_cols:
-            # Because columns can be multiple width, we can't easily work out
-            # which column needs to be moved, so just refer user to whole
-            # section.
+    # Cope with NodeContent:
+    if not hasattr(row, 'content'):
+        return
 
-            nodes = row.content[0].content[0].as_nodes(layout_strategy)
-            while True:
-                # nodes[0] might be a div created for layout.  If so, it won't
-                # be in sect_dict. But one of its children will be.
-                sect = sect_dict.get(nodes[0], None)
-                if sect is not None:
-                    break
-                else:
-                    nodes = nodes[0]
+    if row.column_count() > max_cols:
+        # Because columns can be multiple width, we can't easily work out
+        # which column needs to be moved, so just refer user to whole
+        # section.
 
-            raise TooManyColumns("The maximum number of columns is %(max)d. "
-                                 "Please adjust columns in section '%(name)s'." %
-                                 dict(max=max_cols, name=sect.name))
+        nodes = row.content[0].content[0].as_nodes(layout_strategy)
+        while True:
+            # nodes[0] might be a div created for layout.  If so, it won't
+            # be in sect_dict. But one of its children will be.
+            sect = sect_dict.get(nodes[0], None)
+            if sect is not None:
+                break
+            else:
+                nodes = nodes[0]
+
+        raise TooManyColumns("The maximum number of columns is %(max)d. "
+                             "Please adjust columns in section '%(name)s'." %
+                             dict(max=max_cols, name=sect.name))
+
+    for col in row.content:
+        # Check nested layouts.
+        for content in col.content:
+            _check_layout(content, structure, layout_strategy, sect_dict=sect_dict)
+
 
 def preview_html(html, pres):
     root, structure = format_html(html, pres, return_tree=True)

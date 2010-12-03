@@ -359,6 +359,22 @@ class TestFormat(TestCase):
                            'newcol_h1_6':[NEWCOL],
                            })
 
+    def test_max_cols_nested_2(self):
+        """
+        Tests TooManyColumns is raised when the nested layout has too many columns
+        """
+        html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1><h1>6</h1>"
+        self.assertRaises(TooManyColumns, format_html, html,
+                          {'newrow_h1_1':[NEWROW],
+                           'newcol_h1_1':[NEWCOL],
+                           'innerrow_h1_1':[NEWINNERROW],
+                           'innercol_h1_2':[NEWINNERCOL],
+                           'innercol_h1_3':[NEWINNERCOL],
+                           'innercol_h1_4':[NEWINNERCOL],
+                           'innercol_h1_5':[NEWINNERCOL],
+                           'newcol_h1_6':[NEWCOL],
+                           })
+
 
     def test_format_pre(self):
         html = "<pre>This\r\nis\r\na\r\ntest</pre>"
