@@ -543,7 +543,7 @@ PresentationControls.prototype.insertCommandBlock = function(sectId, command) {
         elem = elem.prev();
     }
     // Inner row should appear before inner col
-    if (elem.prev().is("p.newinnercol") && command.name == 'newinnerrow') {
+    if (elem.prev().is("p.innercol") && command.name == 'innerrow') {
         elem = elem.prev();
     }
     elem.before(newelem);
