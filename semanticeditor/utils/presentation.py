@@ -561,8 +561,9 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
     # 'root' are not altered, but just added to a new tree.  This means that the
     # information in 'structure' does not need updating.
     nodes = []
-    for row in layout:
-        nodes.extend(row.as_nodes(layout_strategy))
+
+    for content in layout.content:
+        nodes.extend(content.as_nodes(layout_strategy))
     rendered = ET.fromstring("<html><body></body></html>")
     rendered.getchildren()[0].extend(nodes)
 
@@ -588,7 +589,7 @@ def format_html(html, styleinfo, return_tree=False, pretty_print=False):
 def _html_extract(root):
     if len(root) == 0 and root.text is None and root.tail is None:
         return ''
-    return ET.tostring(root).replace('<html>', '').replace('</html>', '').replace('<body>', '').replace('</body>', '').replace("<head/>", "").replace("&#13;", "\r")
+    return ET.tostring(root).replace('<html>', '').replace('</html>', '').replace('<body>', '').replace('</body>', '').replace('<body/>','').replace("<head/>", "").replace("&#13;", "\r")
 
 def _strip_presentation(tree):
     cleanup(tree, lambda t: t.tag == 'div')
@@ -623,7 +624,7 @@ class LayoutRow(object):
     def __init__(self, presinfo=None):
         if presinfo is None:
             presinfo = []
-        self.columns = []
+        self.content = []
         self.presinfo = presinfo
 
     def as_nodes(self, layout_strategy):
@@ -632,7 +633,7 @@ class LayoutRow(object):
         """
         # Row
         logical_column_count = _layout_column_count(self)
-        actual_column_count = len(self.columns)
+        actual_column_count = len(self.content)
         rowdiv = ET.Element('div')
         classes = layout_strategy.row_classes(logical_column_count, actual_column_count) + _get_classes_from_presinfo(self.presinfo)
         if classes:
@@ -640,7 +641,7 @@ class LayoutRow(object):
 
         # Columns
         logical_column_num = 1
-        for i, col in  enumerate(self.columns):
+        for i, col in  enumerate(self.content):
             coldiv = ET.Element('div')
             classes = layout_strategy.column_classes(logical_column_num,
                                                      i + 1,
@@ -689,7 +690,7 @@ def _layout_column_count(row):
     """
     Get the number of logical columns in a LayoutRow
     """
-    return sum(_layout_column_width(c) for c in row.columns)
+    return sum(_layout_column_width(c) for c in row.content)
 
 def is_root(node):
     return node.tag == 'html' or node.tag == 'body'
@@ -728,133 +729,114 @@ def _find_layout_commands(root, structure, styleinfo):
 def _create_layout(root, styleinfo, structure):
     # Find the layout commands
     command_info = _find_layout_commands(root, structure, styleinfo)
-    row_info = command_info[NEWROW.name]
-    col_info = command_info[NEWCOL.name]
-    innerrow_info = command_info[NEWINNERROW.name]
-    innercol_info = command_info[NEWINNERCOL.name]
 
-    # Build a Layout structure
+    # Build a Layout structure.
+    # a column is fine for a top level container, as it has a 'contents' attribute
+    layout = LayoutColumn()
 
-    # We put everything inside a Row and Column, even if there is
-    # only one column.
-    layout = []
-    row = LayoutRow()
-    col = LayoutColumn()
-    innerrow = None
-    innercol = None
+    # Get nodes
+    nodes = root.getchildren()
+    if nodes and nodes[0].tag == 'body':
+        nodes = nodes[0].getchildren()
+
     sect_dict = dict((si.node, si) for si in structure)
 
-    # Build Layout
-    children = root.getchildren()
-    if children and children[0].tag == 'body':
-        children = children[0].getchildren()
+    # Now build a layout. At each point, we need to:
+    # - append nodes to current container
+    # - keep track of all containers, so we can respond to new row/column commands.
+    commands = [
+        NEWROW.name,
+        NEWCOL.name,
+        NEWINNERROW.name,
+        NEWINNERCOL.name,
+    ]
+    structs = [
+        LayoutRow,
+        LayoutColumn,
+        LayoutRow,
+        LayoutColumn
+        ]
 
-    for node in children:
+    containers = [layout]
+    current_level = -1
+
+    for node in nodes:
         si = sect_dict.get(node)
-
         if si:
-            row_presinfo = row_info.get(si.sect_id)
-            if row_presinfo is not None:
-                # We have a NEWROW against si.sect_id
+            for command_name in commands:
+                presinfo = command_info[command_name].get(si.sect_id)
+                if presinfo is not None:
+                    # We have the command.
 
-                # Finish any inner rows/columns
-                if innercol is not None:
-                    innerrow.columns.append(innercol)
-                    col.content.append(innerrow)
-                    innercol = None
-                    innerrow = None
+                    # First, need to work out what level it is on:
+                    command_level = commands.index(command_name)
 
-                # Finish current col and row, if they have anything in them
-                if col.content:
-                    row.columns.append(col)
-                if row.columns:
-                    layout.append(row)
-                # Start new row with styles
-                row = LayoutRow(presinfo=row_presinfo)
-                # Start new col
-                col = LayoutColumn()
+                    if command_level > current_level + 1:
+                        raise BadStructure('Section "%(sect)s" has command "%(command)s" '
+                                           'but there needs to be a "%(lowercommand)s" '
+                                           'command first.' %
+                                           dict(sect=si.sect_id,
+                                                command=command_name,
+                                                lowercommand=commands[command_level-1])
+                                           )
 
+                    if command_level <= current_level:
+                        # Need to pop of list of containers so that the next
+                        # container goes on the right parent.
 
-            col_presinfo = col_info.get(si.sect_id)
-            if col_presinfo is not None:
-                # We have NEWCOL against si.sect_id
+                        # Pop as many containers as necessary
+                        for i in xrange(current_level - command_level + 1):
+                            containers.pop()
 
-                # Finish any inner rows/columns
-                if innercol is not None:
-                    innerrow.columns.append(innercol)
-                    col.content.append(innerrow)
-                    innerlayout = None
-                    innercol = None
-                    innerrow = None
+                    # Make new container
+                    struct = structs[command_level]
+                    layout_container = struct(presinfo=presinfo)
+                    containers[-1].content.append(layout_container)
+                    containers.append(layout_container)
 
-                # Finish current col, if it is non-empty
-                if col.content:
-                    row.columns.append(col)
-                # Start new col with styles
-                col = LayoutColumn(presinfo=col_presinfo)
+                    current_level = command_level
 
-            innerrow_presinfo = innerrow_info.get(si.sect_id)
-            if innerrow_presinfo is not None:
-                # We have a NEWINNERROW against si.sect_id
+        # Deal with the nodes
+        if isinstance(containers[-1], LayoutRow):
+            # can't append content to this. We need a column, but none
+            # has been added, so we do it manually.
+            current_level += 1
+            struct = structs[current_level]
+            layout_container = struct()
+            containers[-1].content.append(layout_container)
+            containers.append(layout_container)
 
-                # Finish current col and row, if they have anything in them
-                if innerrow is None:
-                    innerrow = LayoutRow()
-                    innercol = LayoutColumn()
-                else:
-                    if innercol.content:
-                        innerrow.columns.append(innercol)
-                    if innerrow.columns:
-                        col.content.append(innerrow)
+        containers[-1].content.append(NodeContent(node))
 
-                    # Start new inner row
-                    innerrow = LayoutRow(innerrow_presinfo)
-                    # Start new inner column
-                    innercol = LayoutColumn()
-
-            innercol_presinfo = innercol_info.get(si.sect_id)
-            if innercol_presinfo is not None:
-                # We have NEWINNERCOL against si.sect_id
-
-                # Finish current col, if it is non-empty
-                if innerrow is None:
-                    # This could occur if there an NEWINNERROW command was
-                    # missing.
-                    innerrow = LayoutRow()
-                    innercol = LayoutColumn()
-                elif innercol.content:
-                    innerrow.columns.append(innercol)
-                # Start new col with styles
-                innercol = LayoutColumn(presinfo=innercol_presinfo)
-
-        # Now deal with content itself
-        if innercol is not None:
-            innercol.content.append(NodeContent(node))
-        else:
-            col.content.append(NodeContent(node))
-
-    # Finish any inner rows/columns
-    if innercol is not None:
-        innerrow.columns.append(innercol)
-        col.content.append(innerrow)
-
-    # Close last col and row
-    if col.content:
-        row.columns.append(col)
-    layout.append(row)
+    # Need to remove empty layout structures.
+    _trim_empty_layout(layout)
 
     return layout
+
+def _trim_empty_layout(layout):
+    for i, l in reversed(list(enumerate(layout.content))):
+        if hasattr(l, 'content'):
+            if not l.content:
+                # l has nothing, so remove from parent.
+                layout.content[i:i+1] = []
+            else:
+                _trim_empty_layout(l)
 
 def _check_layout(layout, structure, layout_strategy):
     sect_dict = dict((si.node, si) for si in structure)
     max_cols = layout_strategy.max_columns
-    for row in layout:
+    for row in layout.content:
+        # Cope with NodeContent:
+        if not hasattr(row, 'content'):
+            continue
+        # TODO - need to check nested layout structures
+
         if _layout_column_count(row) > max_cols:
             # Because columns can be multiple width, we can't easily work out
             # which column needs to be moved, so just refer user to whole
             # section.
 
-            nodes = row.columns[0].content[0].as_nodes(layout_strategy)
+            nodes = row.content[0].content[0].as_nodes(layout_strategy)
             while True:
                 # nodes[0] might be a div created for layout.  If so, it won't
                 # be in sect_dict. But one of its children will be.

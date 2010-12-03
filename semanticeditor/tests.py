@@ -95,15 +95,15 @@ class TestFormat(TestCase):
         super(TestCase, self).tearDown()
 
     def test_remove_command_divs(self):
-        self.assertEqual('<div class="row"><div><div><p>Test</p></div></div></div>', format_html('<div class="newrow">* </div><p>Test</p>', {}))
-        self.assertEqual('<div class="row"><div><div><p>Test</p></div></div></div>', format_html('<p class="newrow">* </p><p>Test</p>', {}))
+        self.assertEqual('<p>Test</p>', format_html('<div class="newrow">* </div><p>Test</p>', {}))
+        self.assertEqual('<p>Test</p>', format_html('<p class="newrow">* </p><p>Test</p>', {}))
 
     def test_empty(self):
-        self.assertEqual('<div class="row"/>', format_html('', {}));
+        self.assertEqual('', format_html('', {}));
 
     def test_no_headings(self):
         html = '<p>Test</p>'
-        outh = '<div class="row"><div><div><p>Test</p></div></div></div>'
+        outh = '<p>Test</p>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_unknown_block_elements(self):
@@ -112,17 +112,17 @@ class TestFormat(TestCase):
         know about
         """
         html = '<foo>Test</foo>'
-        outh = '<div class="row"><div><div><foo>Test</foo></div></div></div>'
+        outh = '<foo>Test</foo>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_existing_divs(self):
         html = "<div><foo><bar><fribble><div><div>Some text <p>para</p> some more</div><div> more <span> of </span> this stuff </div></div></fribble></bar></foo></div>"
-        outh = '<div class="row"><div><div><p><foo><bar><fribble><p>Some text para some more more  of  this stuff </p></fribble></bar></foo></p></div></div></div>'
+        outh = '<p><foo><bar><fribble><p>Some text para some more more  of  this stuff </p></fribble></bar></foo></p>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_add_css_classes(self):
         html = "<h1>Hello <em>you</em></h1><h2>Hi</h2>"
-        outh = '<div class="row"><div><div><h1 class=\"myclass\">Hello <em>you</em></h1><h2 class=\"c1 c2\">Hi</h2></div></div></div>'
+        outh = '<h1 class=\"myclass\">Hello <em>you</em></h1><h2 class=\"c1 c2\">Hi</h2>'
         self.assertEqual(outh, format_html(html, {'h1_1':[PC('myclass')],
                                                   'h2_1':[PC('c1'), PC('c2')]}))
 
@@ -195,14 +195,8 @@ class TestFormat(TestCase):
             "<h1>4</h1>"
 
         outh = \
-            "<div class=\"row\">" \
-            "<div>" \
-            "<div>" \
             "<h1>1</h1>" \
             "<h1>2</h1>" \
-            "</div>" \
-            "</div>" \
-            "</div>" \
             "<div class=\"row columns2\">" \
             "<div class=\"column firstcolumn\">" \
             "<div>" \
@@ -256,7 +250,7 @@ class TestFormat(TestCase):
     def test_columns_single_col(self):
         html = "<h1>1</h1><p>para 1</p><h2>2</h2>"
         outh = "<div class=\"row\"><div><div><h1>1</h1><p>para 1</p><h2>2</h2></div></div></div>"
-        self.assertEqual(outh, format_html(html, {'h1_1':[NEWROW]}))
+        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW]}))
 
     def test_nested_layout(self):
         html = ("<h1>1</h1>"
@@ -356,6 +350,7 @@ class TestFormat(TestCase):
         html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1><h1>6</h1>"
         self.assertRaises(TooManyColumns, format_html, html,
                           {'newrow_h1_1':[NEWROW],
+                           'newcol_h1_1':[NEWCOL],
                            'newinnerrow_h1_1':[NEWINNERROW],
                            'newinnercol_h1_2':[NEWINNERCOL],
                            'newcol_h1_3':[NEWCOL],
@@ -379,7 +374,7 @@ class TestHacks(TestCase):
         Check that we can convert 'p' tags into 'div' using the 'div' class hack
         """
         html = '<p>Test</p>'
-        outh = '<div class=\"row\"><div><div><div class="div">Test</div></div></div></div>'
+        outh = '<div class="div">Test</div>'
         self.assertEqual(outh, format_html(html, {'p_1':[PC('div')]}))
 
     def test_div_extract_hack(self):
@@ -400,7 +395,7 @@ class TestHacks(TestCase):
         # represented by an image in the editor.  Our code has to run before
         # these are converted, so we have to work with this implementation detail.
         html = '<p> <img src="blah" id="plugin_obj_123"/></p>'
-        outh = '<div class="row"><div><div><div class="div"> <img src="blah" id="plugin_obj_123"/></div></div></div></div>'
+        outh = '<div class="div"> <img src="blah" id="plugin_obj_123"/></div>'
         self.assertEqual(outh, format_html(html, {}))
 
     def test_plugin_p_hack_empty_only(self):
@@ -408,10 +403,10 @@ class TestHacks(TestCase):
         Check that if 'p' has any text in it, it is not converted
         """
         html = '<p>X <img src="blah" id="plugin_obj_123" /></p>'
-        outh = '<div class="row"><div><div><p>X <img src="blah" id="plugin_obj_123"/></p></div></div></div>'
+        outh = '<p>X <img src="blah" id="plugin_obj_123"/></p>'
         self.assertEqual(outh, format_html(html, {}))
         html2 = '<p> <img src="blah" id="plugin_obj_123" />X</p>'
-        outh2 = '<div class="row"><div><div><p> <img src="blah" id="plugin_obj_123"/>X</p></div></div></div>'
+        outh2 = '<p> <img src="blah" id="plugin_obj_123"/>X</p>'
         self.assertEqual(outh2, format_html(html2, {}))
 
 
