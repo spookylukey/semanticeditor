@@ -108,7 +108,14 @@ def PI_to_dict(pi):
     Converts a PresentationInfo to a dictionary
     for use client side
     """
-    return pi.__dict__
+    d = {}
+    # We need to filter out things that are server side only and can't be
+    # turned into JSON.
+    allowed = set([str, unicode, int, bool, dict, list])
+    for k, v in pi.__dict__.items():
+        if type(v) in allowed:
+            d[k] = v
+    return d
 
 def dict_to_PI(d, classes):
     """

@@ -542,19 +542,26 @@ PresentationControls.prototype.commandBlockId = function(sectId, command) {
 };
 
 PresentationControls.prototype.insertCommandBlock = function(sectId, command) {
-    // There is some custom logic about the different commands here i.e.
-    // that newrow should appear before newcol.
     var newelem = jQuery("<p class=\"secommand secommand-" + command.name + "\">&nbsp;</p>");
     var elem = jQuery(this.wym._doc).find("#" + sectId);
-    // New row should appear before new col
-    if (elem.prev().is(this.tagnameToSelector("newcol")) && command.name == 'newrow') {
-        elem = elem.prev();
+
+    // Commands have an order they should appear in, which is defined by layout_order.
+    // We can use this to put the block in the right place.
+    var loopAgain = true;
+    var self = this;
+    while(loopAgain) {
+        loopAgain = false;
+        jQuery.each(this.commands,
+                   function(i, c) {
+                       var prev = elem.prev();
+                       if (prev.is(self.tagnameToSelector(c.name)) &&
+                                   c.layout_order > command.layout_order) {
+                           elem = prev;
+                           loopAgain = true;
+                       }
+                   });
     }
 
-    // Inner row should appear before inner col
-    if (elem.prev().is(this.tagnameToSelector("innercol")) && command.name == 'innerrow') {
-        elem = elem.prev();
-    }
     elem.before(newelem);
     var newId = this.commandBlockId(sectId, command);
     newelem.attr('id', newId);

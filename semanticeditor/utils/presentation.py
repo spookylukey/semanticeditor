@@ -310,12 +310,21 @@ class PresentationCommand(PresentationInfo):
     """
     A PresentationInfo representing a command applied to a section
     """
-    def __init__(self, name, verbose_name="", description=""):
+    def __init__(self, name, layout_order, layout_structure, verbose_name="", description=""):
         super(PresentationCommand, self).__init__(prestype="command",
                                                   name=name,
                                                   verbose_name=verbose_name,
                                                   description=description,
                                                   allowed_elements=sorted(list(technical_blockdef)))
+        # The order that the command must appear in the document e.g. NEWROW
+        # appears before NEWCOL.  (If there isn't a simple ordering on these
+        # commands, the logic in _create_layout may need to be re-thought)
+        self.layout_order = layout_order
+
+        # A layout structure used to respond to this command.  (all commands at
+        # the moment are structure commands).
+        self.layout_structure = layout_structure
+
 
     @property
     def prefix(self):
@@ -331,50 +340,6 @@ class PresentationCommand(PresentationInfo):
 
         return self.name + "_"
 
-NEWROW = PresentationCommand('newrow',
-                             verbose_name="New row",
-                             description="""
-<p>Use this command to start a new row.</p>
-
-<p>This must be used in conjunction with 'New column'
-to create a column layout.</p>
-
-<p>If you wish to stop an existing column layout for a section, then you will
-need to apply a 'New row' command to that section, creating a row with
-just one column in it.</p>
-
-"""
-                             )
-
-NEWCOL = PresentationCommand('newcol',
-                             verbose_name="New column",
-                             description="""
-<p>Use this command to start a new column, after a 'New row'
-command has been used to start a set of columns.</p>
-
-""")
-
-NEWINNERROW = PresentationCommand('innerrow',
-                                  verbose_name="Inner row",
-                                  description="""
-<p>Use this command to start a nested, inner row within an existing column
-structure.</p>
-
-<p>This must be used in conjunction with 'Inner column'
-to create a column layout.</p>
-
-"""
-                                  )
-
-NEWINNERCOL = PresentationCommand('innercol',
-                                  verbose_name="Inner column",
-                                  description="""
-<p>Use this command to start a new inner column, after an 'Inner row' command
-has been used to start a set of nested columns.</p>
-
-""")
-
-COMMANDS = [NEWROW, NEWCOL, NEWINNERROW, NEWINNERCOL]
 
 ## General utilities
 
@@ -623,9 +588,20 @@ class NodeContent(object):
     def as_nodes(self, layout_strategy):
         return [self.node]
 
+# Simple container for whole layout.
+class Layout(object):
+    # True if the structure corresponding to this command allows content to be
+    # embedded directly.
+    accepts_content = True
+
+    def __init__(self):
+        self.content = []
 
 # LayoutRow contains a list of columns, and a list of PresentationInfo objects
 class LayoutRow(object):
+
+    accepts_content = False
+
     def __init__(self, presinfo=None):
         if presinfo is None:
             presinfo = []
@@ -678,16 +654,14 @@ class LayoutRow(object):
 
 # LayoutColumn contains a list of content, and a list of PresentationInfo objects.
 class LayoutColumn(object):
+
+    accepts_content = True
+
     def __init__(self, presinfo=None):
         if presinfo is None:
             presinfo = []
         self.content = []
         self.presinfo = presinfo
-
-# Simple container for whole layout.
-class Layout(object):
-    def __init__(self):
-        self.content = []
 
 
 def _layout_column_width(col):
@@ -753,18 +727,6 @@ def _create_layout(root, styleinfo, structure):
     # Now build a layout. At each point, we need to:
     # - append nodes to current container
     # - keep track of all containers, so we can respond to new row/column commands.
-    commands = [
-        NEWROW.name,
-        NEWCOL.name,
-        NEWINNERROW.name,
-        NEWINNERCOL.name,
-    ]
-    structs = [
-        LayoutRow,
-        LayoutColumn,
-        LayoutRow,
-        LayoutColumn
-        ]
 
     containers = [layout]
     current_level = -1
@@ -772,13 +734,13 @@ def _create_layout(root, styleinfo, structure):
     for node in nodes:
         si = sect_dict.get(node)
         if si:
-            for command_name in commands:
-                presinfo = command_info[command_name].get(si.sect_id)
+            for command in sorted_commands:
+                presinfo = command_info[command.name].get(si.sect_id)
                 if presinfo is not None:
                     # We have the command.
 
                     # First, need to work out what level it is on:
-                    command_level = commands.index(command_name)
+                    command_level = command.layout_order
 
                     if command_level > current_level + 1:
                         raise BadStructure('Section "%(sect)s" has command "%(command)s" '
@@ -798,23 +760,29 @@ def _create_layout(root, styleinfo, structure):
                             containers.pop()
 
                     # Make new container
-                    struct = structs[command_level]
-                    layout_container = struct(presinfo=presinfo)
+                    layout_container = command.layout_structure(presinfo=presinfo)
                     containers[-1].content.append(layout_container)
                     containers.append(layout_container)
 
                     current_level = command_level
 
         # Deal with the nodes
-        if isinstance(containers[-1], LayoutRow):
-            # can't append content to this. We need a column, but none
-            # has been added, so we do it manually.
+
+        # Check whether we can add them here.
+        if not containers[-1].accepts_content:
+            # can't append content to this. We infer the presence of the next
+            # structure down.
             current_level += 1
-            struct = structs[current_level]
-            layout_container = struct()
+            next_command = sorted_commands[current_level]
+            # Currently index in sorted_commands corresponds to layout_order
+            assert next_command.layout_order == current_level
+            layout_container = next_command.layout_structure()
+            # Currently this will always produce a command that accepts content
+            assert layout_container.accepts_content
             containers[-1].content.append(layout_container)
             containers.append(layout_container)
 
+        # Add the content nodes.
         containers[-1].content.append(NodeContent(node))
 
     # Need to remove empty layout structures.
@@ -1147,3 +1115,60 @@ def clean_tree(root):
 def clean_html(html):
     tree = parse(html, clean=True)
     return _html_extract(tree)
+
+
+### DEFINITONS OF COMMANDS ###
+
+NEWROW = PresentationCommand('newrow',
+                             0,
+                             LayoutRow,
+                             verbose_name="New row",
+                             description="""
+<p>Use this command to start a new row.</p>
+
+<p>This must be used in conjunction with 'New column'
+to create a column layout.</p>
+
+<p>If you wish to stop an existing column layout for a section, then you will
+need to apply a 'New row' command to that section, creating a row with
+just one column in it.</p>
+
+""")
+
+NEWCOL = PresentationCommand('newcol',
+                             1,
+                             LayoutColumn,
+                             verbose_name="New column",
+                             description="""
+<p>Use this command to start a new column, after a 'New row'
+command has been used to start a set of columns.</p>
+
+""")
+
+NEWINNERROW = PresentationCommand('innerrow',
+                                  2,
+                                  LayoutRow,
+                                  verbose_name="Inner row",
+                                  description="""
+<p>Use this command to start a nested, inner row within an existing column
+structure.</p>
+
+<p>This must be used in conjunction with 'Inner column'
+to create a column layout.</p>
+
+""")
+
+
+NEWINNERCOL = PresentationCommand('innercol',
+                                  3,
+                                  LayoutColumn,
+                                  verbose_name="Inner column",
+                                  description="""
+<p>Use this command to start a new inner column, after an 'Inner row' command
+has been used to start a set of nested columns.</p>
+
+""")
+
+COMMANDS = [NEWROW, NEWCOL, NEWINNERROW, NEWINNERCOL]
+
+sorted_commands = sorted(COMMANDS, key=lambda c: c.layout_order)
