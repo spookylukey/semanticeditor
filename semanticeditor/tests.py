@@ -136,6 +136,15 @@ class TestFormat(TestCase):
         pres2 = {'newcol_p_1': [NEWROW]}
         self.assertRaises(BadStructure, format_html, html2, pres2)
 
+    def test_check_command_order(self):
+        """
+        Check that the user will be prompted if they try to use,
+        for example, a New Column command without a New row
+        """
+        html = "<h1>1</h1>"
+        pres = {'newcol_h1_1':[NEWCOL]}
+        self.assertRaises(BadStructure, format_html, html, pres)
+
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
         outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn\"><div><h1>2</h1><h1>3</h1></div></div></div>"

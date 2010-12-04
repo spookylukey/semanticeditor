@@ -743,12 +743,13 @@ def _create_layout(root, styleinfo, structure):
                     command_level = command.layout_order
 
                     if command_level > current_level + 1:
+                        lowercommand = sorted_commands[command_level-1]
                         raise BadStructure('Section "%(sect)s" has command "%(command)s" '
                                            'but there needs to be a "%(lowercommand)s" '
                                            'command first.' %
                                            dict(sect=si.name,
-                                                command=command_name,
-                                                lowercommand=commands[command_level-1])
+                                                command=command.verbose_name,
+                                                lowercommand=lowercommand.verbose_name)
                                            )
 
                     if command_level <= current_level:
@@ -774,8 +775,6 @@ def _create_layout(root, styleinfo, structure):
             # structure down.
             current_level += 1
             next_command = sorted_commands[current_level]
-            # Currently index in sorted_commands corresponds to layout_order
-            assert next_command.layout_order == current_level
             layout_container = next_command.layout_structure()
             # Currently this will always produce a command that accepts content
             assert layout_container.accepts_content
@@ -1172,3 +1171,7 @@ has been used to start a set of nested columns.</p>
 COMMANDS = [NEWROW, NEWCOL, NEWINNERROW, NEWINNERCOL]
 
 sorted_commands = sorted(COMMANDS, key=lambda c: c.layout_order)
+
+for i, c in enumerate(sorted_commands):
+    # Several places that index sorted_commands make this assemption:
+    assert c.layout_order == i
