@@ -264,6 +264,16 @@
 	    width: 25%;
 	}
 
+	.previewbox .columns5 > .column {
+	    float: left;
+	    width: 20%;
+	}
+
+	.previewbox .columns6 > .column {
+	    float: left;
+	    width: 16%;
+	}
+
 .prescontrolheadings select { border: 1px solid #ccc; font-family: "Gill Sans"; font-size: 110%;}
 .prescontrolheadings option {color: #666;}
 .prescontrolheadings option.column  {color: blue; }
