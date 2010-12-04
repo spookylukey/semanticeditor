@@ -10,11 +10,13 @@ function PresentationControls(wym, opts) {
     this.opts = opts;
     this.name = wym._element.get(0).name;
     // availableStyles: an array of dictionaries corresponding to PresentationInfo objects
+    // (PresentationClass objects specifically)
     this.availableStyles = new Array();
     // presentationInfo: a dictionary of { sectId : [PresentationInfo] }
     this.presentationInfo = {};
 
-    // commands: an array of dictionaries corresponding to PresentationInfo objects for commands.
+    // commands: an array of dictionaries corresponding to PresentationInfo objects
+    // (PresentationCommand objects specifically)
     this.commands = new Array();
     // commandDict: a dictionary mapping command name to PresentationInfo object.
     this.commandDict = {};
@@ -67,8 +69,8 @@ PresentationControls.prototype.setupControls = function(container) {
 
     // retrieveCommands() must come before retrieveStyles(), due to use
     // of calculateSelectors() which needs .commands to be set.
-    this.retrieveCommands(); // async
-    this.retrieveStyles(); // async
+    this.retrieveCommands(); // async=False
+    this.retrieveStyles(); // async=False
     this.separatePresentation();
 
     this.previewButton.toggle(function(event) {
@@ -127,8 +129,6 @@ PresentationControls.prototype.setupControls = function(container) {
 
 // Setup document - splits the HTML into 'content HTML' and 'presentation'
 PresentationControls.prototype.separatePresentation = function() {
-    // 'andthen' is a function to do afterwards.  This is a nasty
-    // hack to get things to work in the right order.
     var self = this;
     jQuery.post(this.opts.separatePresentationUrl, { html: self.wym.xhtml() } ,
                 function(data) {
@@ -163,15 +163,20 @@ PresentationControls.prototype.retrieveCommands = function() {
 
     self.withGoodData(data, function(value) {
                             self.commands = data.value;
-                            self.calculateSelectors(self.commands);
                             for (var i = 0; i < self.commands.length; i++) {
                                 var c = self.commands[i];
                                 self.commandDict[c.name] = c;
                             }
+                            self.calculateSelectors(self.commands);
                             self.allCommandSelectors = jQuery.map(self.commands,
                                                                     function(c, i) { return self.tagnameToSelector(c.name); }
                                                                     ).join(",");
                             self.buildCommandList();
+                            jQuery.each(self.commands,
+                                function(i, c) {
+                                    self.addCssRule(self.tagnameToSelector(c.name) + ":after",
+                                                    'content: " ' + c.verbose_name + '"');
+                                });
                         });
 };
 
@@ -215,9 +220,12 @@ PresentationControls.prototype.calculateSelectors = function(stylelist) {
 
 PresentationControls.prototype.tagnameToSelector = function(name) {
     // Convert a tag name into a selector used to match elements that represent
-    // that tag.  This function accounts for the use of p elements to represent
+    // that tag.
+    //
+    // A 'tag' is either an HTML element name or a command name.
+    //
+    // This function accounts for the use of p elements to represent
     // commands in the document.
-
     var c = this.commandDict[name];
     if (c == null) {
         // not a command
@@ -225,14 +233,14 @@ PresentationControls.prototype.tagnameToSelector = function(name) {
             // Need to ensure we don't match commands
             var selector = "p";
             for (var i = 0; i < this.commands.length; i++) {
-                selector = selector + "[class!='" + this.commands[i].name + "']";
+                selector = selector + "[class!='secommand-" + this.commands[i].name + "']";
             }
             return selector;
         } else {
-        return name;
+            return name;
         }
     } else {
-        return "p." + c.name;
+        return "p.secommand-" + name;
     }
 };
 
@@ -536,14 +544,15 @@ PresentationControls.prototype.commandBlockId = function(sectId, command) {
 PresentationControls.prototype.insertCommandBlock = function(sectId, command) {
     // There is some custom logic about the different commands here i.e.
     // that newrow should appear before newcol.
-    var newelem = jQuery("<p class=\"" + command.name + "\">&nbsp;</p>");
+    var newelem = jQuery("<p class=\"secommand secommand-" + command.name + "\">&nbsp;</p>");
     var elem = jQuery(this.wym._doc).find("#" + sectId);
     // New row should appear before new col
-    if (elem.prev().is("p.newcol") && command.name == 'newrow') {
+    if (elem.prev().is(this.tagnameToSelector("newcol")) && command.name == 'newrow') {
         elem = elem.prev();
     }
+
     // Inner row should appear before inner col
-    if (elem.prev().is("p.innercol") && command.name == 'innerrow') {
+    if (elem.prev().is(this.tagnameToSelector("innercol")) && command.name == 'innerrow') {
         elem = elem.prev();
     }
     elem.before(newelem);

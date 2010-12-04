@@ -174,23 +174,8 @@
   }
 
 
-  p.newrow:after {
-      content:" New row";
-  }
 
-  p.newcol:after {
-      content:" New column";
-  }
-
-  p.innerrow:after {
-      content:" Inner row";
-  }
-
-  p.innercol:after {
-      content:" Inner column";
-  }
-
-  p.newrow, p.newcol, p.innerrow, p.innercol {
+  p.secommand {
       background-color: #ffffff;
       color: #adc8ad;
       font-weight: bold;
