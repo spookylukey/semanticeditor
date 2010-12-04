@@ -394,7 +394,7 @@ PresentationControls.prototype.docKeydown = function(evt) {
     // being deleted. (The system copes fairly well with them being
     // deleted, but it can be very confusing for the user.)
     var isBackspace = (evt.keyCode == 8);
-    var is_delete = (evt.keyCode == 46);
+    var isDelete = (evt.keyCode == 46);
 
     if (isBackspace || isDelete) {
 
