@@ -135,3 +135,9 @@ def eliminate_tag(parent, index):
     for c in reversed(elem.getchildren()):
         parent.insert(index, c)
 
+
+def empty_text(txt):
+    """
+    Returns True is the some text is considered empty
+    """
+    return txt is None or txt.strip() == ""

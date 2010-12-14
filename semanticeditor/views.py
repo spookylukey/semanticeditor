@@ -4,7 +4,7 @@ from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from semanticeditor.utils import extract_presentation, format_html, preview_html, AllUserErrors, COMMANDS, PresentationInfo, PresentationClass, clean_html
+from semanticeditor.api import extract_presentation, format_html, preview_html, AllUserErrors, COMMANDS, PresentationInfo, PresentationClass, clean_html
 from semanticeditor.models import CssClass
 import sys
 try:

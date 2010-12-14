@@ -1,10 +1,23 @@
 # -*- coding: utf-8 -*-
 
 from django.test import TestCase
-from semanticeditor.utils import *
+from lxml import etree as ET
+
+from semanticeditor.api import extract_structure, PresentationInfo, format_html, extract_presentation, clean_html, preview_html
+from semanticeditor.common import html_extract, parse, get_structure
+from semanticeditor.definitions import IncorrectHeadings, BadStructure, TooManyColumns, PresentationClass, NEWROW, NEWCOL, NEWINNERROW, NEWINNERCOL
+from semanticeditor.layout import LayoutDetails
+from semanticeditor.utils.etree import get_index, get_parent, eliminate_tag, indent
 
 
 PC = PresentationClass
+
+
+def pretty_print(content):
+    t = parse(content)
+    indent(t)
+    return html_extract(t)
+
 
 class TestExtractStructure(TestCase):
     def test_extract_structure(self):
@@ -27,9 +40,9 @@ class TestExtractStructure(TestCase):
          (2, "h2_1", u"A sub heading", u"h2"),
          (3, "p_2", u"Another para...", u"p"),
          (3, "h3_1", u"level 3", u"h3"),
-         (4, "p_3", u"A long paragraph with some actual content...2", u"p"),
+         (4, "p_3", u"A long paragraph with some actual content...", u"p"),
          (4, "h4_1", u"level 4", u"h4"),
-         (5, "p_4", u"Another para...2", u"p"),
+         (5, "p_4", u"Another para...", u"p"),
          (5, "h5_1", u"level 5", u"h5"),
          (6, "p_5", u"nasty  éééééééééééééééééééééééééé...", u"p"),
          (6, "h6_1", u"level 6", u"h6"),
@@ -66,6 +79,34 @@ class TestExtractStructure(TestCase):
         html = '<h1 id="h1_1">heading 1</h1><h1>A new heading</h1><h1 id="h1_2">heading 2</h1><h1 id="h1_3">heading 3</h1>'
         structure = get_structure(parse(html))
         self.assertEqual(["h1_1", "h1_4", "h1_2", "h1_3"], [s.sect_id for s in structure])
+
+    def test_name_empty_headings(self):
+        """
+        Checks that we get some name for a heading with no text content
+        """
+        html = '<h1><img src="" /></h1>'
+        structure = get_structure(parse(html))
+        self.assertTrue(len(structure[0].name) > 0)
+
+    def test_name_empty_para(self):
+        """
+        Checks that we get some name for a paragaph with no text content
+        """
+        html = '<p><img src="" /></p>'
+        structure = get_structure(parse(html))
+        self.assertTrue(len(structure[0].name) > 0)
+
+    def test_name_empty_para(self):
+        """
+        Checks that we get some name for a paragaph with no text content
+        """
+        html = '<p><img src="" /></p>'
+        structure = get_structure(parse(html))
+        self.assertTrue(len(structure[0].name) > 0)
+
+    def test_extract_empty(self):
+        pres, out_html = extract_presentation('')
+        self.assertEqual('', out_html)
 
 
 class TestPresentationInfo(TestCase):
@@ -389,6 +430,39 @@ class TestFormat(TestCase):
         pres, html3 = extract_presentation(html2)
         self.assertEqual(html, html3)
 
+    def test_pretty_print(self):
+        # Pretty print is used by the view function, so that the output HTML is
+        # easier to read by web designers who may need to debug it
+        html = "<ul><li>1</li></ul>"
+        # The exact HTML currently looks like this:
+        pretty_html = """
+  
+    <ul>
+      <li>1</li>
+    </ul>
+  
+
+"""
+        out_html = format_html(html, {}, pretty_print=True)
+        self.assertEqual(pretty_html, out_html)
+
+    def test_round_trip(self):
+        # Test the round trip of html -> extract_presentation -> format_html
+        stored_html = "<h1>Hello</h1>"
+        pres, simple_html = extract_presentation(stored_html)
+        formatted = format_html(simple_html, pres)
+        self.assertEqual(formatted, stored_html)
+
+
+class TestPreview(TestCase):
+
+    def test_preview(self):
+        html = "<h1>Hello <b>there</b></h1><p><ul><li>An item</li></ul></p>"
+        pres = {}
+        expected = ('<div class="structural tagh1">Hello there</div>'
+                    '<div class="structural tagul">An item...</div>')
+        formatted = preview_html(html, pres)
+        self.assertEqual(expected, formatted)
 
 class TestHacks(TestCase):
     def test_div_format_hack(self):
