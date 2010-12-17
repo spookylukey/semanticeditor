@@ -1,7 +1,7 @@
 Semantic Editor
 ===============
 
-Semantic editor is a `Django CMS <http://www.django-cms.org/>`_ plugin for
+Semantic Editor is a `Django CMS <http://www.django-cms.org/>`_ plugin for
 text editing.  It allows you to edit the content of a page in a semantic
 way, and then assign presentation and layout details to each section of the
 text.  It supports complex column layouts using a simple set of controls
@@ -20,8 +20,51 @@ Installation
 
 See the installation instructions in INSTALL.rst
 
-Overview
---------
+Usage
+-----
+
+After installation, when editing a page in Django-CMS you will have a plugin
+type called 'Text/layout'. Choose this type of plugin and you will see an
+enhanced text editor, based on WYMeditor. Down the right hand side you will see
+'commands' and 'classes', as well the 'containers' that are provided by
+WYMeditor.
+
+The list of commands is built in to Semantic Editor, and allows columnar layouts
+to be generated using simple commands like 'New row' and 'New column'. The
+'preview' button allows you to test the layout that will be generated.
+
+For the layout to work on your live site, you will need to include CSS in the
+stylesheets that will correctly format the div structure into a set of columns.
+Some basic CSS to start with is as follows::
+
+    .row { clear: left; }
+    .row .column { float: left; }
+    .columns1 .column { width: 100%; }
+    .columns2 .column { width: 50%; }
+    .columns3 .column { width: 33%; }
+    .columns4 .column { width: 25%; }
+    .columns5 .column { width: 20%; }
+    .columns6 .column { width: 16%; }
+
+The list CSS classes that appear down the right hand side of the editor is
+defined in the database. You can use the Django admin to add and edit the
+'CssClass' objects and assign them to the different templates. You will have to
+add the corresponding CSS to your stylesheets to actually provide the styling
+for these classes.
+
+With the CssClass objects, there is support for styles which can be applied to
+columns to make them take up more than one column. For example, you might define
+a style 'doublewidth', and set the 'Column count equivalent' to '2', and
+ensuring that 'Allowed HTML elements' contained 'newcol'. You might then, for
+example, add 3 columns to a layout by using the 'New column' command in the
+editor. If you highlight the first column, you will be able to apply the
+'doublewidth' class. In the generated output, the columns will be in a div with
+'columns4' applied (not 'columns3'), and the first column will have
+'doublewidth' applied. With appropriate CSS, you can now create a double width
+column.
+
+Internals - overview
+--------------------
 
 The aim is to have an editor in which content is edited semantically, and both
 column layout and styling are applied separately.  However, in the database only
@@ -34,7 +77,7 @@ HTML content is stored in the database something like::
          <h1 class="fancy">Heading</h1>
          <p class="note bordered">Some text</p>
        </div>
-       <div class="column">
+       <div class="column doublewidth">
          <p>Some more text</p>
        </div>
     </div>
@@ -51,8 +94,9 @@ and an array of objects specifying presentation e.g.::
     [
        {'h1_1': ['fancy']},                # styles for the H1
        {'p_1':  ['note', 'bordered']},     # styles for the P
-       {'newrow_h1_1': 'newrow' },         # specifies row before h1_1
-       {'newrow_p_2': 'newcolum' },
+       {'newrow_h1_1': [] },               # specifies row before h1_1
+       {'newcol_p_2': ['doublewidth'] },   # specifier col before p_2
+                                           #  and styles for whole column
     ]
 
 These two parts are then edited separately, i.e. the user does not see the
@@ -61,8 +105,8 @@ AJAX call to combine the two parts.  Note the use of the 'id' attributes are
 added to help identify what the styling information belongs to -- these will be
 removed before saving in the database.
 
-WYMeditor extensions
---------------------
+Internals - WYMeditor extensions
+--------------------------------
 
 The Semantic Editor application provides its own version of WYMeditor.  This
 is derived from the skins/templates found in django-cms2, with the following
