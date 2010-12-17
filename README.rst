@@ -15,6 +15,11 @@ Medicine, who conceived of the system.
 
 Screen shots can be found at https://bitbucket.org/spookylukey/semanticeditor/wiki/Home
 
+Installation
+------------
+
+See the installation instructions in INSTALL.rst
+
 Overview
 --------
 
