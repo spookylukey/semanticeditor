@@ -67,17 +67,20 @@ def json_view(func):
 
     return wraps(func)(wrapper)
 
+
 def error(msg):
     """
     Standard error result - for internal errors
     """
     return dict(result='error', message=msg)
 
+
 def failure(msg):
     """
     Standard failure result
     """
     return dict(result='usererror', message=msg)
+
 
 def success(value):
     """
@@ -100,6 +103,7 @@ def graceful_errors(exceptions, callback):
         return failure(e.args[0])
     return success(val)
 
+
 def PI_to_dict(pi):
     """
     Converts a PresentationInfo to a dictionary
@@ -113,6 +117,7 @@ def PI_to_dict(pi):
         if type(v) in allowed:
             d[k] = v
     return d
+
 
 def dict_to_PI(d, classes):
     """
@@ -128,12 +133,14 @@ def dict_to_PI(d, classes):
         else:
             return css_class_to_presentation_class(c)
 
+
 def css_class_to_presentation_class(c):
     return PresentationClass(c.name,
                              verbose_name=c.verbose_name,
                              description=c.description,
                              allowed_elements=c.allowed_elements.lower().split(' '),
                              column_equiv=c.column_equiv)
+
 
 @json_view
 def retrieve_styles(request):
@@ -151,9 +158,11 @@ def retrieve_styles(request):
                  classes)
     return success(map(PI_to_dict,retval))
 
+
 @json_view
 def retrieve_commands(request):
     return success(map(PI_to_dict, COMMANDS))
+
 
 @json_view
 def separate_presentation(request):
@@ -176,6 +185,7 @@ def separate_presentation(request):
 
     return graceful_errors(AllUserErrors, _handled)
 
+
 def _convert_pres(pres):
     # Convert dictionaries into PresentationInfo classes. We need actual
     # CssClass instances in order to be able to restore column_equiv and
@@ -193,6 +203,7 @@ def _convert_pres(pres):
         retval[k]= newlist
     return retval
 
+
 @json_view
 def combine_presentation(request):
     """
@@ -205,6 +216,7 @@ def combine_presentation(request):
     presentation = _convert_pres(presentation)
     return graceful_errors(AllUserErrors, lambda: dict(html=format_html(html, presentation, pretty_print=True)))
 
+
 @json_view
 def preview(request):
     html = request.POST.get('html', '')
@@ -213,6 +225,7 @@ def preview(request):
     presentation = _convert_pres(presentation)
 
     return graceful_errors(AllUserErrors, lambda: dict(html=preview_html(html, presentation)))
+
 
 @json_view
 def clean_html_view(request):
