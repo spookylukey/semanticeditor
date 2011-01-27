@@ -154,5 +154,5 @@ COMMANDS = [NEWROW, NEWCOL, NEWINNERROW, NEWINNERCOL]
 SORTED_COMMANDS = sorted(COMMANDS, key=lambda c: c.layout_order)
 
 for i, c in enumerate(SORTED_COMMANDS):
-    # Several places that index SORTED_COMMANDS make this assemption:
+    # Several places that index SORTED_COMMANDS make this assumption:
     assert c.layout_order == i
