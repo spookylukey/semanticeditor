@@ -40,9 +40,6 @@ def json_view(func):
         response = None
         try:
             response = func(request, *a, **kw)
-        except KeyboardInterrupt:
-            # Allow keyboard interrupts through for debugging.
-            raise
         except Exception, e:
             # Mail the admins with the error
             exc_info = sys.exc_info()
