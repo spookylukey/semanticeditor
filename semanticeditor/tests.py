@@ -161,8 +161,9 @@ class TestFormat(TestCase):
     def test_add_css_classes(self):
         html = "<h1>Hello <em>you</em></h1><h2>Hi</h2>"
         outh = '<h1 class=\"myclass\">Hello <em>you</em></h1><h2 class=\"c1 c2\">Hi</h2>'
-        self.assertEqual(outh, format_html(html, {'h1_1':[PC('myclass')],
-                                                  'h2_1':[PC('c1'), PC('c2')]}))
+        pres = {'h1_1':[PC('myclass')],
+                'h2_1':[PC('c1'), PC('c2')]}
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_sanity_check_columns(self):
         """
@@ -189,115 +190,121 @@ class TestFormat(TestCase):
     def test_columns_1(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
         outh = "<div class=\"row columns2\"><div class=\"column firstcolumn\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn\"><div><h1>2</h1><h1>3</h1></div></div></div>"
-        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
-                                                  'newcol_h1_2':[NEWCOL]}))
+        pres = {'newrow_h1_1':[NEWROW],
+                'newcol_h1_2':[NEWCOL]}
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_columns_with_double_width(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1>"
         outh = "<div class=\"row columns3\"><div class=\"column firstcolumn doublewidth\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn\"><div><h1>2</h1></div></div></div>"
-        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
-                                                  'newcol_h1_1':[NEWCOL, PC('doublewidth', column_equiv=2)],
-                                                  'newcol_h1_2':[NEWCOL]}))
+        pres =  {'newrow_h1_1':[NEWROW],
+                 'newcol_h1_1':[NEWCOL, PC('doublewidth', column_equiv=2)],
+                 'newcol_h1_2':[NEWCOL]}
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_columns_with_double_width_2(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1>"
         outh = "<div class=\"row columns3\"><div class=\"column firstcolumn\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn doublewidth\"><div><h1>2</h1></div></div></div>"
-        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW],
-                                                  'newcol_h1_1':[NEWCOL],
-                                                  'newcol_h1_2':[NEWCOL, PC('doublewidth', column_equiv=2)]}))
+        pres =  {'newrow_h1_1':[NEWROW],
+                 'newcol_h1_1':[NEWCOL],
+                 'newcol_h1_2':[NEWCOL, PC('doublewidth', column_equiv=2)]}
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_max_cols(self):
         """
         Check we can't exceed max cols
         """
         html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1>"
-        self.assertRaises(TooManyColumns, format_html, html, {'newrow_h1_1':[NEWROW],
-                                                              'newcol_h1_2':[NEWCOL],
-                                                              'newcol_h1_3':[NEWCOL],
-                                                              'newcol_h1_4':[NEWCOL],
-                                                              'newcol_h1_5':[NEWCOL]
-                                                            })
+        pres = {'newrow_h1_1':[NEWROW],
+                'newcol_h1_2':[NEWCOL],
+                'newcol_h1_3':[NEWCOL],
+                'newcol_h1_4':[NEWCOL],
+                'newcol_h1_5':[NEWCOL]
+                }
+        self.assertRaises(TooManyColumns, format_html, html, pres)
     def test_max_cols_2(self):
         """
         Check we can't exceed max cols with double width cols
         """
         html = "<h1>1</h1><h1>2</h1><h1>3</h1>"
-        self.assertRaises(TooManyColumns, format_html, html, {'newrow_h1_1':[NEWROW],
-                                                              'newcol_h1_1':[NEWCOL, PC('doublewidth', column_equiv=2)],
-                                                              'newcol_h1_2':[NEWCOL, PC('doublewidth', column_equiv=2)],
-                                                              'newcol_h1_3':[NEWCOL],
-
-                                                            })
+        pres = {'newrow_h1_1':[NEWROW],
+                'newcol_h1_1':[NEWCOL, PC('doublewidth', column_equiv=2)],
+                'newcol_h1_2':[NEWCOL, PC('doublewidth', column_equiv=2)],
+                'newcol_h1_3':[NEWCOL],
+                }
+        self.assertRaises(TooManyColumns, format_html, html, pres)
 
 
     def test_columns_2(self):
-        html = \
-            "<h1>1</h1>" \
-            "<h1>2</h1>" \
-            "<h2>2.1</h2>" \
-            "<h2>2.2</h2>" \
-            "<h2>2.3</h2>" \
-            "<h2>2.4</h2>" \
-            "<h1>3</h1>" \
-            "<h1>4</h1>"
+        html = ("<h1>1</h1>"
+                "<h1>2</h1>"
+                "<h2>2.1</h2>"
+                "<h2>2.2</h2>"
+                "<h2>2.3</h2>"
+                "<h2>2.4</h2>"
+                "<h1>3</h1>"
+                "<h1>4</h1>")
 
-        outh = \
-            "<h1>1</h1>" \
-            "<h1>2</h1>" \
-            "<div class=\"row columns2\">" \
-            "<div class=\"column firstcolumn\">" \
-            "<div>" \
-            "<h2>2.1</h2>" \
-            "</div>" \
-            "</div>" \
-            "<div class=\"column lastcolumn\">" \
-            "<div>" \
-            "<h2>2.2</h2>" \
-            "</div>" \
-            "</div>" \
-            "</div>" \
-            "<div class=\"row columns2\">" \
-            "<div class=\"column firstcolumn\">" \
-            "<div>" \
-            "<h2>2.3</h2>" \
-            "</div>" \
-            "</div>" \
-            "<div class=\"column lastcolumn\">" \
-            "<div>" \
-            "<h2>2.4</h2>" \
-            "</div>" \
-            "</div>" \
-            "</div>" \
-            "<div class=\"row columns2\">" \
-            "<div class=\"column firstcolumn\">" \
-            "<div>" \
-            "<h1>3</h1>" \
-            "</div>" \
-            "</div>" \
-            "<div class=\"column lastcolumn\">" \
-            "<div>" \
-            "<h1>4</h1>" \
-            "</div>" \
-            "</div>" \
-            "</div>"
-        self.assertEqual(outh, format_html(html, {'newrow_h2_1':[NEWROW],
-                                                  'newcol_h2_2':[NEWCOL],
-                                                  'newrow_h2_3':[NEWROW],
-                                                  'newcol_h2_4':[NEWCOL],
-                                                  'newrow_h1_3':[NEWROW],
-                                                  'newcol_h1_4':[NEWCOL],
-                                                  }))
+        pres = {'newrow_h2_1':[NEWROW],
+                'newcol_h2_2':[NEWCOL],
+                'newrow_h2_3':[NEWROW],
+                'newcol_h2_4':[NEWCOL],
+                'newrow_h1_3':[NEWROW],
+                'newcol_h1_4':[NEWCOL],
+                }
+
+        outh = ("<h1>1</h1>"
+                "<h1>2</h1>"
+                "<div class=\"row columns2\">"
+                  "<div class=\"column firstcolumn\">"
+                    "<div>"
+                      "<h2>2.1</h2>"
+                    "</div>"
+                  "</div>"
+                  "<div class=\"column lastcolumn\">"
+                    "<div>"
+                      "<h2>2.2</h2>"
+                    "</div>"
+                  "</div>"
+                "</div>"
+                "<div class=\"row columns2\">"
+                  "<div class=\"column firstcolumn\">"
+                    "<div>"
+                      "<h2>2.3</h2>"
+                    "</div>"
+                  "</div>"
+                  "<div class=\"column lastcolumn\">"
+                    "<div>"
+                      "<h2>2.4</h2>"
+                    "</div>"
+                  "</div>"
+                "</div>"
+                "<div class=\"row columns2\">"
+                  "<div class=\"column firstcolumn\">"
+                    "<div>"
+                      "<h1>3</h1>"
+                    "</div>"
+                  "</div>"
+                  "<div class=\"column lastcolumn\">"
+                    "<div>"
+                      "<h1>4</h1>"
+                    "</div>"
+                  "</div>"
+                "</div>")
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_layout_with_styling(self):
         html = "<h1>1</h1><p>para 1</p><h1>2</h1><h1>3</h1>"
         outh = "<div class=\"row columns2 fancyrow\"><div class=\"column firstcolumn\"><div><h1>1</h1><p>para 1</p></div></div><div class=\"column lastcolumn\"><div class=\"fancycol\"><h1>2</h1><h1>3</h1></div></div></div>"
-        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW, PC('fancyrow')],
-                                                  'newcol_h1_2':[NEWCOL, PC('fancycol')]}))
+        pres = {'newrow_h1_1':[NEWROW, PC('fancyrow')],
+                'newcol_h1_2':[NEWCOL, PC('fancycol')]}
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_columns_single_col(self):
         html = "<h1>1</h1><p>para 1</p><h2>2</h2>"
         outh = "<div class=\"row\"><div><div><h1>1</h1><p>para 1</p><h2>2</h2></div></div></div>"
-        self.assertEqual(outh, format_html(html, {'newrow_h1_1':[NEWROW]}))
+        pres =  {'newrow_h1_1':[NEWROW]}
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_nested_layout(self):
         html = ("<h1>1</h1>"
@@ -395,33 +402,32 @@ class TestFormat(TestCase):
         Tests the error message for when the first col contains a nested layout.
         """
         html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1><h1>6</h1>"
-        self.assertRaises(TooManyColumns, format_html, html,
-                          {'newrow_h1_1':[NEWROW],
-                           'newcol_h1_1':[NEWCOL],
-                           'innerrow_h1_1':[NEWINNERROW],
-                           'innercol_h1_2':[NEWINNERCOL],
-                           'newcol_h1_3':[NEWCOL],
-                           'newcol_h1_4':[NEWCOL],
-                           'newcol_h1_5':[NEWCOL],
-                           'newcol_h1_6':[NEWCOL],
-                           })
+        pres = {'newrow_h1_1':[NEWROW],
+                'newcol_h1_1':[NEWCOL],
+                'innerrow_h1_1':[NEWINNERROW],
+                'innercol_h1_2':[NEWINNERCOL],
+                'newcol_h1_3':[NEWCOL],
+                'newcol_h1_4':[NEWCOL],
+                'newcol_h1_5':[NEWCOL],
+                'newcol_h1_6':[NEWCOL],
+                }
+        self.assertRaises(TooManyColumns, format_html, html, pres)
 
     def test_max_cols_nested_2(self):
         """
         Tests TooManyColumns is raised when the nested layout has too many columns
         """
         html = "<h1>1</h1><h1>2</h1><h1>3</h1><h1>4</h1><h1>5</h1><h1>6</h1>"
-        self.assertRaises(TooManyColumns, format_html, html,
-                          {'newrow_h1_1':[NEWROW],
-                           'newcol_h1_1':[NEWCOL],
-                           'innerrow_h1_1':[NEWINNERROW],
-                           'innercol_h1_2':[NEWINNERCOL],
-                           'innercol_h1_3':[NEWINNERCOL],
-                           'innercol_h1_4':[NEWINNERCOL],
-                           'innercol_h1_5':[NEWINNERCOL],
-                           'newcol_h1_6':[NEWCOL],
-                           })
-
+        pres = {'newrow_h1_1':[NEWROW],
+                'newcol_h1_1':[NEWCOL],
+                'innerrow_h1_1':[NEWINNERROW],
+                'innercol_h1_2':[NEWINNERCOL],
+                'innercol_h1_3':[NEWINNERCOL],
+                'innercol_h1_4':[NEWINNERCOL],
+                'innercol_h1_5':[NEWINNERCOL],
+                'newcol_h1_6':[NEWCOL],
+                }
+        self.assertRaises(TooManyColumns, format_html, html, pres)
 
     def test_format_pre(self):
         html = "<pre>This\r\nis\r\na\r\ntest</pre>"
@@ -458,10 +464,9 @@ class TestPreview(TestCase):
 
     def test_preview(self):
         html = "<h1>Hello <b>there</b></h1><p><ul><li>An item</li></ul></p>"
-        pres = {}
         expected = ('<div class="structural tagh1">Hello there</div>'
                     '<div class="structural tagul">An item...</div>')
-        formatted = preview_html(html, pres)
+        formatted = preview_html(html, {})
         self.assertEqual(expected, formatted)
 
 class TestHacks(TestCase):
@@ -470,8 +475,9 @@ class TestHacks(TestCase):
         Check that we can convert 'p' tags into 'div' using the 'div' class hack
         """
         html = '<p>Test</p>'
+        pres = {'p_1':[PC('div')]}
         outh = '<div class="div">Test</div>'
-        self.assertEqual(outh, format_html(html, {'p_1':[PC('div')]}))
+        self.assertEqual(outh, format_html(html, pres))
 
     def test_div_extract_hack(self):
         """
