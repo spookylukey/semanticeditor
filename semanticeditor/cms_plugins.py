@@ -50,7 +50,7 @@ class SemanticTextPlugin(TextPlugin):
             import warnings
             warnings.warn("Could not work out what page we are on, which will result in problems with class list")
 
-        plugins = plugin_pool.get_text_enabled_plugins(self.placeholder)
+        plugins = plugin_pool.get_text_enabled_plugins(self.placeholder, page)
         form = self.get_form_class(request, plugins, page)
         kwargs['form'] = form # override standard form
         return super(TextPlugin, self).get_form(request, obj, **kwargs)
