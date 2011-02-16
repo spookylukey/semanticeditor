@@ -105,7 +105,7 @@ class PresentationCommand(PresentationInfo):
 
 NEWROW = PresentationCommand('newrow',
                              0,
-                             verbose_name="New row",
+                             verbose_name="new row",
                              description="""
 <p>Use this command to start a new row.</p>
 
@@ -120,7 +120,7 @@ just one column in it.</p>
 
 NEWCOL = PresentationCommand('newcol',
                              1,
-                             verbose_name="New column",
+                             verbose_name="new column",
                              description="""
 <p>Use this command to start a new column, after a 'New row'
 command has been used to start a set of columns.</p>
@@ -129,7 +129,7 @@ command has been used to start a set of columns.</p>
 
 NEWINNERROW = PresentationCommand('innerrow',
                                   2,
-                                  verbose_name="Inner row",
+                                  verbose_name="inner row",
                                   description="""
 <p>Use this command to start a nested, inner row within an existing column
 structure.</p>
@@ -142,7 +142,7 @@ to create a column layout.</p>
 
 NEWINNERCOL = PresentationCommand('innercol',
                                   3,
-                                  verbose_name="Inner column",
+                                  verbose_name="inner column",
                                   description="""
 <p>Use this command to start a new inner column, after an 'Inner row' command
 has been used to start a set of nested columns.</p>

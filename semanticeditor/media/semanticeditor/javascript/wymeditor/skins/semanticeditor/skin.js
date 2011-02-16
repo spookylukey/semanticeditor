@@ -10,7 +10,7 @@ WYMeditor.SKINS['semanticeditor'] = {
         // add an additional box for 'commands'.
         // This will be filled in later in the 'semantic' plugin.
         wym._options.layoutCommandsSelector = ".wym_layout_commands";
-        jQuery(wym._box).find(wym._options.classesSelector).before('<div class="wym_layout_commands wym_section wym_panel"><h2>Commands</h2><ul></ul></div>');
+        jQuery(wym._box).find(wym._options.classesSelector).before('<div class="wym_layout_commands wym_section wym_panel"><h2>Rows & columns</h2><ul></ul></div>');
 
         //render following sections as buttons
         jQuery(wym._box).find(wym._options.toolsSelector)
@@ -28,7 +28,7 @@ WYMeditor.SKINS['semanticeditor'] = {
           .parents("div.wym_area_right").show()
           .parents(wym._options.boxSelector)
           .find("div.wym_area_main")
-          .css({"margin-right": "155px"});
+          .css({"margin-right": "185px"});
 
         jQuery(wym._box).find("div.wym_area_left ul")
           .parents("div.wym_area_left").show()
