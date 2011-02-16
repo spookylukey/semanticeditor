@@ -1,79 +1,175 @@
-/*
- * WYMeditor : what you see is What You Mean web-based editor
- * Copyright (c) 2005 - 2009 Jean-Francois Hovinne, http://www.wymeditor.org/
- * Dual licensed under the MIT (MIT-license.txt)
- * and GPL (GPL-license.txt) licenses.
- *
- * For further information visit:
- *        http://www.wymeditor.org/
- * 
- * File Name:
- *        wymeditor.css
- *        Main editor css file.
- *        See the documentation for more info.
- * 
- * File Authors:
- *        Jean-Francois Hovinne (jf.hovinne a-t wymeditor dotorg)
- *        Daniel Reszka (d.reszka a-t wymeditor dotorg)
+body  { 
+    background: white;
+    color: black;
+    font-family: "Gill Sans", "Futura", "Bitstream Vera Sans", sans-serif;
+    margin: 0;
+    }
+
+* {margin: 0;} /* reset them all */
+	
+p	{font-size: 100%;}
+
+h1	{font-size: 194%;}  /* heading sizes increase by 25% */
+h2	{font-size: 155%;}
+h3	{font-size: 125%;}
+h4	{font-size: 100%;}
+h5	{font-size: 88%;}
+h6	{font-size: 78%;}
+
+/* basic styles for all legal block-level elements */
+
+p, div,
+h1, h2, h3, h4, h5, h6,
+ul, ol,
+table,
+blockquote,
+pre
+{
+    padding: 0 30px 1px; /* left margin is for the container symbol; right margin to look nice */
+    position:relative; /* to establish containing block for ':before' elements */
+    border-top: 1px solid #f0f0f0; /* a soft pale line around each element */
+}
+
+/* lists present some special cases */
+li  {padding-left: 60px; position: relative;} /* position: relative for the absolutely positioned children */
+li:first-child  {margin-top: 1em;} /* get out of the way of any list markers */
+ul li   {list-style: none;}
+ol li   {list-style: decimal;}
+
+/* presentation mode off */
+/*p.secommand {display: none;}
+*:before    {display: none!important;}
+*:after     {top: 0!important;}
 */
+/* styles for the container and command markers */
 
-/* VISUAL FEEDBACK */
+p:after,
+h1:after, h2:after, h3:after, h4:after, h5:after, h6:after,
+ul:after, ol:after, li:after,
+table:after,
+blockquote:after,
+pre:after
+    {
+    position: absolute; /* take it out of the flow */
+    left: 0; top: 1em; /* 1em should be enough vertical space for the :before style marker */
+    font-size: 12px; color: #a33; font-weight: bold; /* bold and red */
+}
 
-/* basic */
-  body  { background: #e1e8f1;}
- 
-/* make HTML blocs visible */
-  p,
-  div,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  ul,
-  ol,
-  table,
-  blockquote,
-  pre           { background: #FFFFFF no-repeat center left;
-                  padding:8px 5px 5px;
-                  margin:10px; }
-  td            { background: #F0F4F8; }
-  th            { background: #ffffcc; }
-  ul,
-  ol            { border-left:20px solid #B9C4D0; padding:0px 5px; }
-  caption       { background: #E4E4B0; padding: 5px; font-weight: bold; }
-  table         { font-size: 12px; width: 500px; }
-  td            { width: 25%; }
-  blockquote    { margin-left: 30px; }
-  pre           { background-color:transparent; border: 1px solid white; }
+/* the block-level element markers for the left margin */
 
-/* Gecko min height fix */
-  p             { min-height: 1em; } /*min-height is needed under Firefox, because empty parargraphs */
-  *+html p      { min-height: auto; } /* but we have to remove it under IE7 because it triggers the 'haslayout' mode */
-  td            { height: 1.6em; }
- 
-/* labels 
-  p         { background-image: url(lbl-p.png); }
-  h1        { background-image: url(lbl-h1.png); }
-  h2        { background-image: url(lbl-h2.png); }
-  h3        { background-image: url(lbl-h3.png); }
-  h4        { background-image: url(lbl-h4.png); }
-  h5        { background-image: url(lbl-h5.png); }
-  h6        { background-image: url(lbl-h6.png); }
-  blockquote{ background-image: url(lbl-blockquote.png); }
-  pre       { background-image: url(lbl-pre.png); }
+p:after {content:'p';}
+li:after {content:'item';}
+li:after {content:'item';}
+h1:after {content:'h1';}
+h2:after {content:'h2';}
+h3:after {content:'h3';}
+h4:after {content:'h4';}
+h5:after {content:'h5';}
+h6:after {content:'h6';}
+ul:after {content:'unordered list';}
+h6:after {content:'h6';}
 
-*/
-/* specific HTML elements */
-  caption   { text-align: left; }
-  img       { margin-right: 5px;
-              border-style: solid;
-              border-color: gray;
-              border-width: 0; }
-  a img     { border-width: 1px; border-color: blue; }
-  acronym   { border: 1px solid gray; }
-  span      { background-color: #eef; }
+/* inline semantic elements */
+
+em, strong  {position: relative;}   /* for :after elements */
+em:hover:after   {content: "emphasis";}
+strong:hover:after   {content: "strong\0000a0emphasis"; }
+em strong:hover:after, strong em:hover:after {    
+    content: "emphasis\0000a0\000026\0000a0strong\0000a0emphasis\0000a0(silly)";
+    z-index: 100; } /* to hide emphasis/strong emphasis element markers */
+em:after, strong:after {
+    position: absolute; 
+    margin-top: -.5em;
+    left: 0; 
+    background: white; 
+    font-size: 10px; 
+    color: #a33; 
+    font-weight: bold; 
+    font-style: normal;
+    }
+
+
+/* each block-level element has a class marker that appear in the editor. */
+
+p:before, div:before,
+h1:before, h2:before, h3:before, h4:before, h5:before, h6:before, 
+ul:before, ol:before, li:before,
+table:before,
+blockquote:before,
+pre:before
+{
+    display: block;
+    content: "\00a0";   /* puts a non-breaking space in it, so it always takes space */
+    /* small green italic */    
+    font-size: 10px; 
+    color: #686; 
+    font-style: italic; 
+    font-weight: normal;  
+    margin-left: -30px; /* to counteract block-level elements' 30px padding */ 
+}
+
+li:before   {margin-left: 0;}
+
+
+/* the row/column command and style markers */ 
+
+p.secommand {
+    font-weight: bold;
+    margin: 0; padding: 0;
+    z-index: -100;  /* for some reason, sending this backwards makes it easier to hit in Firefox */
+}
+
+/* each one is successively indented further by 50px */
+
+p.secommand:after   {color: #67a;} /* commands are not semantic, so a different color */
+p.secommand:before, p.secommand:after  {
+    margin-left: 0; 
+    z-index: 100; /* bring it forward to make the p easier to hit in Firefox */
+    }
+p.secommand.secommand-newcol:before, p.secommand.secommand-newcol:after     {margin-left: 50px;}
+p.secommand.secommand-innerrow:before, p.secommand.secommand-innerrow:after    {margin-left: 100px;} 
+p.secommand.secommand-innercol:before, p.secommand.secommand-innercol:after    {margin-left: 150px;} 
+
+/* and they get lighter as we proceed */
+
+p.secommand.secommand-newrow    {
+    border-top: 1px solid #aaa; 
+    background: #ddd;
+    }
+
+p.secommand.secommand-newcol    {
+    border-top: 1px solid #bbb; 
+    background: #e8e8e8;
+    }
+    
+p.secommand.secommand-innerrow   {
+    border-top: 1px solid #ccc; 
+    background: #eee;
+    }
+
+p.secommand.secommand-innercol    {
+    border-top: 1px solid #ddd; 
+    background: #f8f8f8;
+    }
+
+/* plugins */
+
+img { border-radius: 5px;}
+
+/* angry warnings */
+
+a   {text-decoration: none;}
+a:before {content: "Warning - illegal content will be deleted: "; text-decoration: none; color: #ec2; font-weight: bold;}
+a:after {position: fixed; top: 1em; right: 1em; content: "Warning: this plugin contains illegal content"; text-decoration: none; background: #ec2; color: white; border-radius: 5px; font-weight: bold; padding: 1px;}
+
+img[id][alt] {border: none;} /* good, decent welcome plugin images have no ugly warning borders */
+img {border: 10px solid #ec2;}   /* bad ones do */
+br:after  {content: "warning"; background: red; margin: 100px; display: inline;}
+
+/* things to do */
+
+blockquote	{font-weight: light; color: #666;} /* not actually used yet, but we should */
+
 
 /* visual feedback for non-valid nesting of elements*/
   h1 h1, h1 h2, h1 h3, h1 h4, h1 h5, h1 h6, h1 p, h1 pre, h1 address,
@@ -91,108 +187,10 @@
     font-size: 12px !important;
     font-weight: normal; }
 
-/* amendments by Daniele to improve layout and appearance */
 
+/* fixes for browser bugs and quirks */
 
-  body  { 
-	background: #fee; /* pink as a warning not to paste */ 
-	color: black;
-	font-family: "Gill Sans", "Futura", "Bitstream Vera Sans", sans-serif;
-	margin: 0;}
-	
-/* labels */
-  p         { background-image: url(arkestra-lbl-p.png); }
-  h1        { background-image: url(arkestra-lbl-h1.png); }
-  h2        { background-image: url(lbl-h2.png); }
-  h3        { background-image: url(arkestra-lbl-h3.png); }
-  h4        { background-image: url(arkestra-lbl-h4.png); }
-  h5        { background-image: url(arkestra-lbl-h5.png); }
-  h6        { background-image: url(arkestra-lbl-h6.png); }
-  blockquote{ background-image: url(lbl-blockquote.png); }
-  pre       { background-image: url(lbl-pre.png); }
-	
-
-  p		{font-size: 100%;}
-  h1	{font-size: 155%;}
-  h2	{font-size: 140%;}
-  h3	{font-size: 125%;}
-  h4	{font-size: 110%;}
-  h5	{font-size: 95%;}
-  h6	{font-size: 80%;}
-  blockquote	{font-weight: light; color: #666;}
-
-  p,
-  div,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  ul,
-  ol,
-  table,
-  blockquote,
-  pre
-  {
-      margin: 0;
-      padding: 10px 0 .5em 2em;
-      position: relative; /* to establish containing block for ':before' elements */
-  }
-  li
-  {
-      position: relative;
-      padding-top: 10px;
-  }
-
-
-  p:before,
-  div:before,
-  h1:before,
-  h2:before,
-  h3:before,
-  h4:before,
-  h5:before,
-  h6:before,
-  ul:before,
-  ol:before,
-  li:before,
-  table:before,
-  blockquote:before,
-  pre:before
-  {
-      position: absolute;
-      left: 0px;
-      top: 0px;
-      font-size: 8px;
-      color: #888;
-  }
-
-  li:before
-  {
-      left: -2em;
-  }
-
-
-
-  p.secommand {
-      background-color: #ffffff;
-      color: #adc8ad;
-      font-weight: bold;
-      font-size: 70%;
-      border-top: 1px solid #f8f8f8;
-      border-bottom: 1px solid #f8f8f8;
-      background-image: none;
-  }
-
-  ol,ul	{border: none;
-		padding: 1em 2em;
-		background-image: url(arkestra-lbl-list.png);
-	  }
-
-  li
-  {
-      margin-left: 1em;
-      padding-left: 1em;
-      list-style-position: outside;
-  }
+/* Gecko min height fix */
+  p             { min-height: 1em; } /*min-height is needed under Firefox, because empty parargraphs */
+  *+html p      { min-height: auto; } /* but we have to remove it under IE7 because it triggers the 'haslayout' mode */
+  td            { height: 1.6em; }

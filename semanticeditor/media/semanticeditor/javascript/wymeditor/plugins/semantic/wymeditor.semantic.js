@@ -175,7 +175,7 @@ PresentationControls.prototype.retrieveCommands = function() {
                             jQuery.each(self.commands,
                                 function(i, c) {
                                     self.addCssRule(self.tagnameToSelector(c.name) + ":after",
-                                                    'content: " ' + c.verbose_name + '"');
+                                                    'content: "' + c.verbose_name + '"');
                                 });
                         });
 };
@@ -542,6 +542,7 @@ PresentationControls.prototype.commandBlockId = function(sectId, command) {
 };
 
 PresentationControls.prototype.insertCommandBlock = function(sectId, command) {
+    // the spaces help make the command a decent target in the editor for Firefox (and we also use z-index: 1 in the CSS to bring them forward) - otherwise we can't hit them reliably with the mouse. Safari has not had a problem with this for some reason.
     var newelem = jQuery("<p class=\"secommand secommand-" + command.name + "\">&nbsp;</p>");
     var elem = jQuery(this.wym._doc).find("#" + sectId);
 
@@ -616,7 +617,8 @@ PresentationControls.prototype.updateStyleDisplay = function(sectId) {
     var stylelist = jQuery.map(styles, function(s, i) {
                                    return self.getVerboseStyleName(s.name);
                                }).join(", ");
-    this.addCssRule("#" + sectId + ":before", 'content: "' + stylelist + '"');
+    // put a non-breaking space into the style list, so it always exists                           
+    this.addCssRule("#" + sectId + ":before", 'content: "' + stylelist + '\\00a0' + '"');
 };
 
 PresentationControls.prototype.updateAllStyleDisplay = function() {
