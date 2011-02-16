@@ -679,25 +679,25 @@ PresentationControls.prototype.buildListGeneric = function(container, stylelist,
                   });
 
         // Attach tooltip to label we just added:
-        var help = item.description;
-        if (help == "") {
-            help = "(No help available)";
-        }
-        help = "<h1>" + self.escapeHtml(item.verbose_name) + "</h1>" + help;
-        help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
-        // Assign an id, because orbitaltooltip doesn't work without it.
-        btn.attr('id', idStem + i);
-        setTimeout(function() {
-                       btn.orbitaltooltip({
-                           orbitalPosition: 270,
-                           // Small spacing means we can move onto the tooltip
-                           // in order to scroll it if the help text has
-                           // produced scroll bars.
-                           spacing:         8,
-                           tooltipClass:         'orbitaltooltip-simplebox',
-                           html:            help
-                       });
-        }, 1000); // Delay, otherwise tooltips can end up in wrong position.
+        // var help = item.description;
+        // if (help == "") {
+        //     help = "(No help available)";
+        // }
+        // help = "<h1>" + self.escapeHtml(item.verbose_name) + "</h1>" + help;
+        // help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
+        // // Assign an id, because orbitaltooltip doesn't work without it.
+        // btn.attr('id', idStem + i);
+        // setTimeout(function() {
+        //                btn.orbitaltooltip({
+        //                    orbitalPosition: 270,
+        //                    // Small spacing means we can move onto the tooltip
+        //                    // in order to scroll it if the help text has
+        //                    // produced scroll bars.
+        //                    spacing:         8,
+        //                    tooltipClass:         'orbitaltooltip-simplebox',
+        //                    html:            help
+        //                });
+        // }, 1000); // Delay, otherwise tooltips can end up in wrong position.
     });
 
 };
