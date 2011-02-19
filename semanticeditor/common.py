@@ -65,7 +65,7 @@ def get_structure(root, assert_structure=False):
                                                     "heading, which was H%d." %
                                                     first_heading_level)
 
-                    # Headings should decrease or monotonically increase
+                    # Heading level should decrease or increase by no more than one.
                     if headings_used and level > last_heading_num + 1:
                         raise IncorrectHeadings('Heading "%(name)s" is level H%(foundnum)d, '
                                                 'but it should be level H%(rightnum)d or less' %
