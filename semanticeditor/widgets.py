@@ -15,7 +15,6 @@ class SemanticEditor(WYMEditor):
         js = [join(settings.SEMANTICEDITOR_MEDIA_URL, path) for path in
               ('javascript/wymeditor/plugins/semantic/wymeditor.semantic.js',
                'javascript/json2.js',
-               'javascript/orbitaltooltip.js',
                'javascript/jquery.query-2.1.7.js',
                )]
 

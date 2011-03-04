@@ -64,8 +64,6 @@ PresentationControls.prototype.setupControls = function(container) {
     this.setupCssStorage();
 
      // Initial set up
-    // Remove any tooltips
-    jQuery(".orbitaltooltip-simplebox").unbind().remove();
 
     // retrieveCommands() must come before retrieveStyles(), due to use
     // of calculateSelectors() which needs .commands to be set.
@@ -116,15 +114,6 @@ PresentationControls.prototype.setupControls = function(container) {
                        20; // 20 is a fudge value, probably equal to some marings/paddings
                    self.classList.css("height", h.toString() + "px");
                }, 1000);
-
-    // Stop the tooltips from getting in the way - dismiss with a click.
-    // (in timeout to give them time to be created)
-    setTimeout(function() {
-                   jQuery(".orbitaltooltip-simplebox").click(function(event) {
-                                                                 jQuery(this).hide();
-                                                             });
-               }, 1000);
-
 };
 
 // Setup document - splits the HTML into 'content HTML' and 'presentation'
@@ -679,27 +668,6 @@ PresentationControls.prototype.buildListGeneric = function(container, stylelist,
                       btnAction(style, btn);
                       event.preventDefault();
                   });
-
-        // Attach tooltip to label we just added:
-        // var help = item.description;
-        // if (help == "") {
-        //     help = "(No help available)";
-        // }
-        // help = "<h1>" + self.escapeHtml(item.verbose_name) + "</h1>" + help;
-        // help = help + '<br/><hr/><p>Can be used on these elements:</p><p>' + item.allowed_elements.join(' ') + '</p>';
-        // // Assign an id, because orbitaltooltip doesn't work without it.
-        // btn.attr('id', idStem + i);
-        // setTimeout(function() {
-        //                btn.orbitaltooltip({
-        //                    orbitalPosition: 270,
-        //                    // Small spacing means we can move onto the tooltip
-        //                    // in order to scroll it if the help text has
-        //                    // produced scroll bars.
-        //                    spacing:         8,
-        //                    tooltipClass:         'orbitaltooltip-simplebox',
-        //                    html:            help
-        //                });
-        // }, 1000); // Delay, otherwise tooltips can end up in wrong position.
     });
 
 };
