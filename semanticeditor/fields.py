@@ -1,4 +1,5 @@
 from django import forms
+from django.core import exceptions
 from django.db import models
 from django.utils.text import capfirst
 
@@ -67,3 +68,9 @@ class MultiSelectField(models.Field):
         value = self._get_val_from_obj(obj)
         return self.get_db_prep_value(value)
 
+    def validate(self, value, model_instance):
+        choice_keys = set(k for k, v in self._choices)
+        # value is a list of values
+        for v in value:
+            if v not in choice_keys:
+                raise exceptions.ValidationError(self.error_messages['invalid_choice'] % value)
