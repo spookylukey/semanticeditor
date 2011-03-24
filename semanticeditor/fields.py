@@ -44,7 +44,7 @@ class MultiSelectField(models.Field):
         defaults.update(kwargs)
         return MultiSelectFormField(**defaults)
 
-    def get_db_prep_value(self, value):
+    def get_db_prep_value(self, value, connection, prepared=False):
         if isinstance(value, basestring):
             return value
         elif isinstance(value, list):
