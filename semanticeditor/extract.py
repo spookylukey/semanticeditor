@@ -38,6 +38,7 @@ def extract_presentation(html):
     structure = get_structure(root)
     structure = layout_strategy.extract_structure_hacks(structure)
     pres = {}
+    layout_commands = find_all_layout_nodes(root, layout_strategy)
     for si in structure:
         pres[si.sect_id] = set()
 
@@ -51,38 +52,31 @@ def extract_presentation(html):
         # and will be removed again at end of format_html
         si.node.set('id', si.sect_id)
 
-        # Try to find 'row' and 'column' divs that this node belongs to.
-        # Columns can have inner divs for styling purposes.  Some CSS classes
-        # will be applied to the outer column div, some to the inner column div.
-        row_node, col_node, inner_col_node = _find_row_col_divs(root, si.node, layout_strategy)
+        # Now, deal with layout divs for this structure item
+        cmd_pairs = layout_commands.get(si.node, [])
+        for cmd, div_node in cmd_pairs:
+            # Need to create another entry in pres
+            pres_name = cmd.prefix + si.sect_id
+            cmd_classes = set()
 
-        # To know whether it is new/row col or *inner* row/col, we count the
-        # number of levels of row divs.
-        count_row_divs = _count_row_divs(root, si.node, layout_strategy)
-
-        # New row
-        if row_node is not None:
-            if count_row_divs > 1:
-                command = NEWINNERROW
+            # Find the classes that correspond to PresentationClass objects and
+            # add them.
+            node_classes = set(get_classes_for_node(div_node))
+            if cmd in (NEWROW, NEWINNERROW):
+                filterfunc = layout_strategy.is_row_class
             else:
-                command = NEWROW
+                filterfunc = layout_strategy.is_column_class
+                # Need the classes from the inner column div
+                children = div_node.getchildren()
+                if len(children) > 0 and children[0].tag == 'div':
+                    node_classes |= set(get_classes_for_node(children[0]))
 
-            r_classes = get_classes_for_node(row_node)
-            row_pres = set([command] + [PresentationClass(c) for c in r_classes if not layout_strategy.is_row_class(c)])
-            pres[command.prefix + si.sect_id] = row_pres
+            for c in node_classes:
+                if not filterfunc(c):
+                    cmd_classes.add(PresentationClass(c))
 
-        # New column
-        if col_node is not None:
-            if count_row_divs > 1:
-                command = NEWINNERCOL
-            else:
-                command = NEWCOL
-
-            c_classes = get_classes_for_node(col_node)
-            if inner_col_node is not None:
-                c_classes.extend(get_classes_for_node(inner_col_node))
-            col_pres = set([command] + [PresentationClass(c) for c in c_classes if not layout_strategy.is_column_class(c)])
-            pres[command.prefix + si.sect_id] = col_pres
+            cmd_classes.add(cmd) # not strictly necessary, but helps testing
+            pres[pres_name] = cmd_classes
 
     strip_presentation(root)
     out_html = html_extract(root)
@@ -90,76 +84,64 @@ def extract_presentation(html):
     return (pres, out_html)
 
 
-def _find_row_col_divs(root, node, layout_strategy):
+def find_all_layout_nodes(node, layout_strategy, depth=0, current_stack=None,
+                          layout_divs=None, layout_commands=None):
     """
-    Finds the row and column divs that a node belongs to.
-    Returns a 3 tuple (row_div, col_div, inner_col_div)
-
-    col_div is None if the node is not the first content
-    node within that column.
-
-    row_div is None if the node is not the first content node
-    within that row.
-
-    inner_col_div is None if there is no inner column div,
-    or if col_div is None
+    Finds all the layout divs, and the content node they correspond to.
+    Returns a dictionary:
+       content node: [stack of (command, command node)],
     """
-    # Keep going up until we find a 'row' div or 'column' div
-    # that are parent/child.
+    if layout_commands is None:
+        # Rather than messing with lots of return values, we define
+        # a containers for collecting the results.
+        layout_commands = {}
 
-    p = get_parent(root, node)
-    gp = None
+    if current_stack is None:
+        current_stack = []
 
-    p_is_col, gp_is_row = False, False
-    row_div, col_div, inner_col_div = None, None, None
+    children = node.getchildren()
 
-    if p is not None and p.tag == 'div' and get_index(p, node) == 0:
-        # We only care if node is the first child of the column div
-        c_classes = get_classes_for_node(p)
-        p_is_col = any(layout_strategy.is_column_class(c) for c in c_classes)
+    # Find out the command that corresponds to curent node
+    if node.tag == 'div':
+        c_classes = get_classes_for_node(node)
+        is_col = any(layout_strategy.is_column_class(c) for c in c_classes)
+        is_row = any(layout_strategy.is_row_class(c) for c in c_classes)
+        if not is_col and len(current_stack) > 0 and \
+                current_stack[-1][0] in (NEWROW, NEWINNERROW):
+            # A div inside a row is always a column
+            is_col = True
+        if is_col:
+            if depth == 0:
+                current_stack.append((NEWCOL, node))
+                depth += 1
+            else:
+                current_stack.append((NEWINNERCOL, node))
+        elif is_row:
+            current_stack.append((NEWROW if depth == 0 else NEWINNERROW, node))
 
-        gp = get_parent(root, p)
-        if gp is not None and gp.tag == 'div' and get_index(gp, p) == 0:
-            # We only locate row divs if col is first col within row
-            r_classes = get_classes_for_node(gp)
-            gp_is_row = any(layout_strategy.is_row_class(c) for c in r_classes)
-
-            # We can't always tell if something is a col (especially for single
-            # column structure), but by identfying the row we can tell we are in
-            # a column structure.
-            if gp_is_row:
-                p_is_col = True
-
-    if gp_is_row:
-        row_div = gp
-    if p_is_col:
-        col_div = p
-
-    if not p_is_col:
-        if p is not None and p.tag == 'div' and get_index(p, node) == 0:
-            # Try to go up one
-            row_div, col_div, inner_col_div = _find_row_col_divs(root, p, layout_strategy)
-            if inner_col_div is None and col_div is not None:
-                # We now know that current parent 'p' is inner_col_div
-                inner_col_div = p
-            return (row_div, col_div, inner_col_div)
-
-    return (row_div, col_div, inner_col_div)
+    else:
+        is_row, is_col = False, False
 
 
-def _count_row_divs(root, node, layout_strategy):
-    """
-    Counts the number of divs from root to node that are divs for layout rows
-    """
-    # Get the path from root to node.
-    # This algorithmically bad, but probably fast enough.
+    # Is the current node the one the stack applies to?
+    if not (is_col or is_row) and len(current_stack) > 0:
+        # If this is the additional inner column div, we want to skip it
+        if node.tag != 'div':
+            layout_commands[node] = current_stack
+            current_stack = []
 
-    count = 0
-    p = node
-    while p is not root:
-        p = get_parent(root, p)
-        p_classes = get_classes_for_node(p)
-        if any(layout_strategy.is_row_class(c) for c in p_classes):
-            count += 1
+    # The current stack of commands applies to the first content node that is a
+    # descendent of them. We only look in first child, recursively.
+    for i, child in enumerate(children):
+        if i == 0:
+            # Look for content node
+            find_all_layout_nodes(child, layout_strategy, depth=depth,
+                                  current_stack=current_stack,
+                                  layout_commands=layout_commands)
+        else:
+            # Not the first child, so we reset the current_stack
+            find_all_layout_nodes(child, layout_strategy, depth=depth,
+                                  current_stack=[],
+                                  layout_commands=layout_commands)
 
-    return count
+    return layout_commands

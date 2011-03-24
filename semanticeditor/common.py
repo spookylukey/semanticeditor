@@ -23,7 +23,8 @@ class StructureItem(object):
 
 def get_structure(root, assert_structure=False):
     """
-    Return the structure nodes, as a list of StructureItems
+    Return the structure nodes, as a list of StructureItems.  Structure nodes
+    are nodes that can have commands or classes applied to them.
     """
     retval = []
     sect_ids = set()

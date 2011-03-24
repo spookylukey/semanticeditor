@@ -559,6 +559,7 @@ class TestElementTreeUtils(TestCase):
 
 
 class TestExtractPresentation(TestCase):
+    maxDiff = None
     def test_extract_presentation(self):
         html = "<h1 class=\"foo\">Heading 1</h1><h2 class=\"bar baz\">Heading 2</h2><p class=\"whatsit\">Some paragraph</p>"
         pres, html2 = extract_presentation(html)
@@ -737,6 +738,56 @@ class TestExtractPresentation(TestCase):
                 )
         pres2, html2 = extract_presentation(html)
         self.assertEqual(pres, pres2)
+
+
+    def test_extract_nested_layout_2(self):
+        """
+        Issue 37
+        """
+        pres = {'newrow_p_1':set([NEWROW]),
+                'newcol_p_1':set([NEWCOL]),
+                'innerrow_p_1':set([NEWINNERROW]),
+                'innercol_p_1':set([NEWINNERCOL]),
+                'innercol_p_2':set([NEWINNERCOL]),
+                'newcol_p_3':set([NEWCOL]),
+                'innerrow_p_3':set([NEWINNERROW]),
+                'innercol_p_3':set([NEWINNERCOL]),
+                'innercol_p_4':set([NEWINNERCOL]),
+                'p_1':set([]),
+                'p_2':set([]),
+                'p_3':set([]),
+                'p_4':set([]),
+                }
+        html = ('<div class="row columns2">'
+                  '<div class="column firstcolumn">'
+                    '<div>'
+                      '<div class="row columns2">'
+                        '<div class="column firstcolumn">'
+                          '<div><p>col1</p></div>'
+                        '</div>'
+                        '<div class="column lastcolumn">'
+                          '<div><p>col2</p></div>'
+                        '</div>'
+                      '</div>'
+                    '</div>'
+                  '</div>'
+                  '<div class="column firstcolumn">'
+                    '<div>'
+                      '<div class="row columns2">'
+                        '<div class="column firstcolumn">'
+                          '<div><p>col3</p></div>'
+                        '</div>'
+                        '<div class="column lastcolumn">'
+                          '<div><p>col4</p></div>'
+                        '</div>'
+                      '</div>'
+                    '</div>'
+                  '</div>'
+                '</div>'
+                )
+        pres2, html2 = extract_presentation(html)
+        self.assertEqual(pres, pres2)
+
 
 class TestHtmlCleanup(TestCase):
     safari_example_1 = """
