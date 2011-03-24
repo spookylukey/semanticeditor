@@ -57,8 +57,10 @@ def clean_tree(root):
             if (j > 0): # skip the first one
                 del node.attrib['id']
 
-    for x in ['p + br', 'p:empty']:
-        doc(x).remove()
+    doc('p + br').remove()
+    for par in doc('p:empty'):
+        if par.text is None  or par.text.strip() == "":
+            par.getparent().remove(par)
 
     # Removed elements can give problems which need to be fixed again.  We keep
     # iterating through this until we get the same answer!
@@ -78,10 +80,10 @@ def _clean_text(t):
     return t.replace(u'\xa0', u' ')
 
 
-def _clean_elem(d):
+def _clean_elem(i, d):
     for x in ['style', 'class']:
         try:
-            d.removeAttr(x)
+            del d.attrib[x]
         except KeyError:
             pass
     for elem in d:

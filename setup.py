@@ -25,5 +25,5 @@ setup(
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
-    install_requires = ['lxml >= 2.2.4', 'pyquery >= 0.3.1', 'django-cms >= 2.0'],
+    install_requires = ['lxml >= 2.2.4', 'pyquery >= 0.6.1', 'django-cms >= 2.0'],
 )
