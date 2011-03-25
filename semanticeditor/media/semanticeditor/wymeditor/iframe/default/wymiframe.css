@@ -36,11 +36,6 @@ li:first-child  {margin-top: 1em;} /* get out of the way of any list markers */
 ul li   {list-style: none;}
 ol li   {list-style: decimal;}
 
-/* presentation mode off */
-/*p.secommand {display: none;}
-*:before    {display: none!important;}
-*:after     {top: 0!important;}
-*/
 /* styles for the container and command markers */
 
 p:after,

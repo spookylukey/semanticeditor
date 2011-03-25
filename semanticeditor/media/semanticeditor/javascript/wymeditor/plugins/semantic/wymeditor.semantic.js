@@ -40,6 +40,7 @@ function PresentationControls(wym, opts) {
 PresentationControls.prototype.setupControls = function(container) {
     var idPrefix = "id_prescontrol_" + this.name + "_";
     var previewButtonId = idPrefix + 'previewbutton';
+    var showStylesButtonId = idPrefix + 'showstyles';
     var previewBoxId = idPrefix + 'previewbox';
     var cleanHtmlButtonId = idPrefix + 'cleanhtmlbutton';
     var self = this;
@@ -49,6 +50,7 @@ PresentationControls.prototype.setupControls = function(container) {
         "<div class=\"prescontrol\">" +
             "<input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanHtmlButtonId  +  "\" />" +
             "<input type=\"submit\" value=\"Preview\" id=\"" + previewButtonId + "\" />" +
+            "<input type=\"submit\" id=\"" + showStylesButtonId + "\" />" +
             "<div class=\"prescontrolerror\" id=\"" + idPrefix + "errorbox" + "\"></div>" +
         "</div>");
 
@@ -59,6 +61,7 @@ PresentationControls.prototype.setupControls = function(container) {
     this.errorBox = jQuery('#' + idPrefix + "errorbox");
     this.previewButton = jQuery('#' + previewButtonId);
     this.previewBox = jQuery('#' + previewBoxId);
+    this.showStylesButton = jQuery('#' + showStylesButtonId);
     this.cleanHtmlButton = jQuery('#' + cleanHtmlButtonId);
 
     this.setupCssStorage();
@@ -78,6 +81,16 @@ PresentationControls.prototype.setupControls = function(container) {
                               function(event) {
                                   self.previewBox.hide();
                               });
+    // start with styles hidden
+    this.showStyles(false);
+    this.showStylesButton.toggle(function(event) {
+                                     self.showStyles(true);
+                                     return false;
+                                 },
+                                 function(event) {
+                                     self.showStyles(false);
+                                     return false;
+                                 });
     this.cleanHtmlButton.click(function(event) {
                                    self.cleanHtml();
                                    return false;
@@ -874,6 +887,24 @@ PresentationControls.prototype.showPreview = function() {
                         });
                 }, "json");
     return false;
+};
+
+PresentationControls.prototype.showStyles = function(show) {
+    if (show) {
+        jQuery(this.wym._doc).find('#presmodestyles').remove();
+        jQuery(this.wym._iframe.ownerDocument).find('#presmodestyles').remove();
+        this.showStylesButton.attr('value', 'Hide styles');
+    } else {
+        jQuery('<style rel="stylesheet" type="text/css" id="presmodestyles">' +
+               'p.secommand { display:none; } ' +
+               '*:before    { display: none!important; } ' +
+               '*:after     { top: 0!important; } ' +
+               '</style>').appendTo(jQuery(this.wym._doc).find("head"));
+        jQuery('<style rel="stylesheet" type="text/css" id="presmodestyles">' +
+               '.wym_layout_commands, .wym_classes  {display: none!important;} ' +
+               '</style>').appendTo(jQuery(this.wym._iframe.ownerDocument).find("head"));
+        this.showStylesButton.attr('value', 'Show styles');
+    }
 };
 
 // ---- WYMeditor plugin definition ----
