@@ -139,7 +139,8 @@ def css_class_to_presentation_class(c):
                              verbose_name=c.verbose_name,
                              description=c.description,
                              allowed_elements=c.allowed_elements.lower().split(' '),
-                             column_equiv=c.column_equiv)
+                             column_equiv=c.column_equiv,
+                             category=c.category)
 
 
 @json_view

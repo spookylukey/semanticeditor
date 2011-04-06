@@ -62,13 +62,17 @@ class PresentationClass(PresentationInfo):
     """
     A PresentationInfo representing a CSS class applied to a section.
     """
-    def __init__(self, name, verbose_name="", description="", allowed_elements=None, column_equiv=None):
+    def __init__(self, name, verbose_name="", description="",
+                 allowed_elements=None, column_equiv=None,
+                 category=None):
         super(PresentationClass, self).__init__(prestype="class",
                                                 name=name,
                                                 verbose_name=verbose_name,
                                                 description=description,
                                                 allowed_elements=allowed_elements,
                                                 column_equiv=column_equiv)
+        self.category = category
+
 
 class PresentationCommand(PresentationInfo):
     """
