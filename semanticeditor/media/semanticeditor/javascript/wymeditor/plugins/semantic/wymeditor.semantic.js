@@ -107,7 +107,7 @@ PresentationControls.prototype.setupControls = function(container) {
         .bind("mouseup", function(evt) {
                   // In case the user clicked somewhere else
                   // in the document, we have to update class list
-                  self.updateClassListItemAll();
+                  self.updateAppliedButtons();
               });
     jQuery(this.wym._options.containersSelector).find("a")
         .bind("mousedown", function(evt) {
@@ -119,7 +119,7 @@ PresentationControls.prototype.setupControls = function(container) {
                   // Need to restore the element id before anything else
                   // runs and calls ensureId
                   self.restoreCurrentElemId();
-                  self.updateClassListItemAll();
+                  self.updateAppliedButtons();
               });
 
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
@@ -388,7 +388,7 @@ PresentationControls.prototype.docKeyup = function(evt) {
                      });
         }
     }
-    this.updateClassListItemAll(container);
+    this.updateAppliedButtons(container);
 };
 
 PresentationControls.prototype.docKeydown = function(evt) {
@@ -773,7 +773,7 @@ PresentationControls.prototype.updateClassListItem = function(btn, style) {
     }
 };
 
-PresentationControls.prototype.updateClassListItemAll = function(curContainer) {
+PresentationControls.prototype.updateAppliedButtons = function(curContainer) {
     var self = this;
     if (curContainer == undefined) {
         curContainer = jQuery(this.wym.selected()).parentsOrSelf(this.blockdefSelector);
@@ -793,6 +793,18 @@ PresentationControls.prototype.updateClassListItemAll = function(curContainer) {
                                             self.updateClassListItem(jQuery(this), styles[k]);
                                         });
         }
+
+        // We also update the container list to set the class="used" for
+        // consistent styling between that list and the command/class lists.
+        jQuery(this.wym._options.containersSelector).find("a").each(function(k) {
+            var name = this.name; // stores 'P', 'H1' etc
+            if (name.toLowerCase() == node.tagName.toLowerCase()) {
+                jQuery(this).addClass("used");
+            } else {
+                jQuery(this).removeClass("used");
+            }
+        });
+
     }
 };
 
