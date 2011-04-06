@@ -20,6 +20,7 @@ class CssClassCategory(models.Model):
 
 
 class CssClass(models.Model):
+    category = models.ForeignKey(CssClassCategory, null=True, blank=True)
     name = models.CharField("CSS class name", max_length=255, unique=True,
                                   help_text="The name as it appears in the CSS file")
     verbose_name = models.CharField("Human name", max_length=255, blank=False, unique=True,
