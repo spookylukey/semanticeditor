@@ -653,37 +653,32 @@ PresentationControls.prototype.getVerboseStyleName = function(stylename) {
 
 PresentationControls.prototype.buildClassList = function() {
     var self = this;
-    this.buildListGeneric(this.classList, this.availableStyles,
-                          function(style, btn) { self.toggleStyle(style, btn); },
-                          'id_classlist_');
+    this.classList.empty();
+    jQuery.each(self.availableStyles, function(i, item) {
+        var btn = jQuery("<li><a href='#'>" + self.escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.classList).find("a");
+        // event handlers
+        var style = self.availableStyles[i];
+
+        btn.click(function(event) {
+                      self.toggleStyle(style, btn);
+                      event.preventDefault();
+                  });
+    });
 };
 
 PresentationControls.prototype.buildCommandList = function () {
     var self = this;
-    this.buildListGeneric(this.commandList, this.commands,
-                          function(command, btn) { self.doCommand(command, btn); },
-                          'id_commandlist_');
-};
-
-PresentationControls.prototype.buildListGeneric = function(container, stylelist, btnAction, idStem) {
-    // container - jQuery object that will hold the 'buttons'
-    // stylelist - list of PresentationInfo objects
-    // btnAction - function to call when the button is clicked
-    // idStem - stem of 'id' attribute to use for each button.
-    container.empty();
-
-    var self = this;
-    jQuery.each(stylelist, function(i, item) {
-        var btn = jQuery("<li><a href='#'>" + self.escapeHtml(item.verbose_name) + "</a></li>").appendTo(container).find("a");
+    self.commandList.empty();
+    jQuery.each(self.commands, function(i, item) {
+        var btn = jQuery("<li><a href='#'>" + self.escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.commandList).find("a");
         // event handlers
-        var style = stylelist[i];
+        var command = self.commands[i];
 
         btn.click(function(event) {
-                      btnAction(style, btn);
+                      self.doCommand(command, btn);
                       event.preventDefault();
                   });
     });
-
 };
 
 PresentationControls.prototype.updateClassListItem = function(btn, style) {
