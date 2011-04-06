@@ -627,27 +627,30 @@ PresentationControls.prototype.insertCommandBlocks = function() {
     }
 };
 
+PresentationControls.prototype.isCommandBlock = function(node) {
+    // command blocks are like <p id="newrow_p_1" class="secommand secommand-[commandname]">
+    return (node != undefined && node.tagName != undefined &&
+            node.tagName.toLowerCase() == 'p' && node.className != undefined &&
+            node.className.match(/\bsecommand\b/));
+};
+
 PresentationControls.prototype.updateCommandBlocks = function(node, id, max) {
     // Updates the 'id' of any HTML block that represents a command.
     if (max == 0) {
         return;
     };
     var prev = node.previousSibling;
-    if (prev != undefined && prev.tagName != undefined && prev.tagName.toLowerCase() == 'p') {
-        // command blocks are like <p id="newrow_p_1" class="newrow">
-        // check we've got a command block.
-        var className = prev.className;
+    if (this.isCommandBlock(prev)) {
         var prevId = prev.id;
-        if (prevId && className && prevId.match(eval("/^" + className + "_/"))) {
-            prev.id = className + "_" + id;
-            // need to update presentationInfo as well
-            this.presentationInfo[prev.id] = this.presentationInfo[prevId];
-            delete this.presentationInfo[prevId];
-            // and then the visible indicators
-            this.updateStyleDisplay(prev.id);
-            // do the next one.
-            this.updateCommandBlocks(prev, id, max - 1);
-        }
+        // Update id
+        prev.id = prev.className + "_" + id;
+        // need to update presentationInfo as well
+        this.presentationInfo[prev.id] = this.presentationInfo[prevId];
+        delete this.presentationInfo[prevId];
+        // and then the visible indicators
+        this.updateStyleDisplay(prev.id);
+        // do the next one.
+        this.updateCommandBlocks(prev, id, max - 1);
     }
 };
 
@@ -798,7 +801,8 @@ PresentationControls.prototype.updateAppliedButtons = function(curContainer) {
         // consistent styling between that list and the command/class lists.
         jQuery(this.wym._options.containersSelector).find("a").each(function(k) {
             var name = this.name; // stores 'P', 'H1' etc
-            if (name.toLowerCase() == node.tagName.toLowerCase()) {
+            if (name.toLowerCase() == node.tagName.toLowerCase() &&
+                !self.isCommandBlock(node)) {
                 jQuery(this).addClass("used");
             } else {
                 jQuery(this).removeClass("used");
