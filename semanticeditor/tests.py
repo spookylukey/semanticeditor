@@ -901,3 +901,15 @@ class TestRetrieveStyles(TestCase):
         classes = CssClass.objects.all()
         classes_2 = get_classes('cms_harness/example.html')
         self.assertEqual(len(classes), len(classes_2))
+
+    def test_retrieve_styles_order(self):
+        classes = get_classes('cms_harness/example.html')
+        # Should be ordered by category, alphabetically, with classes with no
+        # category at the beginning.
+        categories = [c.category.name if c.category is not None else '' for c in classes]
+        self.assertEqual(categories, sorted(categories))
+
+        # Should be ordered alphabetically within categories
+        c2 = [c for c in classes if c.category is not None and c.category.name == 'Borders']
+        assert len(c2) > 0 # Sanity
+        self.assertEqual(c2, list(CssClass.objects.filter(category__name='Borders').order_by('verbose_name')))

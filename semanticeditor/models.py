@@ -56,7 +56,7 @@ class CssClass(models.Model):
 
 
 def get_classes(template):
-    classes = CssClass.objects.all().order_by('verbose_name')
-    # Can't do filter in DB easily, because 'templates' is actually
-    # a comma separated list in DB.
+    # Can't do filter in DB easily, because 'templates' is actually a comma
+    # separated list in DB.
+    classes = CssClass.objects.all().order_by('category__name', 'verbose_name')
     return filter(lambda c: template in c.templates, classes)

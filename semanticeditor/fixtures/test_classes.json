@@ -17,6 +17,19 @@
     "pk": 1, 
     "model": "semanticeditor.cssclass", 
     "fields": {
+      "category": 2, 
+      "templates": "cms_harness/example.html", 
+      "name": "greenborder", 
+      "verbose_name": "Green border", 
+      "column_equiv": null, 
+      "allowed_elements": "h1 h2 h3 h4 h5 h6 p blockquote ul ol li newrow newcol", 
+      "description": ""
+    }
+  },
+  {
+    "pk": 2, 
+    "model": "semanticeditor.cssclass", 
+    "fields": {
       "category": null, 
       "templates": "cms_harness/example.html", 
       "name": "funky", 
@@ -27,13 +40,13 @@
     }
   }, 
   {
-    "pk": 2, 
+    "pk": 3, 
     "model": "semanticeditor.cssclass", 
     "fields": {
       "category": 2, 
       "templates": "cms_harness/example.html", 
-      "name": "redborder", 
-      "verbose_name": "Red border", 
+      "name": "blueborder", 
+      "verbose_name": "Blue border", 
       "column_equiv": null, 
       "allowed_elements": "h1 h2 h3 h4 h5 h6 p blockquote ul ol li newrow newcol", 
       "description": ""
