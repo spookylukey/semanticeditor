@@ -105,12 +105,22 @@ PresentationControls.prototype.setupControls = function(container) {
                   self.docKeydown(evt);
               })
         .bind("mouseup", function(evt) {
+                  // In case the user clicked somewhere else
+                  // in the document, we have to update class list
                   self.updateClassListItemAll();
               });
     jQuery(this.wym._options.containersSelector).find("a")
-         .bind("click", function(evt) {
-                   self.updateClassListItemAll();
-               });
+        .bind("mousedown", function(evt) {
+                  // Need to save element id before the 'click' event
+                  // handler for the button runs and changes the id.
+                  self.saveCurrentElemId();
+              })
+        .bind("click", function(evt) {
+                  // Need to restore the element id before anything else
+                  // runs and calls ensureId
+                  self.restoreCurrentElemId();
+                  self.updateClassListItemAll();
+              });
 
     // Insert rewriting of HTML before the WYMeditor updates the textarea.
     jQuery(this.wym._options.updateSelector)
@@ -461,6 +471,45 @@ PresentationControls.prototype.formSubmit = function(event) {
         this.showError(data.message);
         alert("Data in " + this.name + " can't be saved - see error message.");
     }
+};
+
+PresentationControls.prototype.saveCurrentElemId = function() {
+
+    // When a container tag is clicked, the tag of the current node is changed,
+    // and the 'id' attribute is removed. This causes the styling and commands
+    // to be lost. So we save the id and restore after the change.  This can
+    // result in strange ids e.g. an h2 element with the id='h1_1'.  However,
+    // this doesn't matter at all - it only matters that ids are unique
+    var nodeId = null;
+    var s = this.wym._iframe.contentWindow.getSelection();
+    if (s.focusNode != null) {
+        var node = s.focusNode;
+        if (node.nodeName == "#text") {
+            // always true?
+            node = node.parentNode;
+        }
+        nodeId = node.id;
+    }
+    this._savedNodeId = nodeId;
+};
+
+PresentationControls.prototype.restoreCurrentElemId = function() {
+
+    if (this._savedNodeId == null) {
+        return;
+    }
+    var s = this.wym._iframe.contentWindow.getSelection();
+    if (s.focusNode != null) {
+        var node = s.focusNode;
+        if (node.nodeName == "#text") {
+            // always true?
+            node = node.parentNode;
+        }
+        if (node.id == null || node.id == "") {
+            node.id = this._savedNodeId;
+        }
+    }
+    this._savedNodeId = null;
 };
 
 // ---- Manipulation of edited document ----

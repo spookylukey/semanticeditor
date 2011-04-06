@@ -38,9 +38,8 @@ def get_structure(root, assert_structure=False):
         if n.tag in BLOCKDEF:
             sect_id = n.get('id')
             if sect_id is not None:
-                if not sect_id.startswith(n.tag) or sect_id in sect_ids:
-                    # don't use invalid or duplicate ids.
-                    # remove
+                if sect_id in sect_ids:
+                    # don't use duplicate ids.
                     del n.attrib['id']
                 else:
                     # reserve
