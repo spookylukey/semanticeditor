@@ -64,10 +64,6 @@ class MultiSelectField(models.Field):
             func = lambda self, fieldname = name, choicedict = dict(self.choices):",".join([choicedict.get(value,value) for value in getattr(self,fieldname)])
             setattr(cls, 'get_%s_display' % self.name, func)
 
-    def value_to_string(self, obj):
-        value = self._get_val_from_obj(obj)
-        return self.get_db_prep_value(value)
-
     def validate(self, value, model_instance):
         choice_keys = set(k for k, v in self._choices)
         # value is a list of values
