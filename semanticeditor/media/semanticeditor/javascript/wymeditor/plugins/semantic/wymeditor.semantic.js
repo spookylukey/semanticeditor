@@ -654,8 +654,28 @@ PresentationControls.prototype.getVerboseStyleName = function(stylename) {
 PresentationControls.prototype.buildClassList = function() {
     var self = this;
     this.classList.empty();
+    // For each new category encountered, we have an li that contains
+    // a div with a heading, and a ul with all the actual classes.
+    // NB the category could be 'null' so care must be taken. Also,
+    // the list is already sorted by category and verbose_name
+    var state = {start:true,
+                 category:null,
+                 categoryList:null
+                };
     jQuery.each(self.availableStyles, function(i, item) {
-        var btn = jQuery("<li><a href='#'>" + self.escapeHtml(item.verbose_name) + "</a></li>").appendTo(self.classList).find("a");
+        if (state.start || (state.category != item.category)) {
+            var category;
+            if (item.category == null) {
+                category = "Uncategorized";
+            } else {
+                category = item.category;
+            }
+            var classListItem = jQuery("<li><div class=\"categoryHeading\">" + self.escapeHtml(category) + '</div></li>');
+            classListItem.appendTo(self.classList);
+            state.categoryList = jQuery("<ul></ul>");
+            state.categoryList.appendTo(classListItem);
+        }
+        var btn = jQuery("<li><a href='#'>" + self.escapeHtml(item.verbose_name) + "</a></li>").appendTo(state.categoryList).find("a");
         // event handlers
         var style = self.availableStyles[i];
 
@@ -663,6 +683,8 @@ PresentationControls.prototype.buildClassList = function() {
                       self.toggleStyle(style, btn);
                       event.preventDefault();
                   });
+        state.start = false;
+        state.category = item.category;
     });
 };
 

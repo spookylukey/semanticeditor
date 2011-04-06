@@ -140,7 +140,7 @@ def css_class_to_presentation_class(c):
                              description=c.description,
                              allowed_elements=c.allowed_elements.lower().split(' '),
                              column_equiv=c.column_equiv,
-                             category=c.category)
+                             category=c.category.name if c.category is not None else None)
 
 
 @json_view
