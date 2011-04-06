@@ -54,3 +54,9 @@ class CssClass(models.Model):
         verbose_name_plural = "CSS classes"
         ordering = ('verbose_name',)
 
+
+def get_classes(template):
+    classes = CssClass.objects.all().order_by('verbose_name')
+    # Can't do filter in DB easily, because 'templates' is actually
+    # a comma separated list in DB.
+    return filter(lambda c: template in c.templates, classes)

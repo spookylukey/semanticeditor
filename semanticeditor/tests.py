@@ -3,9 +3,10 @@
 from django.test import TestCase
 from lxml import etree as ET
 
-from semanticeditor.api import extract_structure, PresentationInfo, format_html, extract_presentation, clean_html, preview_html
+from semanticeditor.api import extract_structure, PresentationInfo, format_html, extract_presentation, clean_html, preview_html, get_classes
 from semanticeditor.common import html_extract, parse, get_structure
 from semanticeditor.definitions import IncorrectHeadings, BadStructure, TooManyColumns, PresentationClass, NEWROW, NEWCOL, NEWINNERROW, NEWINNERCOL
+from semanticeditor.models import CssClass
 from semanticeditor.layout import LayoutDetails
 from semanticeditor.utils.etree import get_index, get_parent, eliminate_tag, indent
 
@@ -891,3 +892,12 @@ class TestHtmlCleanup(TestCase):
         # Some unicode
         self.assertEqualClean(u'<p>&nbsp;Frappé&nbsp;</p>',
                               u'<p> Frapp&#233; </p>')
+
+
+class TestRetrieveStyles(TestCase):
+    fixtures = ['test_classes.json']
+
+    def test_retrieve_styles_all(self):
+        classes = CssClass.objects.all()
+        classes_2 = get_classes('cms_harness/example.html')
+        self.assertEqual(len(classes), len(classes_2))

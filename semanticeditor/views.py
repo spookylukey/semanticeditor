@@ -4,7 +4,7 @@ from django.utils import simplejson
 from django.core.mail import mail_admins
 from django.conf import settings
 from django.utils.translation import ugettext as _
-from semanticeditor.api import extract_presentation, format_html, preview_html, AllUserErrors, COMMANDS, PresentationInfo, PresentationClass, clean_html
+from semanticeditor.api import extract_presentation, format_html, preview_html, AllUserErrors, COMMANDS, PresentationInfo, PresentationClass, clean_html, get_classes
 from semanticeditor.models import CssClass
 import sys
 try:
@@ -150,10 +150,7 @@ def retrieve_styles(request):
         # Need to look up page to find out what template to use
         p = Page.objects.get(pk=page_id)
         template = p.get_template()
-    classes = CssClass.objects.all().order_by('verbose_name')
-    # Can't do filter in DB easily, because 'templates' is actually
-    # a comma separated list in DB.
-    classes = filter(lambda c: template in c.templates, classes)
+    classes = get_classes(template)
     retval = map(css_class_to_presentation_class,
                  classes)
     return success(map(PI_to_dict,retval))

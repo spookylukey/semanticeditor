@@ -1,0 +1,42 @@
+[
+  {
+    "pk": 2, 
+    "model": "semanticeditor.cssclasscategory", 
+    "fields": {
+      "name": "Borders"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "semanticeditor.cssclasscategory", 
+    "fields": {
+      "name": "Columns"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "semanticeditor.cssclass", 
+    "fields": {
+      "category": null, 
+      "templates": "cms_harness/example.html", 
+      "name": "funky", 
+      "verbose_name": "Funky", 
+      "column_equiv": null, 
+      "allowed_elements": "h1 h2 h3 h4 h5 h6 p blockquote ul ol li newrow newcol", 
+      "description": "Woot!"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "semanticeditor.cssclass", 
+    "fields": {
+      "category": 2, 
+      "templates": "cms_harness/example.html", 
+      "name": "redborder", 
+      "verbose_name": "Red border", 
+      "column_equiv": null, 
+      "allowed_elements": "h1 h2 h3 h4 h5 h6 p blockquote ul ol li newrow newcol", 
+      "description": ""
+    }
+  }
+]
