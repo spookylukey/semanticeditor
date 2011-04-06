@@ -74,3 +74,7 @@ class MultiSelectField(models.Field):
         for v in value:
             if v not in choice_keys:
                 raise exceptions.ValidationError(self.error_messages['invalid_choice'] % value)
+
+
+from south.modelsinspector import add_introspection_rules
+add_introspection_rules([], ["^semanticeditor\.fields\.MultiSelectField"])

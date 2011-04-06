@@ -26,7 +26,7 @@ class Migration:
             'description': ('django.db.models.fields.TextField', [], {'max_length': '255', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'unique': 'True'}),
-            'templates': ('MultiSelectField', ['"Templates"'], {'default': "''", 'blank': 'True'}),
+            'templates': ('semanticeditor.fields.MultiSelectField', ['"Templates"'], {'default': "''", 'blank': 'True'}),
             'verbose_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'unique': 'True'})
         }
     }
