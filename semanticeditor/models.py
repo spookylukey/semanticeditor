@@ -2,7 +2,22 @@ from django.db import models
 from semanticeditor.fields import MultiSelectField
 from django.conf import settings
 
+
 template_list = [(f,n) for (f,n) in settings.CMS_TEMPLATES if f != settings.CMS_TEMPLATE_INHERITANCE_MAGIC]
+
+
+class CssClassCategory(models.Model):
+    name = models.CharField("Category name", max_length=255, unique=True)
+
+    def __unicode__(self):
+        return self.name
+
+
+    class Meta:
+        verbose_name = "CSS class category"
+        verbose_name_plural = "CSS class categories"
+        ordering = ('name',)
+
 
 class CssClass(models.Model):
     name = models.CharField("CSS class name", max_length=255, unique=True,
