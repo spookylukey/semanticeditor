@@ -117,16 +117,6 @@ PresentationControls.prototype.setupControls = function(container) {
         .bind(this.wym._options.updateEvent, function(event) {
                   self.formSubmit(event);
               });
-
-    // Fix height of classList (in timeout to give command list time to load)
-    setTimeout(function() {
-                   var h = jQuery(" .wym_area_main").height() -
-                       jQuery(self.wym._options.containersSelector).height() -
-                       jQuery(self.wym._options.layoutCommandsSelector).height() -
-                       jQuery(self.wym._options.classesSelector + " h2").height() -
-                       20; // 20 is a fudge value, probably equal to some marings/paddings
-                   self.classList.css("height", h.toString() + "px");
-               }, 1000);
 };
 
 // Setup document - splits the HTML into 'content HTML' and 'presentation'
@@ -911,6 +901,14 @@ PresentationControls.prototype.showStyles = function(show) {
         jQuery(this.wym._doc).find('#presmodestyles').remove();
         jQuery(this.wym._iframe.ownerDocument).find('#presmodestyles').remove();
         this.showStylesButton.attr('value', 'Hide styles');
+        // Fix height of list of classes.
+        var h = jQuery(" .wym_area_main").outerHeight() -
+            jQuery(this.wym._options.containersSelector).outerHeight() -
+            jQuery(this.wym._options.layoutCommandsSelector).outerHeight() -
+            20; // fudge factor, padding related?
+        jQuery(this.wym._options.classesSelector).height(h);
+
+
     } else {
         jQuery('<style rel="stylesheet" type="text/css" id="presmodestyles">' +
                'p.secommand { display:none; } ' +

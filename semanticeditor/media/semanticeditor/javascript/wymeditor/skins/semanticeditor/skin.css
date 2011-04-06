@@ -115,7 +115,7 @@
 
 /*CLASSES*/
         .wym_area_right .wym_panel ul {padding-left: 0;}
-        .wym_skin_semanticeditor .wym_classes ul             { overflow-y: auto;
+        .wym_skin_semanticeditor .wym_classes                { overflow-y: auto;
                                                                overflow-x: visible; }
 
 
@@ -243,10 +243,6 @@
 .prescontrolheadings option {color: #666;}
 .prescontrolheadings option.column  {color: blue; }
 .prescontrolheadings option.row  {color: black; }
-
-/* presentation mode off */
-/*.wym_layout_commands, .wym_classes  {display: none!important;}
-*/
 
 /* the editor controls (containers, commands, classes) */
 
