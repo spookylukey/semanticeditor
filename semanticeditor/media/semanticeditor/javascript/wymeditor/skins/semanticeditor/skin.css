@@ -175,13 +175,24 @@
 /* PREVIEW */
 	.previewbox {
 	    background: #fff;
+	    border: 2px solid #808080;
+	}
+
+        .previewbox .closebar {
+            text-align: right;
+        }
+
+        .previewbox .closebar * {
+            margin: 0px;
+        }
+
+        .previewbox .content {
+	    padding: 4px;
 	    width: 400px;
 	    height: 400px;
 	    overflow-y: scroll;
 	    overflow-x: hidden;
-	    border: 2px solid #008000;
-	    padding: 4px;
-	}
+        }
 
 	.previewbox .structural {
 	    border: 2px solid #888;

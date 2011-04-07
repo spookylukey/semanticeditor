@@ -42,6 +42,7 @@ PresentationControls.prototype.setupControls = function(container) {
     var previewButtonId = idPrefix + 'previewbutton';
     var showStylesButtonId = idPrefix + 'showstyles';
     var previewBoxId = idPrefix + 'previewbox';
+    var hidePreviewButtonId = idPrefix + 'hidepreviewbutton';
     var cleanHtmlButtonId = idPrefix + 'cleanhtmlbutton';
     var self = this;
 
@@ -54,13 +55,19 @@ PresentationControls.prototype.setupControls = function(container) {
             "<div class=\"prescontrolerror\" id=\"" + idPrefix + "errorbox" + "\"></div>" +
         "</div>");
 
-    jQuery("body").append("<div style=\"position: absolute; display: none\" class=\"previewbox\" id=\"" + previewBoxId + "\">");
+    jQuery("body").append("<div style=\"position: absolute; display: none\" class=\"previewbox\" id=\"" +  previewBoxId + "\">" +
+                          "<div class=\"closebar\">" +
+                          "<input type=\"submit\" value=\"Close\" id=\"" + hidePreviewButtonId + "\">" +
+                          "</div>" +
+                          "<div class=\"content\"></div>" +
+                          "</div>");
 
     this.classList = jQuery(this.wym._options.classesSelector).find("ul");
     this.commandList = jQuery(this.wym._options.layoutCommandsSelector).find("ul");
     this.errorBox = jQuery('#' + idPrefix + "errorbox");
     this.previewButton = jQuery('#' + previewButtonId);
     this.previewBox = jQuery('#' + previewBoxId);
+    this.hidePreviewButton = jQuery('#' + hidePreviewButtonId);
     this.showStylesButton = jQuery('#' + showStylesButtonId);
     this.cleanHtmlButton = jQuery('#' + cleanHtmlButtonId);
 
@@ -74,13 +81,14 @@ PresentationControls.prototype.setupControls = function(container) {
     this.retrieveStyles(); // async=False
     this.separatePresentation();
 
-    this.previewButton.toggle(function(event) {
+    this.previewButton.click(function(event) {
                                  self.showPreview();
                                  return false;
-                              },
-                              function(event) {
-                                  self.previewBox.hide();
                               });
+    this.hidePreviewButton.click(function(event) {
+                                     self.previewBox.hide();
+                                     return false;
+                                 });
     // start with styles hidden
     this.showStyles(false);
     this.showStylesButton.toggle(function(event) {
@@ -926,10 +934,9 @@ PresentationControls.prototype.showPreview = function() {
                             var btn = self.previewButton;
                             var box = self.previewBox;
                             var pos = btn.offset();
-                            box.html(value.html);
-                            var height = box.height() + parseInt(box.css('padding-top')) + parseInt(box.css('padding-bottom')) +
-                                parseInt(box.css('border-top-width')) + parseInt(box.css('border-bottom-width'));
-                            box.css("top", pos.top - height).css("left", pos.left);
+                            box.find(".content").html(value.html);
+                            var height = box.outerHeight();
+                            box.css("top", pos.top - height - 20).css("left", pos.left);
                             box.show();
                         });
                 }, "json");
