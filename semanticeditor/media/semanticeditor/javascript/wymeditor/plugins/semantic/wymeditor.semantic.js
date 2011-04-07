@@ -542,20 +542,10 @@ PresentationControls.prototype.ensureId = function(node) {
 
     if (id == undefined || id == "") {
         id = this.nextId(node.tagName.toLowerCase());
-        this.assignId(node, id);
+        node.id = id;
         this.registerSection(id);
     }
     return id;
-};
-
-PresentationControls.prototype.assignId = function(node, id) {
-    // Assign an ID to an element.  This can be tricky, because, if the section
-    // has a command block before it, we need to make sure that the id of those
-    // blocks are changed, since the 'position' of the command blocks are only stored
-    // by giving them the right id.
-    node.id = id;
-    // Need to change (up to) the two previous siblings.
-    this.updateCommandBlocks(node, id, 2);
 };
 
 PresentationControls.prototype.nextId = function(tagName) {
@@ -632,26 +622,6 @@ PresentationControls.prototype.isCommandBlock = function(node) {
     return (node != undefined && node.tagName != undefined &&
             node.tagName.toLowerCase() == 'p' && node.className != undefined &&
             node.className.match(/\bsecommand\b/));
-};
-
-PresentationControls.prototype.updateCommandBlocks = function(node, id, max) {
-    // Updates the 'id' of any HTML block that represents a command.
-    if (max == 0) {
-        return;
-    };
-    var prev = node.previousSibling;
-    if (this.isCommandBlock(prev)) {
-        var prevId = prev.id;
-        // Update id
-        prev.id = prev.className + "_" + id;
-        // need to update presentationInfo as well
-        this.presentationInfo[prev.id] = this.presentationInfo[prevId];
-        delete this.presentationInfo[prevId];
-        // and then the visible indicators
-        this.updateStyleDisplay(prev.id);
-        // do the next one.
-        this.updateCommandBlocks(prev, id, max - 1);
-    }
 };
 
 // ---- Display of style information on document.
