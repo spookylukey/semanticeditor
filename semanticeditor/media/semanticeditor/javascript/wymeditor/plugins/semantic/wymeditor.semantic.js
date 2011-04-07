@@ -370,16 +370,19 @@ PresentationControls.prototype.docKeyup = function(evt) {
     // for one keyup event, so we handle that. This appears to happen for any
     // elements that are created by pressing 'Enter'
 
-    // We also need to update the disable/enabled state of the classList and commandList
-    var self = this;
-    var wym = self.wym;
-    var container = jQuery(wym.selected()).parentsOrSelf(this.blockdefSelector);
+    var node = this.getCurrentContainerNode();
+    var container;
+    if (node == null) {
+        return;
+    } else {
+        container = jQuery(node);
+    }
     if (evt.keyCode == 13 && !evt.shiftKey) {
         if (container.is("p[id],li[id]")) {
             // Need to clear id on all elem's with that id except the first.
             // (hoping that jQuery will return them in document order, which it
             // seems to)
-            jQuery(wym._doc).find(container.get(0).tagName + "#" +  container.attr("id")).
+            jQuery(this.wym._doc).find(container.get(0).tagName + "#" +  container.attr("id")).
                 each(function(i){
                          var node = this;
                          if (i > 0) { // skip the first
@@ -388,6 +391,7 @@ PresentationControls.prototype.docKeyup = function(evt) {
                      });
         }
     }
+    // We also need to update the disable/enabled state of the classList and commandList
     this.updateAppliedButtons(container);
 };
 
@@ -481,13 +485,8 @@ PresentationControls.prototype.saveCurrentElemId = function() {
     // result in strange ids e.g. an h2 element with the id='h1_1'.  However,
     // this doesn't matter at all - it only matters that ids are unique
     var nodeId = null;
-    var s = this.wym._iframe.contentWindow.getSelection();
-    if (s.focusNode != null) {
-        var node = s.focusNode;
-        if (node.nodeName == "#text") {
-            // always true?
-            node = node.parentNode;
-        }
+    var node = this.getCurrentContainerNode();
+    if (node != null) {
         nodeId = node.id;
     }
     this._savedNodeId = nodeId;
@@ -498,16 +497,10 @@ PresentationControls.prototype.restoreCurrentElemId = function() {
     if (this._savedNodeId == null) {
         return;
     }
-    var s = this.wym._iframe.contentWindow.getSelection();
-    if (s.focusNode != null) {
-        var node = s.focusNode;
-        if (node.nodeName == "#text") {
-            // always true?
-            node = node.parentNode;
-        }
-        if (node.id == null || node.id == "") {
-            node.id = this._savedNodeId;
-        }
+    var node = this.getCurrentContainerNode();
+    if (node != null &&
+        (node.id == null || node.id == "")) {
+        node.id = this._savedNodeId;
     }
     this._savedNodeId = null;
 };
@@ -748,10 +741,12 @@ PresentationControls.prototype.updateClassListItem = function(btn, style) {
 
 PresentationControls.prototype.updateAppliedButtons = function(curContainer) {
     var self = this;
+    var node;
     if (curContainer == undefined) {
-        curContainer = jQuery(this.wym.selected()).parentsOrSelf(this.blockdefSelector);
+        node = this.getCurrentContainerNode();
+    } else {
+        node = curContainer.get(0);
     }
-    var node = curContainer.get(0);
     if (node != undefined && node != this.currentNode) {
         // if current node has changed, might need to update list
         this.currentNode = node;
@@ -787,6 +782,16 @@ PresentationControls.prototype.updateAppliedButtons = function(curContainer) {
 PresentationControls.prototype.registerSection = function(sectId) {
     // Make sure we have somewhere to store styles for a section.
     this.presentationInfo[sectId] = new Array();
+};
+
+PresentationControls.prototype.getCurrentContainerNode = function() {
+    // Returns the node of the closest container element to the selection
+    var container = jQuery(this.wym.selected()).parentsOrSelf(this.blockdefSelector);
+    if (container.is(this.blockdefSelector)) {
+        return container.get(0);
+    } else {
+        return null;
+    }
 };
 
 PresentationControls.prototype.getCurrentSection = function(style) {
