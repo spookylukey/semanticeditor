@@ -683,7 +683,7 @@ PresentationControls.prototype.buildClassList = function() {
             } else {
                 category = item.category;
             }
-            var classListItem = jQuery("<li><div class=\"categoryHeading\">" + self.escapeHtml(category) + '</div></li>');
+            var classListItem = jQuery("<li><h3 class=\"categoryHeading\">" + self.escapeHtml(category) + '</h3></li>');
             classListItem.appendTo(self.classList);
             state.categoryList = jQuery("<ul></ul>");
             state.categoryList.appendTo(classListItem);
