@@ -15,7 +15,8 @@ class CssClassAdminInline(admin.StackedInline):
     )
 
 class CssClassAdmin(admin.ModelAdmin):
-    list_display = ('verbose_name', 'name', 'category')
+    list_display = ('verbose_name', 'name', 'category', 'allowed_elements')
+    list_editable = ('name', 'category', 'allowed_elements')
 
 class CssClassCategoryAdmin(admin.ModelAdmin):
     inlines = [CssClassAdminInline,]
