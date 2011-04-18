@@ -23,7 +23,9 @@ h1, h2, h3, h4, h5, h6,
 ul, ol,
 table,
 blockquote,
-pre
+pre,
+table,
+table caption
 {
     padding: 0 30px 1px; /* left margin is for the container symbol; right margin to look nice */
     position:relative; /* to establish containing block for ':before' elements */
@@ -43,7 +45,9 @@ h1:after, h2:after, h3:after, h4:after, h5:after, h6:after,
 ul:after, ol:after, li:after,
 table:after,
 blockquote:after,
-pre:after
+pre:after,
+table:after,
+table caption:after
     {
     position: absolute; /* take it out of the flow */
     left: 0; top: 1em; /* 1em should be enough vertical space for the :before style marker */
@@ -63,8 +67,10 @@ h5:after {content:'h5';}
 h6:after {content:'h6';}
 ul:after {content:'unordered list';}
 h6:after {content:'h6';}
+table:after {content:'table';}
+table caption:after {content:'caption';}
 
-/* inline semantic elements */
+/* inline semantic elements - this doesn't work in FF <= 3.6.13, but it's not essential */
 
 em, strong  {position: relative;}   /* for :after elements */
 em:hover:after   {content: "emphasis";}
@@ -91,7 +97,9 @@ h1:before, h2:before, h3:before, h4:before, h5:before, h6:before,
 ul:before, ol:before, li:before,
 table:before,
 blockquote:before,
-pre:before
+pre:before,
+table:before,
+table caption:before
 {
     display: block;
     content: "\00a0";   /* puts a non-breaking space in it, so it always takes space */
@@ -164,6 +172,12 @@ br:after  {content: "warning"; background: red; margin: 100px; display: inline;}
 /* things to do */
 
 blockquote	{font-weight: light; color: #666;} /* not actually used yet, but we should */
+
+/* tables */
+
+table { background: #cc6633; }
+th { background: #F5D29A; }
+td { background: white;padding: 2px 5px; }
 
 
 /* visual feedback for non-valid nesting of elements*/
