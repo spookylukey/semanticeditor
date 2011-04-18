@@ -8,7 +8,9 @@ from pyquery import PyQuery as pq
 from semanticeditor.common import html_extract, parse, get_classes_for_node
 from semanticeditor.definitions import BLOCKDEF_SELECTOR, COMMANDS
 from semanticeditor.utils.etree import get_parent, get_index, eliminate_tag, empty_text
+from django.conf import settings
 
+disallowed_elements = getattr(settings, "SEMANTICEDITOR_DISALLOWED_ELEMENTS", ['span', 'li p:only-child', 'table', 'tbody', 'thead', 'tr', 'td'])
 
 def clean_tree(root):
     """
@@ -38,7 +40,7 @@ def clean_tree(root):
         i = get_index(p, n)
         eliminate_tag(p, i)
 
-    for x in ['table', 'tbody', 'thead', 'tr', 'td', 'span', 'li p:only-child']:
+    for x in disallowed_elements: 
         for n in doc(x):
             pull_up(n)
     # "li p:only-child" appears to be buggy.  It works like
