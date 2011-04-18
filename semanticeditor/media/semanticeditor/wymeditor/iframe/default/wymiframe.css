@@ -6,15 +6,15 @@ body  {
     }
 
 * {margin: 0;} /* reset them all */
-	
-p	{font-size: 100%;}
 
-h1	{font-size: 194%;}  /* heading sizes increase by 25% */
-h2	{font-size: 155%;}
-h3	{font-size: 125%;}
-h4	{font-size: 100%;}
-h5	{font-size: 88%;}
-h6	{font-size: 78%;}
+p   {font-size: 100%;}
+
+h1  {font-size: 194%;}  /* heading sizes increase by 25% */
+h2  {font-size: 155%;}
+h3  {font-size: 125%;}
+h4  {font-size: 100%;}
+h5  {font-size: 88%;}
+h6  {font-size: 78%;}
 
 /* basic styles for all legal block-level elements */
 
