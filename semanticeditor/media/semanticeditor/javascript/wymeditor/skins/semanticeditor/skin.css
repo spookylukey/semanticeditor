@@ -2,32 +2,28 @@
 @import url("wym.css");
 
 /* SEMANTIC EDITOR PRESENTATION CONTROLS */
-    div.prescontrol             { }
-	.prescontrol td             { padding: 0; }
-	.prescontrolheadings        { margin-right: 260px; }
-	.prescontrolheadings select { background: inherit; border: none; width: 100%;}
-	.prescontrolclasslistcont div { clear:left; }
-	.prescontrolclasslist         { overflow-y: scroll; border: none; }
-	.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
-	.prescontrolclasslistcont {width: 220px; float: right;}
-	.prescontrol .prescontrolclasslist label {
-	    /* Override some stuff set by Django admin CSS*/
-	    display: inline;
-	    width: auto;
-	    float: none;
-	    /* Make them harder to 'fall off' w.r.t tooltips */
-	    line-height: 1.5em;
-	    font-size: 100%;
-	    font-family: "Futura", "Helvetica";
-	}
-        .prescontrol .prescontrolheadings label {
-            display: inline; /* override hiding */
-            width: auto;
-            float: none;
-        }
+.prescontrol td             { padding: 0; border: none; }
+.prescontrolheadings        { margin-right: 260px; }
+.prescontrolheadings select { background: inherit; border: none; width: 100%;}
+.prescontrolclasslistcont div { clear:left; }
+.prescontrolclasslist         { overflow-y: scroll; border: none; }
+.prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
+.prescontrolclasslistcont   { width: 220px; float: right; }
+.prescontrol .prescontrolclasslist label {
+    /* Override some stuff set by Django admin CSS*/
+    display: inline;
+    width: auto;
+    float: none;
+    /* Make them harder to 'fall off' w.r.t tooltips */
+    line-height: 1.5em;
+    font-size: 100%;
+}
 
-    .prescontrol td {border: none;}    
-
+.prescontrol .prescontrolheadings label {
+    display: inline; /* override hiding */
+    width: auto;
+    float: none;
+}
 
 .prescontrolheadings select { border: 1px solid #ccc; font-family: "Gill Sans"; font-size: 110%;}
 .prescontrolheadings option {color: #666;}
@@ -36,7 +32,12 @@
 
 /* the editor controls (containers, commands, classes) */
 
-.wym_section.wym_panel li, .wym_tools li  {display: inline-block; margin-bottom: 4px; font: small-caption;}
+.wym_section.wym_panel li,
+.wym_tools li  {
+    display: inline-block;
+    margin-bottom: 4px;
+    font: small-caption;
+    }
 
 .wym_panel li a,
 .wym_tools li a {
