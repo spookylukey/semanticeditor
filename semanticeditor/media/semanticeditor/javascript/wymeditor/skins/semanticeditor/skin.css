@@ -1,3 +1,4 @@
+@import url("preview.css");
 /*
  * WYMeditor : what you see is What You Mean web-based editor
  * Copyright (c) 2008 Jean-Francois Hovinne, http://www.wymeditor.org/
@@ -171,84 +172,6 @@
 
     .prescontrol td {border: none;}    
 
-
-/* PREVIEW */
-	.previewbox {
-	    background: #fff;
-	    border: 2px solid #808080;
-	}
-
-        .previewbox .closebar {
-            text-align: right;
-        }
-
-        .previewbox .closebar * {
-            margin: 0px;
-        }
-
-        .previewbox .content {
-	    padding: 4px;
-	    width: 400px;
-	    height: 400px;
-	    overflow-y: scroll;
-	    overflow-x: hidden;
-        }
-
-	.previewbox .structural {
-	    border: 2px solid #888;
-	    margin: 2px;
-	    padding: 2px;
-	    overflow: hidden;
-	}
-
-	.previewbox .tagh1,
-	.previewbox .tagh2,
-	.previewbox .tagh3,
-	.previewbox .tagh4,
-	.previewbox .tagh5,
-	.previewbox .tagh6 {
-	    font-weight: bold;
-	}
-
-	.previewbox .row
-	{
-	    clear: left;
-	}
-
-	.previewbox .columns2,
-	.previewbox .columns3,
-	.previewbox .columns4
-	{
-	    /* Can show row structure here if desired
-
-	    border: 1px solid red;
-	    padding: 2px;
-	    margin-bottom: 3px; */
-	}
-
-	.previewbox .columns2 > .column {
-	    float: left;
-	    width: 50%;
-	}
-
-	.previewbox .columns3 > .column {
-	    float: left;
-	    width: 33%;
-	}
-	.previewbox .columns4 > .column {
-	    float: left;
-	    width: 25%;
-	}
-
-	.previewbox .columns5 > .column {
-	    float: left;
-	    width: 20%;
-	}
-
-	.previewbox .columns6 > .column {
-	    float: left;
-	    width: 16%;
-	}
 
 .prescontrolheadings select { border: 1px solid #ccc; font-family: "Gill Sans"; font-size: 110%;}
 .prescontrolheadings option {color: #666;}
