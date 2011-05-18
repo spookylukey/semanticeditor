@@ -37,19 +37,19 @@ class SemanticTextPlugin(TextPlugin):
         return TextPluginForm
 
     def get_form(self, request, obj=None, **kwargs):
-        page = None
-        if obj:
-            page = obj.page
-        else:
-            # Ugly hack here - we really need to get the page id.
-            m = re.search("/page/(\d+)/edit-plugin/(\d+)/$", request.path)
-            if m is not None:
-                page = Page.objects.get(pk=int(m.groups()[0]))
 
-        if page is None:
-            import warnings
-            warnings.warn("Could not work out what page we are on, which will result in problems with class list")
-
+        placeholder = obj.placeholder
+        field = placeholder._get_attached_field_name()
+        model = placeholder._get_attached_model()
+        
+        # if obj.placeholder.page, we must be editing a plugin belonging to a page; 
+        # if not, we can find the object it belongs to via placeholder._get_attached_model()
+        
+        # all Arkestra models with placeholders will have a get_website() method - what about
+        # other models, that don't? For now, that's someone else's problem
+        
+        page = obj.page or model.objects.get(**{field: obj.placeholder.id}).get_website()
+        
         plugins = plugin_pool.get_text_enabled_plugins(self.placeholder, page)
         form = self.get_form_class(request, plugins, page)
         kwargs['form'] = form # override standard form
