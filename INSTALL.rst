@@ -12,7 +12,7 @@ Dependencies
  * django-cms2, tested on r172 or later
  * lxml, tested with 2.2.4
  * pyquery, tested with 0.3.1
- * Javascript dependencies are included in media/
+ * Javascript dependencies are included in static/
 
 Settings
 ========
@@ -20,7 +20,7 @@ Settings
  * Normal Django settings
  * Normal django-cms2 settings
  * INSTALLED_APPS - add "semanticeditor"
- * SEMANTICEDITOR_MEDIA_URL = os.path.join(MEDIA_URL, "semanticeditor/")
+ * SEMANTICEDITOR_MEDIA_URL = os.path.join(STATIC_URL, "semanticeditor/")
 
 Templates
 =========
@@ -32,7 +32,7 @@ Media
 =====
 
 Media files: media/semanticeditor needs to be copied/linked/served so that it is
-under MEDIA_URL.  (i.e. side-by-side with the media/cms directory).
+under STATIC_URL.
 
 URLS
 ====

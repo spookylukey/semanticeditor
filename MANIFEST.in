@@ -3,4 +3,4 @@ include INSTALL.rst
 include LICENSE
 include MANIFEST.in
 recursive-include semanticeditor/templates *
-recursive-include semanticeditor/media *
+recursive-include semanticeditor/static *
