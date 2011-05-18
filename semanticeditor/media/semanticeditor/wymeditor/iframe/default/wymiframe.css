@@ -38,6 +38,10 @@ li:first-child  {margin-top: 1em;} /* get out of the way of any list markers */
 ul li   {list-style: none;}
 ol li   {list-style: decimal;}
 
+/* table captions do too - we're going to need something suitable here */
+table caption   {}
+
+
 /* styles for the container and command markers */
 
 p:after,
