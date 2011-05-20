@@ -243,7 +243,7 @@ PresentationControls.prototype.tagnameToSelector = function(name) {
             // Need to ensure we don't match commands
             var selector = "p";
             for (var i = 0; i < this.commands.length; i++) {
-                selector = selector + "[class!='secommand-" + this.commands[i].name + "']";
+                selector = selector + "[class!='secommand secommand-" + this.commands[i].name + "']";
             }
             return selector;
         } else {
