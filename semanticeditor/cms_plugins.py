@@ -38,17 +38,19 @@ class SemanticTextPlugin(TextPlugin):
 
     def get_form(self, request, obj=None, **kwargs):
 
-        placeholder = obj.placeholder
-        field = placeholder._get_attached_field_name()
-        model = placeholder._get_attached_model()
+        page = None
+        if obj:
+            # if obj.placeholder.page, we must be editing a plugin belonging to a page; 
+            placeholder = obj.placeholder
+            field = placeholder._get_attached_field_name()
+            model = placeholder._get_attached_model()
         
-        # if obj.placeholder.page, we must be editing a plugin belonging to a page; 
-        # if not, we can find the object it belongs to via placeholder._get_attached_model()
+            # if not, we can find the object it belongs to via placeholder._get_attached_model()
         
-        # all Arkestra models with placeholders will have a get_website() method - what about
-        # other models, that don't? For now, that's someone else's problem
+            # all Arkestra models with placeholders will have a get_website() method - what about
+            # other models, that don't? For now, that's someone else's problem
         
-        page = obj.page or model.objects.get(**{field: obj.placeholder.id}).get_website()
+            page = obj.page or model.objects.get(**{field: obj.placeholder.id}).get_website()
         
         plugins = plugin_pool.get_text_enabled_plugins(self.placeholder, page)
         form = self.get_form_class(request, plugins, page)
