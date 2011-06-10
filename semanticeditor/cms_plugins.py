@@ -38,6 +38,7 @@ class SemanticTextPlugin(TextPlugin):
 
     def get_form(self, request, obj=None, **kwargs):
 
+        page = None
         placeholder = obj.placeholder
         field = placeholder._get_attached_field_name()
         model = placeholder._get_attached_model()
@@ -48,8 +49,13 @@ class SemanticTextPlugin(TextPlugin):
         # all Arkestra models with placeholders will have a get_website() method - what about
         # other models, that don't? For now, that's someone else's problem
         
-        page = obj.page or model.objects.get(**{field: obj.placeholder.id}).get_website()
-        
+        try:
+            page = obj.page or model.objects.get(**{field: obj.placeholder.id}).get_website()
+        except AttributeError:
+            import warnings
+            warnings.warn("Couldn't work out get_website() for this item, which will result in problems with class list")
+
+            
         plugins = plugin_pool.get_text_enabled_plugins(self.placeholder, page)
         form = self.get_form_class(request, plugins, page)
         kwargs['form'] = form # override standard form
