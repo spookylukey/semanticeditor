@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "semanticeditor",
-    version = "0.1",
+    version = "0.2",
     description = "A Django CMS plugin for editing text with presentation and layout in a semantic way.",
     long_description = read('README.rst'),
     url = 'https://bitbucket.org/spookylukey/semanticeditor/',
