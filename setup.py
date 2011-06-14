@@ -1,19 +1,37 @@
+#!/usr/bin/env python
 import os
 from setuptools import setup, find_packages
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+def find_package_data(pkg, filetypes):
+    import glob
+    import itertools
+
+    out = []
+    for f in filetypes:
+        for x in range(0, 20):
+            pattern = pkg + '/' + ('*/' * x) + f
+            out.extend([p[len(pkg)+1:] for p in glob.glob(pattern)])
+    return out
+
+
 setup(
     name = "semanticeditor",
-    version = "0.2",
+    version = "0.2.1",
     description = "A Django CMS plugin for editing text with presentation and layout in a semantic way.",
-    long_description = read('README.rst'),
+    long_description = (
+        read('README.rst') + '\n\n' + read('CHANGES.rst')
+        ),
     url = 'https://bitbucket.org/spookylukey/semanticeditor/',
     license = 'BSD',
     author = 'Luke Plant',
     author_email = 'L.Plant.98@cantab.net',
     packages = find_packages(),
+    package_data = {
+        'semanticeditor': find_package_data('semanticeditor', ['*.js', '*.html', '*.css', '*.png'])
+        },
     classifiers = [
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
