@@ -18,7 +18,7 @@ Settings
 ========
 
  * Normal Django settings
- * Normal django-cms2 settings
+ * Normal django-cms settings
  * INSTALLED_APPS - add "semanticeditor"
  * SEMANTICEDITOR_MEDIA_URL = os.path.join(STATIC_URL, "semanticeditor/")
 
@@ -31,8 +31,8 @@ is in TEMPLATE_LOADERS.
 Media
 =====
 
-Media files: media/semanticeditor needs to be copied/linked/served so that it is
-under STATIC_URL.
+Media files: /semanticeditor/static needs to be copied/linked/served so that it is
+under STATIC_URL. (The normal collectstatic tool should do this).
 
 URLS
 ====
