@@ -39,23 +39,29 @@ class SemanticTextPlugin(TextPlugin):
     def get_form(self, request, obj=None, **kwargs):
 
         page = None
-        if obj:
-            # if obj.placeholder.page, we must be editing a plugin belonging to a page; 
-            placeholder = obj.placeholder
-            field = placeholder._get_attached_field_name()
-            model = placeholder._get_attached_model()
-        
-            # if not, we can find the object it belongs to via placeholder._get_attached_model()
-        
-            # all Arkestra models with placeholders will (should) have a get_website() method
-            # for other models, that don't, we just do without
-        
-            try:
-                page = obj.page or model.objects.get(**{field: obj.placeholder.id}).get_website()
-            except AttributeError:
-                import warnings
-                warnings.warn("Couldn't work out get_website() for this item, which will result in problems with class list")
+        # In theory, placeholders can belong to many pages. In practice
+        # they usually belong to just one.
+        try:
+            page = self.placeholder.page_set.all()[0]
+        except IndexError:
+            pass
 
+        if page is None and obj is not None:
+            # Fallback for Arkestra:
+             placeholder = obj.placeholder
+             field = placeholder._get_attached_field_name()
+             model = placeholder._get_attached_model()
+
+             # all Arkestra models with placeholders will (should) have a
+             # get_website() method.
+             try:
+                 page = model.objects.get(**{field: placeholder.id}).get_website()
+             except AttributeError:
+                 pass
+
+        if page is None:
+            import warnings
+            warnings.warn("Couldn't work out page for this item, which will result in problems with CSS class list")
 
         plugins = plugin_pool.get_text_enabled_plugins(self.placeholder, page)
         form = self.get_form_class(request, plugins, page)
