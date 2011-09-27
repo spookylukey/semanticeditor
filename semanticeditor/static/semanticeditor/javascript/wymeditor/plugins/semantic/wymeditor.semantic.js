@@ -30,7 +30,7 @@ function PresentationControls(wym, opts) {
     // Need to sync with presentation.py
     this.blockdefSelector = "h1,h2,h3,h4,h5,h6,p,ol,ul,blockquote,li,pre";
 
-    this.setupControls(jQuery(wym._bvox).find(".wym_area_bottom"));
+    this.setupControls(jQuery(wym._box).find(".wym_area_bottom"));
 }
 
 // ---- Setup and loading ----
