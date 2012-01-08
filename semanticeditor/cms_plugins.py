@@ -53,9 +53,12 @@ class SemanticTextPlugin(TextPlugin):
              model = placeholder._get_attached_model()
 
              # all Arkestra models with placeholders will (should) have a
-             # get_website() method.
+             # get_website property.
              try:
-                 page = model.objects.get(**{field: placeholder.id}).get_website()
+                 page = model.objects.get(**{field: placeholder.id}).get_website    
+             # older Arkestra versions used a get_website() method
+             except TypeError:
+                 page = model.objects.get(**{field: placeholder.id}).get_website()    
              except AttributeError:
                  pass
 
