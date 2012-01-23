@@ -44,6 +44,7 @@ PresentationControls.prototype.setupControls = function(container) {
     var previewBoxId = idPrefix + 'previewbox';
     var hidePreviewButtonId = idPrefix + 'hidepreviewbutton';
     var cleanHtmlButtonId = idPrefix + 'cleanhtmlbutton';
+    var editorNewTabId = idPrefix + 'editornewtab';
     var self = this;
 
     // Create elements
@@ -53,6 +54,7 @@ PresentationControls.prototype.setupControls = function(container) {
             "<input type=\"submit\" id=\"" + showStylesButtonId + "\" /><br/>" +
             "<input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanHtmlButtonId  +  "\" /><br/>" +
             "<input type=\"submit\" value=\"Preview\" id=\"" + previewButtonId + "\" /><br/>" +
+            "<input type=\"submit\" value=\"Edit in new tab\" id=\"" + editorNewTabId + "\" /<br/>" +
             "<div class=\"prescontrolerror\" id=\"" + idPrefix + "errorbox" + "\"></div>" +
         "</div>");
 
@@ -71,6 +73,7 @@ PresentationControls.prototype.setupControls = function(container) {
     this.hidePreviewButton = jQuery('#' + hidePreviewButtonId);
     this.showStylesButton = jQuery('#' + showStylesButtonId);
     this.cleanHtmlButton = jQuery('#' + cleanHtmlButtonId);
+    this.editorNewTabButton = jQuery('#' + editorNewTabId);
 
     this.setupCssStorage();
 
@@ -104,6 +107,11 @@ PresentationControls.prototype.setupControls = function(container) {
                                    self.cleanHtml();
                                    return false;
                                });
+    this.editorNewTabButton.click(function(event) {
+                                      var url = self.wym._box.get(0).ownerDocument.URL;
+                                      window.open(url, '_blank');
+                                      return false;
+                                  });
     jQuery(this.wym._doc)
         .bind("keyup", function(evt) {
                   // this style of binding gives docKeyup
