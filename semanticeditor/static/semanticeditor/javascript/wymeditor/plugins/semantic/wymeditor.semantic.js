@@ -30,7 +30,7 @@ function PresentationControls(wym, opts) {
     // Need to sync with presentation.py
     this.blockdefSelector = "h1,h2,h3,h4,h5,h6,p,ol,ul,blockquote,li,pre";
 
-    this.setupControls(jQuery(wym._box).find(".wym_area_bottom"));
+    this.setupControls(jQuery(wym._box).find(".wym_area_right"));
 }
 
 // ---- Setup and loading ----
@@ -47,11 +47,12 @@ PresentationControls.prototype.setupControls = function(container) {
     var self = this;
 
     // Create elements
-    container.after(
-        "<div class=\"prescontrol\">" +
-            "<input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanHtmlButtonId  +  "\" />" +
-            "<input type=\"submit\" value=\"Preview\" id=\"" + previewButtonId + "\" />" +
-            "<input type=\"submit\" id=\"" + showStylesButtonId + "\" />" +
+    container.prepend(
+        "<div class=\"prescontrol wym_panel\">" +
+            "<h2>Semantic editor</h2>" +
+            "<input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanHtmlButtonId  +  "\" /><br/>" +
+            "<input type=\"submit\" value=\"Preview\" id=\"" + previewButtonId + "\" /><br/>" +
+            "<input type=\"submit\" id=\"" + showStylesButtonId + "\" /><br/>" +
             "<div class=\"prescontrolerror\" id=\"" + idPrefix + "errorbox" + "\"></div>" +
         "</div>");
 
@@ -931,12 +932,11 @@ PresentationControls.prototype.showPreview = function() {
                 function(data) {
                     self.withGoodData(data,
                         function(value) {
-                            var btn = self.previewButton;
                             var box = self.previewBox;
-                            var pos = btn.offset();
+                            var pos = jQuery(self.wym._iframe).offset();
                             box.find(".content").html(value.html);
                             var height = box.outerHeight();
-                            box.css("top", pos.top - height - 20).css("left", pos.left);
+                            box.css("top", pos.top + 20).css("left", pos.left + 20);
                             box.show();
                         });
                 }, "json");
