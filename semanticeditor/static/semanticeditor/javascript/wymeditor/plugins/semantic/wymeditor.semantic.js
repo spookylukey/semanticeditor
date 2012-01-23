@@ -50,9 +50,9 @@ PresentationControls.prototype.setupControls = function(container) {
     container.prepend(
         "<div class=\"prescontrol wym_panel\">" +
             "<h2>Semantic editor</h2>" +
+            "<input type=\"submit\" id=\"" + showStylesButtonId + "\" /><br/>" +
             "<input type=\"submit\" value=\"Clean pasted HTML\" id=\"" + cleanHtmlButtonId  +  "\" /><br/>" +
             "<input type=\"submit\" value=\"Preview\" id=\"" + previewButtonId + "\" /><br/>" +
-            "<input type=\"submit\" id=\"" + showStylesButtonId + "\" /><br/>" +
             "<div class=\"prescontrolerror\" id=\"" + idPrefix + "errorbox" + "\"></div>" +
         "</div>");
 
@@ -947,7 +947,7 @@ PresentationControls.prototype.showStyles = function(show) {
     if (show) {
         jQuery(this.wym._doc).find('#presmodestyles').remove();
         jQuery(this.wym._iframe.ownerDocument).find('#presmodestyles').remove();
-        this.showStylesButton.attr('value', 'Hide styles');
+        this.showStylesButton.attr('value', 'Hide presentation layer');
         // Fix height of list of classes.
         var h = jQuery(" .wym_area_main").outerHeight() -
             jQuery(this.wym._options.containersSelector).outerHeight() -
@@ -965,7 +965,7 @@ PresentationControls.prototype.showStyles = function(show) {
         jQuery('<style rel="stylesheet" type="text/css" id="presmodestyles">' +
                '.wym_layout_commands, .wym_classes  {display: none!important;} ' +
                '</style>').appendTo(jQuery(this.wym._iframe.ownerDocument).find("head"));
-        this.showStylesButton.attr('value', 'Show styles');
+        this.showStylesButton.attr('value', 'Show presentation layer');
     }
 };
 
