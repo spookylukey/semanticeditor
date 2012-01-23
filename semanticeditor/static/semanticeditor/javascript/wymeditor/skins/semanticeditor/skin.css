@@ -2,33 +2,7 @@
 @import url("wym.css");
 
 /* SEMANTIC EDITOR PRESENTATION CONTROLS */
-.prescontrol td             { padding: 0; border: none; }
-.prescontrolheadings        { margin-right: 260px; }
-.prescontrolheadings select { background: inherit; border: none; width: 100%;}
-.prescontrolclasslistcont div { clear:left; }
-.prescontrolclasslist         { overflow-y: scroll; border: none; }
 .prescontrolerror           { color: red; text-align: center; padding-top: 5px; }
-.prescontrolclasslistcont   { width: 220px; float: right; }
-.prescontrol .prescontrolclasslist label {
-    /* Override some stuff set by Django admin CSS*/
-    display: inline;
-    width: auto;
-    float: none;
-    /* Make them harder to 'fall off' w.r.t tooltips */
-    line-height: 1.5em;
-    font-size: 100%;
-}
-
-.prescontrol .prescontrolheadings label {
-    display: inline; /* override hiding */
-    width: auto;
-    float: none;
-}
-
-.prescontrolheadings select { border: 1px solid #ccc; font-size: 110%;}
-.prescontrolheadings option {color: #666;}
-.prescontrolheadings option.column  {color: blue; }
-.prescontrolheadings option.row  {color: black; }
 
 /* the editor controls (containers, commands, classes) */
 
