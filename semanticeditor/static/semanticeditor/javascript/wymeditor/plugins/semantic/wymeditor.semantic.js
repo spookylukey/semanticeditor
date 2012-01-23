@@ -640,10 +640,55 @@ PresentationControls.prototype.updateStyleDisplay = function(sectId) {
     var styles = this.presentationInfo[sectId];
     var self = this;
     var stylelist = jQuery.map(styles, function(s, i) {
-                                   return self.getVerboseStyleName(s.name);
-                               }).join(", ");
-    // put a non-breaking space into the style list, so it always exists                           
-    this.addCssRule("#" + sectId + ":before", 'content: "' + stylelist + '\\00a0' + '"');
+                                   return self.getPresentationInfo(s.name);
+                               });
+    // Group by category:
+    var cmpString = function(a, b) {
+        if (a == null && b == null) {
+            return 0;
+        }
+        if (a == null) {
+            return -1;
+        }
+        if (b == null) {
+            return 1;
+        }
+        if (a < b) {
+            return -1;
+        }
+        if (a > b) {
+            return 1;
+        }
+        return 0;
+    };
+    stylelist.sort(function(s1, s2) {
+                       if (s1.category == s2.category) {
+                           return cmpString(s1.verbose_name, s2.verbose_name);
+                       } else {
+                           return cmpString(s1.category, s2.category);
+                       }
+                   });
+
+    // Now build the caption.
+    var caption = [];
+    var currentCategory = null;
+    jQuery.each(stylelist, function(i, item) {
+        if (caption.length > 0) {
+            caption.push(", ");
+        }
+        if (currentCategory != item.category) {
+            // NB - due to sorting, uncategorized items always appear at
+            // start, which is what we want.
+            if (item.category != null) {
+                caption.push(item.category + ": ");
+            }
+            currentCategory = item.category;
+        }
+        caption.push(item.verbose_name);
+    });
+
+    // put a non-breaking space into the style list, so it always exists
+    this.addCssRule("#" + sectId + ":before", 'content: "' + caption.join("") + '\\00a0' + '"');
 };
 
 PresentationControls.prototype.updateAllStyleDisplay = function() {
@@ -652,20 +697,20 @@ PresentationControls.prototype.updateAllStyleDisplay = function() {
     }
 };
 
-PresentationControls.prototype.getVerboseStyleName = function(stylename) {
-    // Full style information is not stored against individual headings, only
-    // the type and name. So sometimes we need to go from one to the other.
+PresentationControls.prototype.getPresentationInfo = function(stylename) {
+    // Full PresentationInfo information is not stored against individual DOM nodes, only
+    // the prestype and name. This function gets the full info from the name.
 
     var styles = this.availableStyles;
     for (var i = 0; i < styles.length; i++) {
         if (styles[i].name == stylename) {
-            return styles[i].verbose_name;
+            return styles[i];
         }
     }
     var commands = this.commands;
     for (var i2 = 0; i2 < commands; i2++) {
         if (commands[i2].name == stylename) {
-            return commands[i2].verbose_name;
+            return commands[i2];
         }
     }
     return undefined; // shouldn't get here
