@@ -736,6 +736,7 @@ PresentationControls.prototype.updateClassListItem = function(btn, style) {
             btn.removeClass("used");
         } else {
             btn.hide();
+            btn.addClass('disabled');
         }
     } else {
         if (style.prestype == "command") {
@@ -746,6 +747,7 @@ PresentationControls.prototype.updateClassListItem = function(btn, style) {
                 btn.removeClass("used");
             }
         } else {
+            btn.removeClass('disabled');
             btn.show();
             if (this.hasStyle(sectId, style)) {
                 btn.addClass("used");
@@ -778,6 +780,16 @@ PresentationControls.prototype.updateAppliedButtons = function(curContainer) {
                                             self.updateClassListItem(jQuery(this), styles[k]);
                                         });
         }
+        this.classList.find('li.class-category').each(function(k) {
+            var category = jQuery(this);
+            var total = category.find('li a').length;
+            var hidden = category.find('li a.disabled').length;
+            if ((total - hidden) > 0) {
+                category.show();
+            } else {
+                category.hide();
+            }
+        });
 
         // We also update the container list to set the class="used" for
         // consistent styling between that list and the command/class lists.
