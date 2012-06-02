@@ -31,6 +31,8 @@ class CssClass(models.Model):
                                    "list of styles.  The data will be interpreted "
                                    "as raw HTML, so it can include an example.")
     templates = MultiSelectField("Templates", choices=template_list, blank=True,
+                                 help_text="Available to all templates by default; "
+                                 "select templates to restrict availability.",
                                  default="")
 
     allowed_elements = models.CharField("Allowed HTML elements", max_length=255,
@@ -59,4 +61,6 @@ def get_classes(template):
     # Can't do filter in DB easily, because 'templates' is actually a comma
     # separated list in DB.
     classes = CssClass.objects.all().order_by('category__name', 'verbose_name')
-    return filter(lambda c: template in c.templates, classes)
+    # the class is allowed in the template if explicitly mentioned, or if no templates
+    # are specified - useful, because many classes will be used across all templates  
+    return [c for c in classes if c.templates == [u''] or template in c.templates]
