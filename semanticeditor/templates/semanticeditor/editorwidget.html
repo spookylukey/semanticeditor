@@ -6,10 +6,10 @@ var editPluginPopupCallbacks = {};
 
 {% include "cms/plugins/widgets/widget_lib.js" %}
 
+(function(jQuery){
 
-
-$(document).ready(function(){
-    $('#id_{{ name }}').wymeditor({
+jQuery(document).ready(function(){
+    jQuery('#id_{{ name }}').wymeditor({
         lang: '{{ language }}',
         skin: 'semanticeditor',
         skinPath: "{{ SEMANTICEDITOR_MEDIA_URL }}javascript/wymeditor/skins/semanticeditor/",
@@ -81,12 +81,12 @@ $(document).ready(function(){
     /* onclick for 'Insert object' */
 	
 	function init_buttons(placeholder){
-		$('span.insert-object').click(function(){
-			var select = $(this).parent().children("select");
+		jQuery('span.insert-object').click(function(){
+			var select = jQuery(this).parent().children("select");
 			var pluginvalue = select.attr('value');
 			var splits = window.location.href.split("?")[0].split("/");
 			var parent_id = Number(splits[splits.length - 2]);
-			var language = $('#id_language').attr('value');
+			var language = jQuery('#id_language').attr('value');
 			
 			if (pluginvalue == "") {
 				alert("{% filter escapejs %}{% trans "Please select a plugin type." %}{% endfilter %}");
@@ -104,7 +104,7 @@ $(document).ready(function(){
 		}).css("cursor", "pointer").css("margin", "5px");
 		
 		/* onclick for 'Edit selected object' */
-		$('span.edit-object').click(function(){
+		jQuery('span.edit-object').click(function(){
 			var texteditor = get_editor(placeholder);
 			if (texteditor == null || texteditor.selectedObject == null) {
 				alert("{% filter escapejs %}{% trans "Text editor does not support editing objects." %}{% endfilter %}");
@@ -125,7 +125,7 @@ $(document).ready(function(){
 	}
 });
 
-
+})(jQuery);
 
 function get_plugin_html(){
 	html = '<div class="plugin-select-holder">'

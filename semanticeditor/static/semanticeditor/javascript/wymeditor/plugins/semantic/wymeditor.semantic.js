@@ -5,6 +5,8 @@
  * parsing and provide list of allowed CSS classes.
  */
 
+(function(jQuery){ // protect against jQuery being redefined
+
 function PresentationControls(wym, opts) {
     this.wym = wym;
     this.opts = opts;
@@ -1041,3 +1043,6 @@ WYMeditor.editor.prototype.semantic = function(options) {
     var wym = this;
     var c = new PresentationControls(wym, options);
 };
+
+
+})(jQuery);
