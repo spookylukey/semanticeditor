@@ -54,8 +54,8 @@ class MultiSelectField(models.Field):
     def to_python(self, value):
         if isinstance(value, list):
             return value
-        elif value==None:
-            return ''
+        elif value == None or value == u"":
+            return []
         return value.split(",")
 
     def contribute_to_class(self, cls, name):

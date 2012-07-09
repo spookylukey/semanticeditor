@@ -63,4 +63,4 @@ def get_classes(template):
     classes = CssClass.objects.all().order_by('category__name', 'verbose_name')
     # the class is allowed in the template if explicitly mentioned, or if no templates
     # are specified - useful, because many classes will be used across all templates  
-    return [c for c in classes if c.templates == [u''] or template in c.templates]
+    return [c for c in classes if c.templates == [] or template in c.templates]
