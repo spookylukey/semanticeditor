@@ -23,7 +23,7 @@ class SemanticEditor(WYMEditor):
         super(SemanticEditor, self).__init__(attrs=attrs, installed_plugins=installed_plugins)
 
     def render_additions(self, name, value, attrs=None):
-        language = get_language()
+        language = get_language().split('-')[0]
         containers = getattr(settings, 'WYM_CONTAINERS', None)
         if containers is None:
             containers = text_settings.WYM_CONTAINERS
