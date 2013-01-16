@@ -1,9 +1,14 @@
 from django.db import models
 from semanticeditor.fields import MultiSelectField
-from django.conf import settings
 
+# in django CMS 2.4, settings.CMS_TEMPLATE_INHERITANCE_MAGIC is unavailable
+try:
+    from django.conf import settings
+    template_list = [(f,n) for (f,n) in settings.CMS_TEMPLATES if f != settings.CMS_TEMPLATE_INHERITANCE_MAGIC]
 
-template_list = [(f,n) for (f,n) in settings.CMS_TEMPLATES if f != settings.CMS_TEMPLATE_INHERITANCE_MAGIC]
+except AttributeError:
+    import cms.constants
+    template_list = [(f,n) for (f,n) in settings.CMS_TEMPLATES if f != cms.constants.TEMPLATE_INHERITANCE_MAGIC]    
 
 
 class CssClassCategory(models.Model):

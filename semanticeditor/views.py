@@ -12,6 +12,13 @@ try:
 except ImportError:
     from django.utils.functional import wraps  # Python 2.3, 2.4 fallback.
 
+# in django CMS 2.4, settings.CMS_TEMPLATE_INHERITANCE_MAGIC is unavailable
+try:
+    TEMPLATE_INHERITANCE_MAGIC = settings.CMS_TEMPLATE_INHERITANCE_MAGIC
+except AttributeError:
+    import cms.constants
+    TEMPLATE_INHERITANCE_MAGIC = cms.constants.TEMPLATE_INHERITANCE_MAGIC
+
 
 def json_view(func):
     """
@@ -147,7 +154,7 @@ def css_class_to_presentation_class(c):
 def retrieve_styles(request):
     template = request.GET['template']
     page_id = request.GET['page_id']
-    if template == settings.CMS_TEMPLATE_INHERITANCE_MAGIC:
+    if template == TEMPLATE_INHERITANCE_MAGIC:
         # Need to look up page to find out what template to use
         p = Page.objects.get(pk=page_id)
         template = p.get_template()
