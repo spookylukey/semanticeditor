@@ -1,10 +1,10 @@
 Version 0.3
 -----------
+* Compatibility with django-cms 2.3 and 2.4
 * Grouping of CSS classes by category
 * Button to open editor in new tab
 * UI improvements
 * Fixed typo that caused complete failure of semantic plugin under jQuery 1.4.2
-* Fixed javascript issue with django-cms 2.3
 * Other bug fixes
 
 Version 0.2.1
