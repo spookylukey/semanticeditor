@@ -19,7 +19,7 @@ def find_package_data(pkg, filetypes):
 
 setup(
     name = "semanticeditor",
-    version = "0.2.1",
+    version = "0.3",
     description = "A Django CMS plugin for editing text with presentation and layout in a semantic way.",
     long_description = (
         read('README.rst') + '\n\n' + read('CHANGES.rst')
