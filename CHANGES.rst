@@ -1,3 +1,9 @@
+Version 0.3.1
+-------------
+* Fixed issue with CssClass.templates field which could become corrupt via a
+  roundtrip through JSON. (It ended up with things like "u['']" etc.)  If this
+  affects you, you will need to manual check this field and correct it.
+
 Version 0.3
 -----------
 * Compatibility with django-cms 2.3 and 2.4
