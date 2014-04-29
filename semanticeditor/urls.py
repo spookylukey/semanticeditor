@@ -1,4 +1,8 @@
-from django.conf.urls.defaults import patterns, url
+try:
+    # Django 1.6
+    from django.conf.urls import patterns, url
+except:
+    from django.conf.urls.defaults import patterns, url
 from semanticeditor.views import *
 
 urlpatterns = patterns('',

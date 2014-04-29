@@ -19,7 +19,7 @@ def find_package_data(pkg, filetypes):
 
 setup(
     name = "semanticeditor",
-    version = "0.2.1",
+    version = "0.3",
     description = "A Django CMS plugin for editing text with presentation and layout in a semantic way.",
     long_description = (
         read('README.rst') + '\n\n' + read('CHANGES.rst')
@@ -43,5 +43,9 @@ setup(
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
-    install_requires = ['lxml >= 2.2.4', 'pyquery >= 0.6.1', 'django-cms >= 2.0'],
+    install_requires = ['lxml >= 2.2.4',
+                        'pyquery >= 0.6.1',
+                        'django-cms >= 2.0',
+                        'django-multiselectfield >= 0.0.2',
+                        ],
 )
