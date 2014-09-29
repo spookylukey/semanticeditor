@@ -44,7 +44,9 @@ setup(
     ],
     install_requires = ['lxml >= 2.2.4',
                         'pyquery >= 0.6.1',
-                        'django-cms >= 2.0',
+                        'django-cms >= 2.0, < 3',
                         'django-multiselectfield >= 0.0.2',
+                        'South>=1.0',
+                        'django >= 1.4, < 1.6',
                         ],
 )
