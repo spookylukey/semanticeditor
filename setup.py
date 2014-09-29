@@ -7,7 +7,6 @@ def read(fname):
 
 def find_package_data(pkg, filetypes):
     import glob
-    import itertools
 
     out = []
     for f in filetypes:

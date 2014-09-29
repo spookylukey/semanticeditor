@@ -1,4 +1,5 @@
 {% load i18n %}
+{% load url from future %}
 <script type="text/javascript">
 
 // Global var, for storing callbacks, see below.
@@ -53,12 +54,12 @@ jQuery(document).ready(function(){
             }
 
             symanticopts = {
-                retrieveStylesUrl: "{% url semantic.retrieve_styles %}",
-                retrieveCommandsUrl: "{% url semantic.retrieve_commands %}",
-                separatePresentationUrl: "{% url semantic.separate_presentation %}",
-                combinePresentationUrl: "{% url semantic.combine_presentation %}",
-                cleanHtmlUrl: "{% url semantic.clean_html %}",
-                previewUrl: "{% url semantic.preview %}",
+                retrieveStylesUrl: "{% url 'semantic.retrieve_styles' %}",
+                retrieveCommandsUrl: "{% url 'semantic.retrieve_commands' %}",
+                separatePresentationUrl: "{% url 'semantic.separate_presentation' %}",
+                combinePresentationUrl: "{% url 'semantic.combine_presentation' %}",
+                cleanHtmlUrl: "{% url 'semantic.clean_html' %}",
+                previewUrl: "{% url 'semantic.preview' %}",
                 template: template,
                 pageId: "{{ page.id }}"
             };
